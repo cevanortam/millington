@@ -30,7 +30,7 @@
         }
 
         .header-title h1 { color: var(--ceva-blue); margin: 0; font-weight: 900; font-size: 3.5vh; text-transform: uppercase; }
-        .ceva-logo { height: 5vh; width: auto; max-width: 250px; object-fit: contain; }
+        .ceva-logo { height: 6vh; width: auto; max-width: 250px; object-fit: contain; }
 
         .dashboard-main { display: flex; flex: 1; gap: 1vw; min-height: 0; }
 
@@ -46,16 +46,16 @@
 
         table { width: 100%; border-collapse: separate; border-spacing: 0 4px; }
         th { background-color: var(--ceva-blue); color: white; text-transform: uppercase; padding: 1vh; font-size: 1.4vh; position: sticky; top: 0; z-index: 10; }
-        td { padding: 1vh; background: rgba(255,255,255,0.03); font-size: 1.6vh; cursor: pointer; transition: 0.2s; }
+        td { padding: 1vh; background: rgba(255,255,255,0.03); font-size: 1.6vh; cursor: pointer; transition: 0.2s; border: none; }
         td:hover { background: rgba(255,255,255,0.1); }
         
         .rank-1 { background: var(--ceva-red) !important; color: white; font-weight: bold; }
         .rank-2, .rank-3 { background: rgba(0, 45, 114, 0.8) !important; }
         .total-col { color: #00d4ff; font-weight: bold; text-align: right; }
 
-        .modal-content { background-color: #1a1a1a; color: white; border: 1px solid var(--ceva-red); }
-        .omit-tag { background: var(--ceva-red); color: white; padding: 2px 8px; border-radius: 4px; margin: 2px; display: inline-block; }
+        .omit-tag { background: var(--ceva-red); color: white; padding: 2px 8px; border-radius: 4px; margin: 2px; display: inline-block; font-size: 1.2vh; }
         .omit-tag span { cursor: pointer; margin-left: 5px; font-weight: bold; }
+        .modal-content { background-color: #1a1a1a; color: white; border: 1px solid var(--ceva-red); }
     </style>
 </head>
 <body>
@@ -65,20 +65,17 @@
         <h1 id="mainHeader">Millington Performance</h1>
         <div id="last-update" style="font-size: 1.4vh; color: #666; font-weight: bold;">Initializing...</div>
     </div>
-    <img src="https://www.cevalogistics.com/public-cdn/images-spx/x_large_picture/CEVA_BlueRed.png" 
-         class="ceva-logo" 
-         alt="CEVA Logistics"
-         style="filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.1));">
+    <img src="https://www.cevalogistics.com/public-cdn/images-spx/x_large_picture/CEVA_BlueRed.png" class="ceva-logo" alt="CEVA Logo">
 </div>
 
 <div class="dashboard-main">
     <div class="left-panel">
         <div class="chart-card">
-            <div class="d-flex justify-content-between align-items-center">
-                <h4 id="chartTitle" style="color: var(--ceva-red); font-weight: bold; margin: 0;">Hourly Volume Trends</h4>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h4 id="chartTitle" style="color: var(--ceva-red); font-weight: bold; margin: 0; font-size: 2vh;">Hourly Volume Trends</h4>
                 <button class="btn btn-sm btn-outline-light" onclick="resetToTeam()" style="font-size: 1vh;">Reset View</button>
             </div>
-            <div style="position: absolute; top: 6vh; left: 1vh; right: 1vh; bottom: 1vh;">
+            <div style="position: absolute; top: 7vh; left: 1vh; right: 1vh; bottom: 1vh;">
                 <canvas id="productivityChart"></canvas>
             </div>
         </div>
@@ -90,8 +87,8 @@
                     <select id="supervisorFilter" class="form-select form-select-sm bg-dark text-white border-secondary"></select>
                 </div>
                 <div class="col-8 text-end">
-                    <button class="btn btn-sm btn-danger me-2" data-bs-toggle="modal" data-bs-target="#omitModal">Manage Exclusions</button>
-                    <span class="small opacity-50" style="font-size: 1.2vh;">Click name to graph associate performance</span>
+                    <button class="btn btn-sm btn-danger me-2" data-bs-toggle="modal" data-bs-target="#omitModal" style="font-size: 1.2vh;">Manage Exclusions</button>
+                    <span class="small opacity-50" style="font-size: 1.2vh;">Click name to graph performance</span>
                 </div>
             </div>
         </div>
@@ -122,15 +119,11 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p class="small text-secondary">Names added here will be hidden from the leaderboard and chart.</p>
                 <div class="input-group mb-3">
                     <input type="text" id="omitInput" class="form-control" placeholder="Enter Exact Name">
                     <button class="btn btn-primary" onclick="addOmission()">Add</button>
                 </div>
                 <div id="omitList" class="p-2 border border-secondary rounded"></div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close & Apply</button>
             </div>
         </div>
     </div>
@@ -154,7 +147,7 @@
                 header: false,
                 skipEmptyLines: true,
                 complete: function(results) {
-                    fullDataBackup = results.data.slice(1);
+                    fullDataBackup = results.data;
                     renderOmitList();
                     processData();
                     setTimeout(initDashboard, 300000); 
@@ -169,22 +162,32 @@
         associateMap = {};
         const selectedSupv = $('#supervisorFilter').val();
 
-        // 1. Filter out Omitted Names
-        let data = fullDataBackup.filter(row => row[2] && !excludedNames.includes(row[2].trim()));
+        // Data Cleaning & Mapping
+        // 1. Identify rows that aren't headers or empty
+        let cleanedData = fullDataBackup.filter(row => {
+            const name = row[2] ? row[2].trim() : "";
+            // Skip headers, omitted names, and empty rows
+            return name && 
+                   name !== "Associate" && 
+                   name !== "Name" && 
+                   name !== "ASSOCIATE" && 
+                   !excludedNames.includes(name);
+        });
 
-        // 2. Filter by Supervisor (if selected)
+        // 2. Filter by Supervisor
         if (selectedSupv) {
-            data = data.filter(row => row[4] === selectedSupv);
+            cleanedData = cleanedData.filter(row => row[4] === selectedSupv);
         }
 
-        // 3. Sort by Total (Index 29)
-        data.sort((a, b) => (parseFloat(b[29]) || 0) - (parseFloat(a[29]) || 0));
+        // 3. Sort by Total (Column Index 29)
+        cleanedData.sort((a, b) => (parseFloat(b[29]) || 0) - (parseFloat(a[29]) || 0));
 
         let tableHtml = "";
-        data.forEach((row, index) => {
+        cleanedData.forEach((row, index) => {
             supervisors.add(row[4]);
             
             let pData = [];
+            // Map hourly productivity (Cols 5-28)
             for (let j = 5; j <= 28; j++) {
                 let val = parseFloat(row[j]) || 0;
                 pData.push(val);
@@ -192,32 +195,58 @@
             }
             associateMap[row[2]] = pData;
 
+            let totalVal = parseFloat(row[29]) || 0;
             let rankClass = (index === 0) ? 'rank-1' : (index < 3) ? 'rank-2' : '';
+            
             tableHtml += `<tr class="${rankClass}" onclick="updateChartForAssociate('${row[2]}')">
                 <td style="width: 10%;">${index + 1}</td>
                 <td style="width: 50%;">${row[2]}</td>
                 <td style="width: 25%;">${row[4] || ''}</td>
-                <td class="total-col" style="width: 15%;">${row[29]}</td>
+                <td class="total-col" style="width: 15%;">${totalVal}</td>
             </tr>`;
         });
 
         $('#tableBody').html(tableHtml);
         $('#last-update').text("Last Update: " + new Date().toLocaleTimeString());
         
-        // Build Supervisor List once
-        if($('#supervisorFilter').children().length === 0) {
-            const allSupvs = new Set(fullDataBackup.map(r => r[4]).filter(s => s));
-            $('#supervisorFilter').append('<option value="">Full Building</option>');
+        // Refresh Supervisor List
+        if($('#supervisorFilter').children().length <= 1) {
+            const allSupvs = new Set(fullDataBackup.map(r => r[4]).filter(s => s && s !== "Supervisor" && s !== "SUPV"));
+            $('#supervisorFilter').html('<option value="">Full Building</option>');
             Array.from(allSupvs).sort().forEach(s => $('#supervisorFilter').append(`<option value="${s}">${s}</option>`));
         }
 
         resetToTeam();
     }
 
-    // Listener for Supervisor Filter
-    $('#supervisorFilter').on('change', processData);
+    // Charting logic remains the same
+    function updateChartForAssociate(name) {
+        $('#chartTitle').text(name + " Individual Performance");
+        renderChart(hourLabels, associateMap[name], '#FFFFFF');
+    }
 
-    // --- Omission Management ---
+    function resetToTeam() {
+        const supvLabel = $('#supervisorFilter').val() || "Building";
+        $('#chartTitle').text(supvLabel + " Hourly Flow");
+        renderChart(hourLabels, teamTotals, '#E31837');
+    }
+
+    function renderChart(labels, data, color) {
+        if (myChart) myChart.destroy();
+        myChart = new Chart(document.getElementById('productivityChart').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{ 
+                    data: data, borderColor: color, backgroundColor: color === '#FFFFFF' ? 'rgba(255,255,255,0.1)' : 'rgba(227, 24, 55, 0.2)', 
+                    fill: true, tension: 0.4, pointRadius: 4, borderWidth: 5 
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { color: '#888' }, grid: { color: 'rgba(255,255,255,0.1)' } }, x: { ticks: { color: '#888' }, grid: { display: false } } } }
+        });
+    }
+
+    // Omission Logic
     function addOmission() {
         const name = $('#omitInput').val().trim();
         if (name && !excludedNames.includes(name)) {
@@ -243,33 +272,7 @@
         });
     }
 
-    // --- Chart Functions ---
-    function updateChartForAssociate(name) {
-        $('#chartTitle').text(name + " Individual");
-        renderChart(hourLabels, associateMap[name], '#FFFFFF');
-    }
-
-    function resetToTeam() {
-        const label = $('#supervisorFilter').val() || "Team";
-        $('#chartTitle').text(label + " Hourly Flow");
-        renderChart(hourLabels, teamTotals, '#E31837');
-    }
-
-    function renderChart(labels, data, color) {
-        if (myChart) myChart.destroy();
-        myChart = new Chart(document.getElementById('productivityChart').getContext('2d'), {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{ 
-                    data: data, borderColor: color, backgroundColor: color === '#FFFFFF' ? 'rgba(255,255,255,0.1)' : 'rgba(227, 24, 55, 0.2)', 
-                    fill: true, tension: 0.4, pointRadius: 4, borderWidth: 5 
-                }]
-            },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { color: '#888' }, grid: { color: 'rgba(255,255,255,0.1)' } }, x: { ticks: { color: '#888' }, grid: { display: false } } } }
-        });
-    }
-
+    $('#supervisorFilter').on('change', processData);
     $(document).ready(initDashboard);
 </script>
 </body>
