@@ -3,142 +3,198 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Warehouse Productivity Dashboard</title>
+    <title>CEVA Productivity Leaderboard</title>
+    
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+    
     <style>
-        body { background-color: #f4f7f6; padding: 20px; font-family: 'Segoe UI', sans-serif; }
-        .header-bg { background: #2c3e50; color: white; padding: 25px; border-radius: 12px; margin-bottom: 25px; }
-        .card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        .top-performer { background-color: #e8f5e9 !important; font-weight: bold; border-left: 5px solid #28a745 !important; }
-        .gold { color: #d4af37; } .silver { color: #aaa9ad; } .bronze { color: #cd7f32; }
-        canvas { max-height: 400px; width: 100% !important; }
+        :root {
+            --ceva-blue: #002D72;
+            --ceva-red: #E31837;
+            --ceva-white: #FFFFFF;
+        }
+
+        body { 
+            background-color: #0b1624; /* Deep dark background for TV pop */
+            color: var(--ceva-white);
+            font-family: 'Segoe UI', Arial, sans-serif;
+            overflow: hidden; /* Prevents scrollbars on TV */
+            height: 100vh;
+            padding: 10px;
+        }
+
+        /* Header Area */
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--ceva-white);
+            padding: 10px 30px;
+            border-radius: 8px;
+            border-bottom: 5px solid var(--ceva-red);
+            margin-bottom: 15px;
+        }
+
+        .header-title h1 { 
+            color: var(--ceva-blue); 
+            margin: 0; 
+            font-weight: 900; 
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .ceva-logo { height: 50px; } /* Adjust this for your actual logo file */
+
+        /* Layout Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* Split screen: Chart on left, Table on right */
+            gap: 15px;
+            height: calc(100vh - 120px);
+        }
+
+        .card-dark {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 15px;
+            overflow: hidden;
+        }
+
+        /* Table Styling */
+        table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+        th { 
+            background-color: var(--ceva-blue); 
+            color: white; 
+            text-transform: uppercase; 
+            padding: 8px;
+            font-size: 0.75rem;
+        }
+        td { padding: 4px 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+
+        /* Leaderboard Accents */
+        .rank-1 { background: rgba(227, 24, 55, 0.3) !important; font-weight: bold; border-left: 5px solid var(--ceva-red); }
+        .rank-2, .rank-3 { background: rgba(0, 45, 114, 0.4) !important; }
+        
+        .total-col { color: #00d4ff; font-weight: bold; font-size: 1rem; }
+
+        /* Chart Customization */
+        #chartTitle { color: var(--ceva-red); text-transform: uppercase; font-weight: bold; margin-bottom: 10px; }
+        
+        #last-update { font-size: 0.9rem; color: #888; margin-top: 5px; }
     </style>
 </head>
 <body>
 
-<div class="container-fluid">
-    <div class="header-bg text-center">
-        <h1>Millington Warehouse Productivity</h1>
-        <p id="last-update" class="mb-0 fw-bold text-warning">Initializing Sync...</p>
+<div class="header-container">
+    <div class="header-title">
+        <h1>Productivity Leaderboard</h1>
+        <div id="last-update">Syncing...</div>
     </div>
+    <img src="https://upload.wikimedia.org/wikipedia/commons/1/14/CEVA_Logistics_logo.svg" class="ceva-logo" alt="CEVA Logo">
+</div>
 
-    <div class="card p-4">
-        <h5 id="chartTitle" class="text-secondary fw-bold">Team Productivity Trends</h5>
-        <div style="position: relative; height:40vh; width:100%">
+<div class="dashboard-grid">
+    <div class="d-flex flex-column gap-3">
+        <div class="card-dark flex-grow-1">
+            <h5 id="chartTitle">Daily Warehouse Flow</h5>
             <canvas id="productivityChart"></canvas>
         </div>
-    </div>
-
-    <div class="card p-3">
-        <div class="row g-3">
-            <div class="col-md-4">
-                <label class="form-label fw-bold">Supervisor Filter:</label>
-                <select id="supervisorFilter" class="form-select"><option value="">All Supervisors</option></select>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label fw-bold">Associate Detail:</label>
-                <select id="associateFilter" class="form-select"><option value="TEAM">View Overall Team</option></select>
+        
+        <div class="card-dark" style="height: 120px;">
+            <div class="row">
+                <div class="col-6">
+                    <label class="small fw-bold mb-1">Supervisor View</label>
+                    <select id="supervisorFilter" class="form-select form-select-sm bg-dark text-white border-secondary">
+                        <option value="">Full Building</option>
+                    </select>
+                </div>
+                <div class="col-6">
+                    <label class="small fw-bold mb-1">Associate Focus</label>
+                    <select id="associateFilter" class="form-select form-select-sm bg-dark text-white border-secondary">
+                        <option value="TEAM">Total Team</option>
+                    </select>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="card p-3">
-        <table id="productivityTable" class="table table-hover w-100">
-            <thead><tr id="tableHeader"></tr></thead>
-            <tbody id="tableBody"></tbody>
-        </table>
+    <div class="card-dark">
+        <div style="height: 100%; overflow-y: auto;">
+            <table id="leaderboard">
+                <thead>
+                    <tr id="tableHeader"></tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
     </div>
 </div>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-    // Corrected Link for 2PACX-1vQSCLwK71k52Yc_Sfnz3qzycsuHKn23n7ywFNEWzowh2jYCpfS23jpwz0po4E3b_OdLt6fkNAN-JEVU
     const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQSCLwK71k52Yc_Sfnz3qzycsuHKn23n7ywFNEWzowh2jYCpfS23jpwz0po4E3b_OdLt6fkNAN-JEVU/pub?gid=0&single=true&output=csv';
-    
-    const excludedNames = ["System Admin", "Internal Test", "Training User"];
-    let rawData = [];
-    let myChart;
-    const hourLabels = ["4am", "5am", "6am", "7am", "8am", "9am", "10am", "11am", "12pm", "1pm", "2pm", "3pm", "4pm", "5pm", "6pm", "7pm", "8pm", "9pm", "10pm", "11pm", "12am", "1am", "2am", "3am"];
+    const excludedNames = ["System Admin", "Internal Test"];
+    const hourLabels = ["4a", "5a", "6a", "7a", "8a", "9a", "10a", "11a", "12p", "1p", "2p", "3p", "4p", "5p", "6p", "7p", "8p", "9p", "10p", "11p", "12a", "1a", "2a", "3a"];
+
+    let rawData = [], myChart, associateMap = {}, teamTotals = new Array(24).fill(0);
 
     function initDashboard() {
-        console.log("Fetching data...");
-        
-        // Final attempt using a more robust fetch configuration
-        fetch(csvUrl, { method: 'GET', mode: 'cors' })
-            .then(res => {
-                if (!res.ok) throw new Error('CORS or Network Block');
-                return res.text();
-            })
-            .then(csvText => {
-                Papa.parse(csvText, {
-                    header: false,
-                    skipEmptyLines: true,
-                    complete: function(results) {
-                        if (results.data && results.data.length > 1) {
-                            rawData = results.data.slice(1);
-                            processData();
-                        }
-                    }
-                });
-            })
-            .catch(err => {
-                console.error(err);
-                $('#last-update').html("<span class='text-danger'>Browser Blocked Connection. Check F12 Console.</span>");
+        fetch(csvUrl).then(res => res.text()).then(csvText => {
+            Papa.parse(csvText, {
+                header: false,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    rawData = results.data.slice(1);
+                    processData();
+                    // Auto-refresh every 5 minutes
+                    setTimeout(initDashboard, 300000); 
+                }
             });
+        });
     }
 
     function processData() {
         const supervisors = new Set();
-        const associateMap = {};
-        const teamTotals = new Array(24).fill(0);
-
         let filteredData = rawData.filter(row => row[2] && !excludedNames.includes(row[2]));
         filteredData.sort((a, b) => (parseFloat(b[29]) || 0) - (parseFloat(a[29]) || 0));
 
-        let headerHtml = "<th>Rank</th><th>Associate</th><th>Supervisor</th>";
-        hourLabels.forEach(h => headerHtml += `<th>${h}</th>`);
-        headerHtml += "<th>Total</th>";
+        let headerHtml = "<th>#</th><th>Name</th>";
+        // To save space on TV, we only show specific shift hours or just the total
+        headerHtml += "<th>Supv</th><th>Total</th>";
         $('#tableHeader').html(headerHtml);
 
         let tableHtml = "";
         filteredData.forEach((row, index) => {
             supervisors.add(row[4]);
-            let associateHours = [];
+            let hours = [];
             for (let j = 5; j <= 28; j++) {
-                let val = parseFloat(row[j]) || 0;
-                associateHours.push(val);
-                teamTotals[j-5] += val;
+                let v = parseFloat(row[j]) || 0;
+                hours.push(v);
+                if (index === 0) teamTotals[j-5] = 0; // reset on first pass
+                teamTotals[j-5] += v;
             }
-            associateMap[row[2]] = associateHours;
+            associateMap[row[2]] = hours;
             $('#associateFilter').append(`<option value="${row[2]}">${row[2]}</option>`);
 
-            let medal = (index === 0) ? "🥇 " : (index === 1) ? "🥈 " : (index === 2) ? "🥉 " : "";
-            tableHtml += `<tr class="${index < 3 ? 'top-performer' : ''}">
+            let rankClass = (index === 0) ? 'rank-1' : (index < 3) ? 'rank-2' : '';
+            tableHtml += `<tr class="${rankClass}">
                 <td>${index + 1}</td>
-                <td>${medal}${row[2]}</td>
-                <td>${row[4]}</td>`;
-            associateHours.forEach(h => tableHtml += `<td>${h}</td>`);
-            tableHtml += `<td class="fw-bold">${row[29]}</td></tr>`;
+                <td>${row[2]}</td>
+                <td>${row[4]}</td>
+                <td class="total-col">${row[29]}</td>
+            </tr>`;
         });
 
         $('#tableBody').html(tableHtml);
-        $('#last-update').text("Last Updated: " + rawData[rawData.length - 1][0]);
+        $('#last-update').text("Last Refresh: " + new Date().toLocaleTimeString());
+        
         supervisors.forEach(s => s && $('#supervisorFilter').append(`<option value="${s}">${s}</option>`));
 
-        const dataTable = $('#productivityTable').DataTable({ pageLength: 25, dom: 'lrtip', order: [[0, 'asc']] });
-        $('#supervisorFilter').on('change', function() { dataTable.column(2).search(this.value).draw(); });
-
-        renderChart(hourLabels, teamTotals, "Team Hourly Productivity");
-        $('#associateFilter').on('change', function() {
-            const val = $(this).val();
-            renderChart(hourLabels, val === "TEAM" ? teamTotals : associateMap[val], val === "TEAM" ? "Team Hourly Productivity" : `${val}'s Productivity`);
-        });
+        renderChart(hourLabels, teamTotals, "Team Hourly Flow");
     }
 
     function renderChart(labels, data, title) {
@@ -147,9 +203,25 @@
             type: 'line',
             data: {
                 labels: labels,
-                datasets: [{ label: 'Units', data: data, borderColor: '#3498db', backgroundColor: 'rgba(52, 152, 219, 0.1)', fill: true, tension: 0.3 }]
+                datasets: [{ 
+                    label: 'Units', 
+                    data: data, 
+                    borderColor: '#E31837', 
+                    backgroundColor: 'rgba(227, 24, 55, 0.2)', 
+                    fill: true, 
+                    tension: 0.4,
+                    pointRadius: 0
+                }]
             },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { ticks: { color: '#aaa' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                    x: { ticks: { color: '#aaa' }, grid: { display: false } }
+                },
+                plugins: { legend: { display: false } }
+            }
         });
     }
 
