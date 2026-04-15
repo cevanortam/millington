@@ -142,18 +142,28 @@
     let excludedNames = JSON.parse(localStorage.getItem('cevaExclusions')) || [];
 
     function initDashboard() {
-        fetch(csvUrl).then(res => res.text()).then(csvText => {
-            Papa.parse(csvText, {
-                header: false,
-                skipEmptyLines: true,
-                complete: function(results) {
-                    fullDataBackup = results.data;
-                    renderOmitList();
-                    processData();
-                    setTimeout(initDashboard, 300000); 
-                }
+        // CACHE BUSTER: Forces the browser to get fresh data from Google Sheets
+        const cacheBuster = "&t=" + new Date().getTime();
+        
+        fetch(csvUrl + cacheBuster)
+            .then(res => res.text())
+            .then(csvText => {
+                Papa.parse(csvText, {
+                    header: false,
+                    skipEmptyLines: true,
+                    complete: function(results) {
+                        fullDataBackup = results.data;
+                        renderOmitList();
+                        processData();
+                        // Refresh every 5 minutes
+                        setTimeout(initDashboard, 300000); 
+                    }
+                });
+            })
+            .catch(err => {
+                console.error("Fetch Error:", err);
+                setTimeout(initDashboard, 30000); 
             });
-        });
     }
 
     function processData() {
@@ -162,22 +172,22 @@
         associateMap = {};
         const selectedSupv = $('#supervisorFilter').val();
 
-        // New Mapping Logic:
-        // Col A (0) = ID, Col B (1) = User Name, Col C (2) = Supv ID, Col D (3) = Supv Name
-        // Col E (4) = 4am ... Col AC (28) = Total
+        // COLUMN MAPPING:
+        // Index 1 (Col B) = Name | Index 3 (Col D) = Supv Name
+        // Index 4 (Col E) = 4am ... Index 27 (Col AB) = 3am
+        // Index 28 (Col AC) = Total
 
         let cleanedData = fullDataBackup.filter(row => {
-            const name = row[1] ? row[1].trim() : ""; // User Name is now Column B (Index 1)
-            return name && 
-                   !["Associate", "Name", "ASSOCIATE", "USER NAME", "USER_NAME"].includes(name.toUpperCase()) && 
-                   !excludedNames.includes(name);
+            const name = row[1] ? row[1].trim() : "";
+            const isHeader = ["NAME", "USER NAME", "ASSOCIATE", "USER_NAME"].includes(name.toUpperCase());
+            return name && !isHeader && !excludedNames.includes(name);
         });
 
         if (selectedSupv) {
-            cleanedData = cleanedData.filter(row => row[3] === selectedSupv); // Supv Name is now Column D (Index 3)
+            cleanedData = cleanedData.filter(row => row[3] === selectedSupv);
         }
 
-        // Sort by Total (Column AC = Index 28)
+        // Sort by Total (Index 28)
         cleanedData.sort((a, b) => (parseFloat(b[28]) || 0) - (parseFloat(a[28]) || 0));
 
         let tableHtml = "";
@@ -189,7 +199,6 @@
             supervisors.add(supvName);
             
             let pData = [];
-            // Map hourly productivity (Cols E through AB = Indices 4 through 27)
             for (let j = 4; j <= 27; j++) {
                 let val = parseFloat(row[j]) || 0;
                 pData.push(val);
@@ -200,9 +209,9 @@
             let rankClass = (index === 0) ? 'rank-1' : (index < 3) ? 'rank-2' : '';
             
             tableHtml += `<tr class="${rankClass}" onclick="updateChartForAssociate('${associateName}')">
-                <td style="width: 10%;">${index + 1}</td>
-                <td style="width: 50%;">${associateName}</td>
-                <td style="width: 25%;">${supvName || ''}</td>
+                <td style="width: 10%; text-align: center;">${index + 1}</td>
+                <td style="width: 45%;">${associateName}</td>
+                <td style="width: 30%;">${supvName || ''}</td>
                 <td class="total-col" style="width: 15%;">${totalVal}</td>
             </tr>`;
         });
@@ -210,6 +219,7 @@
         $('#tableBody').html(tableHtml);
         $('#last-update').text("Last Update: " + new Date().toLocaleTimeString());
         
+        // Build Supervisor Filter
         if($('#supervisorFilter').children().length <= 1) {
             const allSupvs = new Set(fullDataBackup.map(r => r[3]).filter(s => s && !["SUPERVISOR", "SUPV NAME", "NAME"].includes(s.toUpperCase())));
             $('#supervisorFilter').html('<option value="">Full Building</option>');
