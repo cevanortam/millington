@@ -53,8 +53,10 @@
         .rank-2, .rank-3 { background: rgba(0, 45, 114, 0.8) !important; }
         .total-col { color: #00d4ff; font-weight: bold; text-align: right; }
 
-        .chart-instruction { font-size: 1.2vh; color: #888; font-style: italic; }
-        #last-update { font-size: 1.4vh; color: #666; font-weight: bold; }
+        /* Modal Customization */
+        .modal-content { background-color: #1a1a1a; color: white; border: 1px solid var(--ceva-red); }
+        .omit-tag { background: var(--ceva-red); color: white; padding: 2px 8px; border-radius: 4px; margin: 2px; display: inline-block; }
+        .omit-tag span { cursor: pointer; margin-left: 5px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -72,7 +74,7 @@
         <div class="chart-card">
             <div class="d-flex justify-content-between align-items-center">
                 <h4 id="chartTitle" style="color: var(--ceva-red); font-weight: bold; margin: 0;">Hourly Volume Trends</h4>
-                <button class="btn btn-sm btn-outline-light" onclick="resetToTeam()" style="font-size: 1vh;">Reset to Team View</button>
+                <button class="btn btn-sm btn-outline-light" onclick="resetToTeam()" style="font-size: 1vh;">Reset View</button>
             </div>
             <div style="position: absolute; top: 6vh; left: 1vh; right: 1vh; bottom: 1vh;">
                 <canvas id="productivityChart"></canvas>
@@ -81,12 +83,13 @@
         
         <div class="control-card">
             <div class="row align-items-center h-100">
-                <div class="col-6">
+                <div class="col-4">
                     <label class="small text-uppercase fw-bold d-block" style="font-size: 1vh; color: #ccc;">Supervisor Filter</label>
                     <select id="supervisorFilter" class="form-select form-select-sm bg-dark text-white border-secondary"></select>
                 </div>
-                <div class="col-6 text-end">
-                    <span class="chart-instruction">Tip: Click an Associate Name to see their individual chart.</span>
+                <div class="col-8 text-end">
+                    <button class="btn btn-sm btn-danger me-2" data-bs-toggle="modal" data-bs-target="#omitModal">Manage Exclusions</button>
+                    <span class="small opacity-50">Click name to graph associate performance</span>
                 </div>
             </div>
         </div>
@@ -98,7 +101,7 @@
                 <thead>
                     <tr>
                         <th>Rank</th>
-                        <th>Associate (Click Name)</th>
+                        <th>Associate</th>
                         <th>Supv</th>
                         <th style="text-align: right;">Total</th>
                     </tr>
@@ -109,24 +112,39 @@
     </div>
 </div>
 
+<div class="modal fade" id="omitModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Exclude User Names</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="small text-secondary">Names added here will be hidden from the leaderboard and chart. (Saves to this TV only)</p>
+                <div class="input-group mb-3">
+                    <input type="text" id="omitInput" class="form-control" placeholder="Enter Exact Name">
+                    <button class="btn btn-primary" onclick="addOmission()">Add</button>
+                </div>
+                <div id="omitList" class="p-2 border border-secondary rounded"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close & Apply</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
     const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQSCLwK71k52Yc_Sfnz3qzycsuHKn23n7ywFNEWzowh2jYCpfS23jpwz0po4E3b_OdLt6fkNAN-JEVU/pub?gid=0&single=true&output=csv';
-    
-    // --- 1. OMIT LIST: Add any names here to remove them from the dashboard ---
-    const excludedNames = [
-        "System Admin", 
-        "Internal Test", 
-        "Training Account",
-        "Placeholder User"
-    ];
-
     const hourLabels = ["4a", "5a", "6a", "7a", "8a", "9a", "10a", "11a", "12p", "1p", "2p", "3p", "4p", "5p", "6p", "7p", "8p", "9p", "10p", "11p", "12a", "1a", "2a", "3a"];
-
-    let myChart, associateMap = {}, teamTotals = [];
+    
+    let myChart, associateMap = {}, teamTotals = [], fullDataBackup = [];
+    let excludedNames = JSON.parse(localStorage.getItem('cevaExclusions')) || [];
 
     function initDashboard() {
         fetch(csvUrl).then(res => res.text()).then(csvText => {
@@ -134,7 +152,9 @@
                 header: false,
                 skipEmptyLines: true,
                 complete: function(results) {
-                    processData(results.data.slice(1));
+                    fullDataBackup = results.data.slice(1);
+                    renderOmitList();
+                    processData(fullDataBackup);
                     setTimeout(initDashboard, 300000); 
                 }
             });
@@ -152,15 +172,13 @@
         let tableHtml = "";
         filteredData.forEach((row, index) => {
             supervisors.add(row[4]);
-            
-            // Map Associate hourly data
-            let personalHours = [];
+            let pData = [];
             for (let j = 5; j <= 28; j++) {
                 let val = parseFloat(row[j]) || 0;
-                personalHours.push(val);
+                pData.push(val);
                 teamTotals[j-5] += val;
             }
-            associateMap[row[2]] = personalHours;
+            associateMap[row[2]] = pData;
 
             let rankClass = (index === 0) ? 'rank-1' : (index < 3) ? 'rank-2' : '';
             tableHtml += `<tr class="${rankClass}" onclick="updateChartForAssociate('${row[2]}')">
@@ -179,42 +197,58 @@
             Array.from(supervisors).sort().forEach(s => s && $('#supervisorFilter').append(`<option value="${s}">${s}</option>`));
         }
 
-        resetToTeam(); // Default view
+        resetToTeam();
     }
 
+    // --- Omission Management Functions ---
+    function addOmission() {
+        const name = $('#omitInput').val().trim();
+        if (name && !excludedNames.includes(name)) {
+            excludedNames.push(name);
+            localStorage.setItem('cevaExclusions', JSON.stringify(excludedNames));
+            $('#omitInput').val('');
+            renderOmitList();
+            processData(fullDataBackup);
+        }
+    }
+
+    function removeOmission(index) {
+        excludedNames.splice(index, 1);
+        localStorage.setItem('cevaExclusions', JSON.stringify(excludedNames));
+        renderOmitList();
+        processData(fullDataBackup);
+    }
+
+    function renderOmitList() {
+        $('#omitList').html('');
+        excludedNames.forEach((name, i) => {
+            $('#omitList').append(`<div class="omit-tag">${name} <span onclick="removeOmission(${i})">&times;</span></div>`);
+        });
+    }
+
+    // --- Chart Functions ---
     function updateChartForAssociate(name) {
-        $('#chartTitle').text(name + " - Individual Performance");
-        renderChart(hourLabels, associateMap[name], '#FFFFFF'); // Individual line is White
+        $('#chartTitle').text(name + " Individual");
+        renderChart(hourLabels, associateMap[name], '#FFFFFF');
     }
 
     function resetToTeam() {
         $('#chartTitle').text("Team Hourly Flow");
-        renderChart(hourLabels, teamTotals, '#E31837'); // Team line is CEVA Red
+        renderChart(hourLabels, teamTotals, '#E31837');
     }
 
-    function renderChart(labels, data, lineColor) {
+    function renderChart(labels, data, color) {
         if (myChart) myChart.destroy();
-        const ctx = document.getElementById('productivityChart').getContext('2d');
-        myChart = new Chart(ctx, {
+        myChart = new Chart(document.getElementById('productivityChart').getContext('2d'), {
             type: 'line',
             data: {
                 labels: labels,
                 datasets: [{ 
-                    data: data, 
-                    borderColor: lineColor, 
-                    backgroundColor: lineColor === '#FFFFFF' ? 'rgba(255,255,255,0.1)' : 'rgba(227, 24, 55, 0.2)', 
+                    data: data, borderColor: color, backgroundColor: color === '#FFFFFF' ? 'rgba(255,255,255,0.1)' : 'rgba(227, 24, 55, 0.2)', 
                     fill: true, tension: 0.4, pointRadius: 4, borderWidth: 5 
                 }]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    y: { beginAtZero: true, ticks: { color: '#888' }, grid: { color: 'rgba(255,255,255,0.1)' } },
-                    x: { ticks: { color: '#888' }, grid: { display: false } }
-                }
-            }
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { color: '#888' }, grid: { color: 'rgba(255,255,255,0.1)' } }, x: { ticks: { color: '#888' }, grid: { display: false } } } }
         });
     }
 
