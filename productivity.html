@@ -162,46 +162,47 @@
         associateMap = {};
         const selectedSupv = $('#supervisorFilter').val();
 
-        // Data Cleaning & Mapping
-        // 1. Identify rows that aren't headers or empty
+        // New Mapping Logic:
+        // Col A (0) = ID, Col B (1) = User Name, Col C (2) = Supv ID, Col D (3) = Supv Name
+        // Col E (4) = 4am ... Col AC (28) = Total
+
         let cleanedData = fullDataBackup.filter(row => {
-            const name = row[2] ? row[2].trim() : "";
-            // Skip headers, omitted names, and empty rows
+            const name = row[1] ? row[1].trim() : ""; // User Name is now Column B (Index 1)
             return name && 
-                   name !== "Associate" && 
-                   name !== "Name" && 
-                   name !== "ASSOCIATE" && 
+                   !["Associate", "Name", "ASSOCIATE", "USER NAME", "USER_NAME"].includes(name.toUpperCase()) && 
                    !excludedNames.includes(name);
         });
 
-        // 2. Filter by Supervisor
         if (selectedSupv) {
-            cleanedData = cleanedData.filter(row => row[4] === selectedSupv);
+            cleanedData = cleanedData.filter(row => row[3] === selectedSupv); // Supv Name is now Column D (Index 3)
         }
 
-        // 3. Sort by Total (Column Index 29)
-        cleanedData.sort((a, b) => (parseFloat(b[29]) || 0) - (parseFloat(a[29]) || 0));
+        // Sort by Total (Column AC = Index 28)
+        cleanedData.sort((a, b) => (parseFloat(b[28]) || 0) - (parseFloat(a[28]) || 0));
 
         let tableHtml = "";
         cleanedData.forEach((row, index) => {
-            supervisors.add(row[4]);
+            const associateName = row[1];
+            const supvName = row[3];
+            const totalVal = parseFloat(row[28]) || 0;
+
+            supervisors.add(supvName);
             
             let pData = [];
-            // Map hourly productivity (Cols 5-28)
-            for (let j = 5; j <= 28; j++) {
+            // Map hourly productivity (Cols E through AB = Indices 4 through 27)
+            for (let j = 4; j <= 27; j++) {
                 let val = parseFloat(row[j]) || 0;
                 pData.push(val);
-                teamTotals[j-5] += val;
+                teamTotals[j-4] += val;
             }
-            associateMap[row[2]] = pData;
+            associateMap[associateName] = pData;
 
-            let totalVal = parseFloat(row[29]) || 0;
             let rankClass = (index === 0) ? 'rank-1' : (index < 3) ? 'rank-2' : '';
             
-            tableHtml += `<tr class="${rankClass}" onclick="updateChartForAssociate('${row[2]}')">
+            tableHtml += `<tr class="${rankClass}" onclick="updateChartForAssociate('${associateName}')">
                 <td style="width: 10%;">${index + 1}</td>
-                <td style="width: 50%;">${row[2]}</td>
-                <td style="width: 25%;">${row[4] || ''}</td>
+                <td style="width: 50%;">${associateName}</td>
+                <td style="width: 25%;">${supvName || ''}</td>
                 <td class="total-col" style="width: 15%;">${totalVal}</td>
             </tr>`;
         });
@@ -209,9 +210,8 @@
         $('#tableBody').html(tableHtml);
         $('#last-update').text("Last Update: " + new Date().toLocaleTimeString());
         
-        // Refresh Supervisor List
         if($('#supervisorFilter').children().length <= 1) {
-            const allSupvs = new Set(fullDataBackup.map(r => r[4]).filter(s => s && s !== "Supervisor" && s !== "SUPV"));
+            const allSupvs = new Set(fullDataBackup.map(r => r[3]).filter(s => s && !["SUPERVISOR", "SUPV NAME", "NAME"].includes(s.toUpperCase())));
             $('#supervisorFilter').html('<option value="">Full Building</option>');
             Array.from(allSupvs).sort().forEach(s => $('#supervisorFilter').append(`<option value="${s}">${s}</option>`));
         }
@@ -219,7 +219,6 @@
         resetToTeam();
     }
 
-    // Charting logic remains the same
     function updateChartForAssociate(name) {
         $('#chartTitle').text(name + " Individual Performance");
         renderChart(hourLabels, associateMap[name], '#FFFFFF');
@@ -246,7 +245,6 @@
         });
     }
 
-    // Omission Logic
     function addOmission() {
         const name = $('#omitInput').val().trim();
         if (name && !excludedNames.includes(name)) {
