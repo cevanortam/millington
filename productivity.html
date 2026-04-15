@@ -30,7 +30,7 @@
         }
 
         .header-title h1 { color: var(--ceva-blue); margin: 0; font-weight: 900; font-size: 3.5vh; text-transform: uppercase; }
-        .ceva-logo { height: 6vh; }
+        .ceva-logo { height: 5vh; width: auto; max-width: 250px; object-fit: contain; }
 
         .dashboard-main { display: flex; flex: 1; gap: 1vw; min-height: 0; }
 
@@ -53,7 +53,6 @@
         .rank-2, .rank-3 { background: rgba(0, 45, 114, 0.8) !important; }
         .total-col { color: #00d4ff; font-weight: bold; text-align: right; }
 
-        /* Modal Customization */
         .modal-content { background-color: #1a1a1a; color: white; border: 1px solid var(--ceva-red); }
         .omit-tag { background: var(--ceva-red); color: white; padding: 2px 8px; border-radius: 4px; margin: 2px; display: inline-block; }
         .omit-tag span { cursor: pointer; margin-left: 5px; font-weight: bold; }
@@ -64,9 +63,9 @@
 <div class="header-container">
     <div class="header-title">
         <h1 id="mainHeader">Millington Performance</h1>
-        <div id="last-update">Initializing...</div>
+        <div id="last-update" style="font-size: 1.4vh; color: #666; font-weight: bold;">Initializing...</div>
     </div>
-    <img src="https://upload.wikimedia.org/wikipedia/commons/1/14/CEVA_Logistics_logo.svg" class="ceva-logo" alt="CEVA Logo">
+    <img src="https://www.cevalogistics.com/themes/custom/ceva_theme/logo.svg" class="ceva-logo" alt="CEVA Logo" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/1/14/CEVA_Logistics_logo.svg/512px-CEVA_Logistics_logo.svg.png'">
 </div>
 
 <div class="dashboard-main">
@@ -89,7 +88,7 @@
                 </div>
                 <div class="col-8 text-end">
                     <button class="btn btn-sm btn-danger me-2" data-bs-toggle="modal" data-bs-target="#omitModal">Manage Exclusions</button>
-                    <span class="small opacity-50">Click name to graph associate performance</span>
+                    <span class="small opacity-50" style="font-size: 1.2vh;">Click name to graph associate performance</span>
                 </div>
             </div>
         </div>
@@ -120,7 +119,7 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p class="small text-secondary">Names added here will be hidden from the leaderboard and chart. (Saves to this TV only)</p>
+                <p class="small text-secondary">Names added here will be hidden from the leaderboard and chart.</p>
                 <div class="input-group mb-3">
                     <input type="text" id="omitInput" class="form-control" placeholder="Enter Exact Name">
                     <button class="btn btn-primary" onclick="addOmission()">Add</button>
@@ -154,24 +153,34 @@
                 complete: function(results) {
                     fullDataBackup = results.data.slice(1);
                     renderOmitList();
-                    processData(fullDataBackup);
+                    processData();
                     setTimeout(initDashboard, 300000); 
                 }
             });
         });
     }
 
-    function processData(rawData) {
+    function processData() {
         const supervisors = new Set();
         teamTotals = new Array(24).fill(0);
         associateMap = {};
+        const selectedSupv = $('#supervisorFilter').val();
 
-        let filteredData = rawData.filter(row => row[2] && !excludedNames.includes(row[2].trim()));
-        filteredData.sort((a, b) => (parseFloat(b[29]) || 0) - (parseFloat(a[29]) || 0));
+        // 1. Filter out Omitted Names
+        let data = fullDataBackup.filter(row => row[2] && !excludedNames.includes(row[2].trim()));
+
+        // 2. Filter by Supervisor (if selected)
+        if (selectedSupv) {
+            data = data.filter(row => row[4] === selectedSupv);
+        }
+
+        // 3. Sort by Total (Index 29)
+        data.sort((a, b) => (parseFloat(b[29]) || 0) - (parseFloat(a[29]) || 0));
 
         let tableHtml = "";
-        filteredData.forEach((row, index) => {
+        data.forEach((row, index) => {
             supervisors.add(row[4]);
+            
             let pData = [];
             for (let j = 5; j <= 28; j++) {
                 let val = parseFloat(row[j]) || 0;
@@ -192,15 +201,20 @@
         $('#tableBody').html(tableHtml);
         $('#last-update').text("Last Update: " + new Date().toLocaleTimeString());
         
+        // Build Supervisor List once
         if($('#supervisorFilter').children().length === 0) {
+            const allSupvs = new Set(fullDataBackup.map(r => r[4]).filter(s => s));
             $('#supervisorFilter').append('<option value="">Full Building</option>');
-            Array.from(supervisors).sort().forEach(s => s && $('#supervisorFilter').append(`<option value="${s}">${s}</option>`));
+            Array.from(allSupvs).sort().forEach(s => $('#supervisorFilter').append(`<option value="${s}">${s}</option>`));
         }
 
         resetToTeam();
     }
 
-    // --- Omission Management Functions ---
+    // Listener for Supervisor Filter
+    $('#supervisorFilter').on('change', processData);
+
+    // --- Omission Management ---
     function addOmission() {
         const name = $('#omitInput').val().trim();
         if (name && !excludedNames.includes(name)) {
@@ -208,7 +222,7 @@
             localStorage.setItem('cevaExclusions', JSON.stringify(excludedNames));
             $('#omitInput').val('');
             renderOmitList();
-            processData(fullDataBackup);
+            processData();
         }
     }
 
@@ -216,7 +230,7 @@
         excludedNames.splice(index, 1);
         localStorage.setItem('cevaExclusions', JSON.stringify(excludedNames));
         renderOmitList();
-        processData(fullDataBackup);
+        processData();
     }
 
     function renderOmitList() {
@@ -233,7 +247,8 @@
     }
 
     function resetToTeam() {
-        $('#chartTitle').text("Team Hourly Flow");
+        const label = $('#supervisorFilter').val() || "Team";
+        $('#chartTitle').text(label + " Hourly Flow");
         renderChart(hourLabels, teamTotals, '#E31837');
     }
 
