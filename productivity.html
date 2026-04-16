@@ -23,7 +23,6 @@
             --silver:    #7a8898;
             --bronze:    #a0622a;
             --green:     #22c55e;
-            --circumference: 113.1;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -36,7 +35,6 @@
             font-family: 'Open Sans', sans-serif;
         }
 
-        /* ── PAGE ─────────────────────────────────────────────────────────── */
         .page {
             display: flex;
             flex-direction: column;
@@ -53,27 +51,28 @@
             align-items: center;
             justify-content: space-between;
             padding: 0 32px;
-            height: 72px;
+            height: 68px;
             box-shadow: 0 4px 24px rgba(0,0,0,0.2);
         }
         .header-left { display: flex; align-items: center; gap: 22px; }
-        .logo-img { height: 44px; object-fit: contain; filter: brightness(0) invert(1); }
-        .logo-divider { width: 1px; height: 36px; background: rgba(255,255,255,0.2); }
+        .logo-img { height: 42px; object-fit: contain; filter: brightness(0) invert(1); }
+        .logo-divider { width: 1px; height: 34px; background: rgba(255,255,255,0.2); }
         .header-title h1 {
             font-family: 'Titillium Web', sans-serif;
-            font-size: 20px; font-weight: 700; color: var(--white);
+            font-size: 19px; font-weight: 700; color: var(--white);
         }
         .header-title p {
-            font-size: 11px; color: rgba(255,255,255,0.45);
+            font-size: 10px; color: rgba(255,255,255,0.45);
             letter-spacing: 2.5px; text-transform: uppercase; margin-top: 2px;
         }
-        .header-right { display: flex; align-items: center; gap: 14px; }
+        .header-right { display: flex; align-items: center; gap: 12px; }
         .sync-badge {
             display: flex; align-items: center; gap: 7px;
             background: rgba(255,255,255,0.08);
             border: 1px solid rgba(255,255,255,0.14);
-            border-radius: 6px; padding: 7px 13px;
+            border-radius: 6px; padding: 6px 12px;
             font-size: 12px; color: rgba(255,255,255,0.65);
+            white-space: nowrap;
         }
         .sync-dot {
             width: 8px; height: 8px; border-radius: 50%;
@@ -85,7 +84,7 @@
             0%,100% { opacity:1; box-shadow: 0 0 0 0 rgba(34,197,94,0.5); }
             50%      { opacity:0.8; box-shadow: 0 0 0 5px rgba(34,197,94,0); }
         }
-        .countdown-ring { position: relative; width: 44px; height: 44px; }
+        .countdown-ring { position: relative; width: 42px; height: 42px; }
         .countdown-ring svg { position: absolute; top:0; left:0; transform: rotate(-90deg); }
         .ring-bg   { fill: none; stroke: rgba(255,255,255,0.12); stroke-width: 3; }
         .ring-fill { fill: none; stroke: var(--red); stroke-width: 3; stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
@@ -93,31 +92,31 @@
             position: absolute; inset: 0;
             display: flex; align-items: center; justify-content: center;
             font-family: 'Titillium Web', sans-serif;
-            font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.75);
+            font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.75);
         }
         .settings-btn {
             background: rgba(255,255,255,0.1);
             border: 1px solid rgba(255,255,255,0.2);
             border-radius: 6px; color: rgba(255,255,255,0.7);
-            cursor: pointer; padding: 8px 12px;
-            font-size: 18px; line-height: 1;
+            cursor: pointer; padding: 7px 11px;
+            font-size: 17px; line-height: 1;
             transition: background 0.2s;
         }
         .settings-btn:hover { background: rgba(255,255,255,0.22); }
 
-        /* ── KPI ROW ──────────────────────────────────────────────────────── */
+        /* ── KPI ROW — 4 cards ────────────────────────────────────────────── */
         .kpi-row {
             flex-shrink: 0;
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-            padding: 12px 32px 0;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            padding: 10px 32px 0;
         }
         .kpi-card {
             background: var(--white);
             border: 1px solid var(--border);
             border-radius: 10px;
-            padding: 14px 20px;
+            padding: 13px 18px;
             position: relative; overflow: hidden;
             box-shadow: 0 2px 10px rgba(0,48,87,0.07);
         }
@@ -129,29 +128,29 @@
             border-radius: 10px 0 0 10px;
         }
         .kpi-label {
-            font-size: 11px; font-weight: 600;
-            letter-spacing: 2px; text-transform: uppercase;
+            font-size: 10px; font-weight: 600;
+            letter-spacing: 1.8px; text-transform: uppercase;
             color: var(--gray-dk); margin-bottom: 3px;
         }
         .kpi-value {
             font-family: 'Titillium Web', sans-serif;
-            font-size: 40px; font-weight: 900;
+            font-size: 38px; font-weight: 900;
             color: var(--navy); line-height: 1;
         }
-        .kpi-sub { font-size: 12px; color: var(--gray-dk); margin-top: 3px; }
+        .kpi-sub { font-size: 11px; color: var(--gray-dk); margin-top: 3px; }
         .kpi-icon {
-            position: absolute; right: 16px; top: 50%;
+            position: absolute; right: 14px; top: 50%;
             transform: translateY(-50%);
-            font-size: 36px; opacity: 0.06;
+            font-size: 34px; opacity: 0.06;
         }
 
-        /* ── BODY: 50 / 50 ────────────────────────────────────────────────── */
+        /* ── BODY ─────────────────────────────────────────────────────────── */
         .body-row {
             flex: 1;
             display: grid;
-            grid-template-columns: 1fr 1fr;   /* ← exact 50/50 */
-            gap: 12px;
-            padding: 12px 32px 14px;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            padding: 10px 32px 12px;
             min-height: 0;
         }
 
@@ -161,35 +160,64 @@
             background: var(--white);
             border: 1px solid var(--border);
             border-radius: 10px;
-            padding: 18px 18px 14px;
+            padding: 16px 16px 12px;
             box-shadow: 0 2px 10px rgba(0,48,87,0.07);
             min-height: 0;
         }
         .panel-title {
             font-family: 'Titillium Web', sans-serif;
-            font-size: 12px; font-weight: 700;
+            font-size: 11px; font-weight: 700;
             letter-spacing: 2px; text-transform: uppercase;
             color: var(--navy);
-            display: flex; align-items: center; gap: 9px;
-            flex-shrink: 0; margin-bottom: 4px;
+            display: flex; align-items: center; gap: 8px;
+            flex-shrink: 0; margin-bottom: 6px;
         }
         .panel-title::before {
             content: '';
-            width: 4px; height: 15px;
+            width: 4px; height: 14px;
             background: var(--red); border-radius: 2px; flex-shrink: 0;
         }
+
+        /* Supervisor filter row */
+        .chart-controls {
+            display: flex; align-items: center; gap: 10px;
+            flex-shrink: 0; margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+        .filter-label {
+            font-size: 10px; font-weight: 600;
+            letter-spacing: 1.5px; text-transform: uppercase;
+            color: var(--gray-dk); white-space: nowrap;
+        }
+        .sup-select {
+            flex: 1; min-width: 140px;
+            background: var(--off-white);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            padding: 6px 28px 6px 10px;
+            font-family: 'Open Sans', sans-serif;
+            font-size: 12px;
+            appearance: none;
+            cursor: pointer;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%235e6e82' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            transition: border-color 0.2s;
+        }
+        .sup-select:focus { outline: none; border-color: var(--navy); }
+        .sup-select option { background: white; }
+
         .chart-meta {
             display: flex; align-items: center; gap: 10px;
-            margin-bottom: 10px; flex-shrink: 0; min-height: 22px;
+            flex-shrink: 0; margin-bottom: 8px; min-height: 20px;
         }
-        .chart-subject-label {
-            font-size: 12px; color: var(--gray-dk);
-        }
+        .chart-subject-label { font-size: 11px; color: var(--gray-dk); }
         .chart-subject-label strong { color: var(--navy); font-weight: 600; }
         .reset-btn {
             background: var(--red); color: white;
             border: none; border-radius: 5px;
-            padding: 3px 10px; font-size: 11px;
+            padding: 3px 9px; font-size: 10px;
             font-family: 'Titillium Web', sans-serif;
             font-weight: 700; letter-spacing: 0.5px;
             cursor: pointer; display: none;
@@ -197,6 +225,7 @@
         }
         .reset-btn.visible { display: inline-block; }
         .reset-btn:hover { background: #a00d24; }
+
         .chart-wrap { flex: 1; position: relative; min-height: 0; }
         .chart-wrap canvas { width: 100% !important; height: 100% !important; }
 
@@ -213,16 +242,16 @@
         .table-header-bar {
             flex-shrink: 0;
             display: flex; align-items: center; justify-content: space-between;
-            padding: 12px 18px 10px;
+            padding: 11px 16px 9px;
             border-bottom: 1px solid var(--gray-lt);
         }
         .scroll-meta {
-            display: flex; align-items: center; gap: 10px;
+            display: flex; align-items: center; gap: 8px;
             font-size: 11px; color: var(--gray-dk);
         }
         .click-hint { font-style: italic; color: var(--gray); }
         .progress-bar {
-            width: 90px; height: 4px;
+            width: 80px; height: 4px;
             background: var(--gray-lt); border-radius: 2px; overflow: hidden;
         }
         .progress-fill {
@@ -230,53 +259,43 @@
             transition: width 0.4s ease;
         }
 
-        /* ── SHARED TABLE STYLES ──────────────────────────────────────────── */
+        /* ── TABLE STYLES ─────────────────────────────────────────────────── */
         table.lb {
             width: 100%; border-collapse: collapse;
             table-layout: fixed;
         }
-
-        /* Column widths — consistent across both pinned and scroll tables */
-        table.lb col.col-rank  { width: 56px; }
-        table.lb col.col-name  { width: auto; }   /* fills remaining */
+        table.lb col.col-rank  { width: 54px; }
+        table.lb col.col-name  { width: auto; }
         table.lb col.col-sup   { width: 28%; }
-        table.lb col.col-total { width: 80px; }
+        table.lb col.col-total { width: 76px; }
 
         table.lb thead th {
             background: var(--navy);
             color: rgba(255,255,255,0.65);
             font-size: 10px; font-weight: 600;
             letter-spacing: 1.5px; text-transform: uppercase;
-            padding: 9px 12px;
-            text-align: left; white-space: nowrap;
+            padding: 8px 12px; text-align: left; white-space: nowrap;
         }
         table.lb thead th.right { text-align: right; }
 
         table.lb tbody td {
-            padding: 0 12px;
-            height: 46px;                 /* fixed row height — same for both tables */
-            border: none;
-            text-align: left;
-            color: var(--text);
-            vertical-align: middle;
-            overflow: hidden;
-            white-space: nowrap;
-            text-overflow: ellipsis;
+            padding: 0 12px; height: 44px;
+            border: none; text-align: left;
+            color: var(--text); vertical-align: middle;
+            overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
         }
         table.lb tbody td.right { text-align: right; }
         table.lb tbody td.sup-cell { color: var(--gray-dk); font-size: 12px; }
         table.lb tbody td.total-cell {
             font-family: 'Titillium Web', sans-serif;
-            font-size: 20px; font-weight: 900;
+            font-size: 19px; font-weight: 900;
             color: var(--navy); text-align: right;
         }
         .name-cell { font-weight: 600; }
 
-        /* Row colours — pinned */
         .pinned-body tr {
             border-bottom: 1px solid var(--gray-lt);
-            cursor: pointer;
-            transition: background 0.12s;
+            cursor: pointer; transition: background 0.12s;
         }
         .pinned-body tr.rank-1-row  { background: #fffbea; }
         .pinned-body tr.rank-2-row  { background: #f9fafb; }
@@ -284,28 +303,21 @@
         .pinned-body tr:hover       { background: #dce8f4 !important; }
         .pinned-body tr.active-row  { background: #c8dff5 !important; }
 
-        /* Navy divider between pinned and scroll */
         .pin-divider { height: 3px; background: var(--navy); flex-shrink: 0; }
 
-        /* Scroll zone */
-        .scroll-zone {
-            flex: 1; overflow: hidden;
-            position: relative; min-height: 0;
-        }
+        .scroll-zone { flex: 1; overflow: hidden; position: relative; min-height: 0; }
         .scroll-body tr {
             border-bottom: 1px solid var(--gray-lt);
-            cursor: pointer;
-            transition: background 0.12s;
+            cursor: pointer; transition: background 0.12s;
         }
         .scroll-body tr:hover      { background: #dce8f4 !important; }
         .scroll-body tr.active-row { background: #c8dff5 !important; }
 
-        /* Rank badge */
         .rank-badge {
             display: inline-flex; align-items: center; justify-content: center;
-            width: 30px; height: 30px; border-radius: 6px;
+            width: 28px; height: 28px; border-radius: 6px;
             font-family: 'Titillium Web', sans-serif;
-            font-weight: 700; font-size: 14px;
+            font-weight: 700; font-size: 13px;
         }
         .rb-1 { background: rgba(212,160,23,0.14); color: var(--gold);   border: 1px solid rgba(212,160,23,0.3); }
         .rb-2 { background: rgba(122,136,152,0.14); color: var(--silver); border: 1px solid rgba(122,136,152,0.3); }
@@ -315,70 +327,64 @@
         /* ── SETTINGS MODAL ───────────────────────────────────────────────── */
         .modal-overlay {
             position: fixed; inset: 0;
-            background: rgba(0,0,0,0.5);
-            backdrop-filter: blur(4px);
-            z-index: 100;
-            display: flex; align-items: center; justify-content: center;
-            opacity: 0; pointer-events: none;
-            transition: opacity 0.2s;
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+            z-index: 100; display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.2s;
         }
         .modal-overlay.open { opacity: 1; pointer-events: all; }
         .modal {
             background: var(--white); border-radius: 12px;
             width: 500px; max-width: 95vw;
             box-shadow: 0 24px 60px rgba(0,0,0,0.25);
-            overflow: hidden;
-            transform: translateY(14px); transition: transform 0.2s;
+            overflow: hidden; transform: translateY(14px); transition: transform 0.2s;
         }
         .modal-overlay.open .modal { transform: translateY(0); }
         .modal-head {
-            background: var(--navy); padding: 16px 22px;
+            background: var(--navy); padding: 15px 20px;
             display: flex; align-items: center; justify-content: space-between;
             border-bottom: 3px solid var(--red);
         }
         .modal-head h2 {
             font-family: 'Titillium Web', sans-serif;
-            font-size: 16px; font-weight: 700; color: var(--white); letter-spacing: 1px;
+            font-size: 15px; font-weight: 700; color: var(--white); letter-spacing: 1px;
         }
         .modal-close {
-            background: none; border: none;
-            color: rgba(255,255,255,0.6); font-size: 22px;
-            cursor: pointer; line-height: 1; padding: 0 4px;
+            background: none; border: none; color: rgba(255,255,255,0.6);
+            font-size: 20px; cursor: pointer; line-height: 1; padding: 0 4px;
         }
         .modal-close:hover { color: white; }
-        .modal-body { padding: 20px 22px; }
+        .modal-body { padding: 18px 20px; }
         .modal-section-label {
-            font-size: 11px; font-weight: 600;
+            font-size: 10px; font-weight: 600;
             letter-spacing: 2px; text-transform: uppercase;
-            color: var(--gray-dk); margin-bottom: 9px;
+            color: var(--gray-dk); margin-bottom: 8px;
         }
         .excluded-list {
             border: 1px solid var(--border); border-radius: 8px;
-            overflow: hidden; margin-bottom: 14px;
-            max-height: 220px; overflow-y: auto;
+            overflow: hidden; margin-bottom: 12px;
+            max-height: 200px; overflow-y: auto;
         }
         .excluded-list:empty::after {
             content: 'No names excluded';
-            display: block; padding: 12px 14px;
+            display: block; padding: 11px 13px;
             font-size: 13px; color: var(--gray); font-style: italic;
         }
         .excluded-item {
             display: flex; align-items: center; justify-content: space-between;
-            padding: 10px 14px; border-bottom: 1px solid var(--gray-lt);
-            font-size: 13.5px;
+            padding: 9px 13px; border-bottom: 1px solid var(--gray-lt); font-size: 13px;
         }
         .excluded-item:last-child { border-bottom: none; }
         .excluded-item:nth-child(even) { background: var(--off-white); }
-        .remove-btn {
+        .remove-btn-x {
             background: none; border: none; color: var(--red);
-            cursor: pointer; font-size: 18px; line-height: 1; padding: 0 4px;
+            cursor: pointer; font-size: 17px; line-height: 1; padding: 0 4px;
         }
-        .remove-btn:hover { opacity: 0.7; }
+        .remove-btn-x:hover { opacity: 0.7; }
         .add-row { display: flex; gap: 8px; }
         .autocomplete-wrap { position: relative; flex: 1; }
         .add-input {
             width: 100%; border: 1px solid var(--border); border-radius: 6px;
-            padding: 9px 12px; font-family: 'Open Sans', sans-serif;
+            padding: 8px 11px; font-family: 'Open Sans', sans-serif;
             font-size: 13px; color: var(--text); background: var(--off-white);
         }
         .add-input:focus { outline: none; border-color: var(--navy); }
@@ -388,26 +394,26 @@
             background: white; border: 1px solid var(--border);
             border-radius: 6px; z-index: 200;
             box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-            max-height: 180px; overflow-y: auto; display: none;
+            max-height: 160px; overflow-y: auto; display: none;
         }
         .autocomplete-list.open { display: block; }
-        .ac-item { padding: 9px 12px; font-size: 13px; cursor: pointer; }
+        .ac-item { padding: 8px 11px; font-size: 13px; cursor: pointer; }
         .ac-item:hover { background: var(--off-white); color: var(--navy); }
-        .add-btn {
+        .add-btn-modal {
             background: var(--navy); color: white; border: none;
-            border-radius: 6px; padding: 9px 18px;
-            font-family: 'Titillium Web', sans-serif; font-size: 14px; font-weight: 700;
+            border-radius: 6px; padding: 8px 16px;
+            font-family: 'Titillium Web', sans-serif; font-size: 13px; font-weight: 700;
             cursor: pointer; white-space: nowrap;
         }
-        .add-btn:hover { background: var(--navy-lt); }
+        .add-btn-modal:hover { background: var(--navy-lt); }
         .modal-footer {
-            padding: 14px 22px; border-top: 1px solid var(--gray-lt);
+            padding: 13px 20px; border-top: 1px solid var(--gray-lt);
             display: flex; justify-content: flex-end;
         }
         .apply-btn {
             background: var(--red); color: white; border: none;
-            border-radius: 6px; padding: 10px 24px;
-            font-family: 'Titillium Web', sans-serif; font-size: 15px; font-weight: 700;
+            border-radius: 6px; padding: 9px 22px;
+            font-family: 'Titillium Web', sans-serif; font-size: 14px; font-weight: 700;
             cursor: pointer;
         }
         .apply-btn:hover { background: #a00d24; }
@@ -420,7 +426,7 @@
             z-index: 999; transition: opacity 0.5s;
         }
         .loading-overlay.hidden { opacity: 0; pointer-events: none; }
-        .load-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; }
+        .load-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 30px; }
         .load-tri {
             width: 0; height: 0;
             border-left: 18px solid transparent;
@@ -432,16 +438,15 @@
             font-size: 34px; font-weight: 900; color: white; letter-spacing: 3px;
         }
         .load-spinner {
-            width: 44px; height: 44px;
+            width: 42px; height: 42px;
             border: 3px solid rgba(255,255,255,0.12);
             border-top-color: var(--red);
-            border-radius: 50%; animation: spin 0.8s linear infinite;
-            margin-bottom: 14px;
+            border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 12px;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
         .load-text {
             font-family: 'Titillium Web', sans-serif;
-            font-size: 12px; letter-spacing: 3px; text-transform: uppercase;
+            font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
             color: rgba(255,255,255,0.35);
         }
     </style>
@@ -468,13 +473,13 @@
         <div class="modal-body">
             <div class="modal-section-label">Currently excluded from leaderboard</div>
             <div class="excluded-list" id="excludedList"></div>
-            <div class="modal-section-label" style="margin-top:16px;">Add a name to exclude</div>
+            <div class="modal-section-label" style="margin-top:14px;">Add a name to exclude</div>
             <div class="add-row">
                 <div class="autocomplete-wrap">
                     <input type="text" class="add-input" id="addInput" placeholder="Start typing a name…" autocomplete="off">
                     <div class="autocomplete-list" id="acList"></div>
                 </div>
-                <button class="add-btn" id="addBtn">Exclude</button>
+                <button class="add-btn-modal" id="addBtn">Exclude</button>
             </div>
         </div>
         <div class="modal-footer">
@@ -505,10 +510,10 @@
                 <span id="lastUpdate">Initializing…</span>
             </div>
             <div class="countdown-ring" title="Next data refresh">
-                <svg width="44" height="44" viewBox="0 0 44 44">
-                    <circle class="ring-bg" cx="22" cy="22" r="18"/>
-                    <circle class="ring-fill" id="ringFill" cx="22" cy="22" r="18"
-                            stroke-dasharray="113.1" stroke-dashoffset="0"/>
+                <svg width="42" height="42" viewBox="0 0 42 42">
+                    <circle class="ring-bg" cx="21" cy="21" r="17"/>
+                    <circle class="ring-fill" id="ringFill" cx="21" cy="21" r="17"
+                            stroke-dasharray="106.8" stroke-dashoffset="0"/>
                 </svg>
                 <div class="countdown-text" id="countdownText">5:00</div>
             </div>
@@ -516,7 +521,7 @@
         </div>
     </div>
 
-    <!-- KPIs -->
+    <!-- KPIs — 4 cards -->
     <div class="kpi-row">
         <div class="kpi-card">
             <div class="kpi-label">Active Associates</div>
@@ -531,10 +536,16 @@
             <div class="kpi-icon">✅</div>
         </div>
         <div class="kpi-card">
-            <div class="kpi-label">Team Average</div>
-            <div class="kpi-value" id="kpiAvg">—</div>
-            <div class="kpi-sub">confirmations per associate</div>
-            <div class="kpi-icon">📊</div>
+            <div class="kpi-label">Avg Confirmations / Associate</div>
+            <div class="kpi-value" id="kpiAvgAssoc">—</div>
+            <div class="kpi-sub">per active associate</div>
+            <div class="kpi-icon">👤</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Avg Confirmations / Hour</div>
+            <div class="kpi-value" id="kpiAvgHour">—</div>
+            <div class="kpi-sub" id="kpiAvgHourSub">across — active hours</div>
+            <div class="kpi-icon">⏱</div>
         </div>
     </div>
 
@@ -544,12 +555,23 @@
         <!-- LEFT: CHART -->
         <div class="chart-panel">
             <div class="panel-title">Hourly Confirmations</div>
+
+            <!-- Supervisor filter -->
+            <div class="chart-controls">
+                <span class="filter-label">Supervisor:</span>
+                <select class="sup-select" id="supFilter">
+                    <option value="">All Supervisors</option>
+                </select>
+            </div>
+
+            <!-- Current subject label + reset -->
             <div class="chart-meta">
                 <div class="chart-subject-label" id="chartSubjectLabel">
                     Showing: <strong>Overall Team</strong>
                 </div>
                 <button class="reset-btn" id="resetBtn">✕ Reset to Team</button>
             </div>
+
             <div class="chart-wrap">
                 <canvas id="productivityChart"></canvas>
             </div>
@@ -604,21 +626,20 @@
             </div>
         </div>
 
-    </div><!-- /body-row -->
-</div><!-- /page -->
+    </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 <script>
-// ── CONFIG ────────────────────────────────────────────────────────────────────
-const CSV_URL     = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQSCLwK71k52Yc_Sfnz3qzycsuHKn23n7ywFNEWzowh2jYCpfS23jpwz0po4E3b_OdLt6fkNAN-JEVU/pub?gid=0&single=true&output=csv';
-const REFRESH_MS  = 5 * 60 * 1000;
-const SCROLL_MS   = 5000;
-const PIN_COUNT   = 10;
-const SCROLL_ROWS = 8;
-const CIRCUMFERENCE = 2 * Math.PI * 18;
+// ── CONFIG ─────────────────────────────────────────────────────────────────────
+const CSV_URL       = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQSCLwK71k52Yc_Sfnz3qzycsuHKn23n7ywFNEWzowh2jYCpfS23jpwz0po4E3b_OdLt6fkNAN-JEVU/pub?gid=0&single=true&output=csv';
+const REFRESH_MS    = 5 * 60 * 1000;
+const SCROLL_MS     = 5000;
+const PIN_COUNT     = 10;
+const SCROLL_ROWS   = 8;
+const CIRCUMFERENCE = 2 * Math.PI * 17;   // r=17 to match updated SVG
 
-// Column indices (0-based, data starts at CSV row 2)
 const COL_NAME    = 1;
 const COL_SUP     = 3;
 const COL_H_START = 4;
@@ -633,23 +654,26 @@ const HOUR_LABELS = [
 
 const DEFAULT_EXCLUDED = ["System Admin","Internal Test","Training User","Vernester Shipp RF"];
 
-// ── STATE ─────────────────────────────────────────────────────────────────────
+// ── STATE ──────────────────────────────────────────────────────────────────────
 let excluded        = [...DEFAULT_EXCLUDED];
 let allNames        = [];
-let processedRows   = [];
+let processedRows   = [];   // all rows after exclusion filter
+let filteredRows    = [];   // rows after supervisor filter
 let associateMap    = {};
-let teamTotals      = [];
+let teamTotals      = [];   // full team hourly totals
+let supTotalsMap    = {};   // supervisor name → 24-element hourly totals array
 let myChart;
 let scrollOffset    = 0;
 let scrollTimer, refreshTimer, countdownInterval;
 let countdownSec    = REFRESH_MS / 1000;
 let activeAssociate = null;
+let activeSup       = '';   // '' = all supervisors
 
-// ── UTILS ─────────────────────────────────────────────────────────────────────
+// ── UTILS ──────────────────────────────────────────────────────────────────────
 const $  = id => document.getElementById(id);
 const tx = (id, v) => $(id).textContent = v;
 
-// ── COUNTDOWN ─────────────────────────────────────────────────────────────────
+// ── COUNTDOWN ──────────────────────────────────────────────────────────────────
 function startCountdown() {
     clearInterval(countdownInterval);
     countdownSec = REFRESH_MS / 1000;
@@ -667,7 +691,18 @@ function tickRing() {
     tx('countdownText', `${m}:${s}`);
 }
 
-// ── FETCH ─────────────────────────────────────────────────────────────────────
+// ── TIMESTAMP ─────────────────────────────────────────────────────────────────
+// Build a human-readable "last updated" string from the current moment
+function nowTimestamp() {
+    const d = new Date();
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    const mo = d.toLocaleString('en-US', { month: 'short' });
+    const dy = d.getDate();
+    return `Updated: ${mo} ${dy} @ ${hh}:${mm}`;
+}
+
+// ── FETCH ──────────────────────────────────────────────────────────────────────
 function fetchData() {
     fetch(CSV_URL + '&t=' + Date.now(), { mode: 'cors' })
         .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
@@ -675,11 +710,16 @@ function fetchData() {
             Papa.parse(csv, {
                 header: false, skipEmptyLines: true,
                 complete: res => {
-                    // Row 0 = sheet row 1 (skip), Row 1 = headers (skip), Row 2+ = data
+                    // Row 0 = sheet row 1 (blank/meta, skip)
+                    // Row 1 = sheet row 2 (headers, skip)
+                    // Row 2+ = associate data
                     const rows = res.data.slice(2);
                     if (!rows.length) { showError('No data rows found.'); return; }
                     allNames = rows.map(r => (r[COL_NAME] || '').trim()).filter(Boolean);
                     renderDashboard(rows);
+                    // Stamp the time we successfully pulled data
+                    tx('lastUpdate', nowTimestamp());
+                    $('syncDot').classList.remove('error');
                     startCountdown();
                     clearTimeout(refreshTimer);
                     refreshTimer = setTimeout(fetchData, REFRESH_MS);
@@ -695,59 +735,144 @@ function showError(msg) {
     $('loadingOverlay').classList.add('hidden');
 }
 
-// ── RENDER ────────────────────────────────────────────────────────────────────
+// ── RENDER ─────────────────────────────────────────────────────────────────────
 function renderDashboard(rawRows) {
+    // Filter excluded names, sort descending by total
     const rows = rawRows
         .filter(r => r[COL_NAME] && !excluded.includes(r[COL_NAME].trim()))
         .sort((a, b) => (parseFloat(b[COL_TOTAL]) || 0) - (parseFloat(a[COL_TOTAL]) || 0));
     processedRows = rows;
 
-    // KPIs
-    const supSet = new Set(rows.map(r => (r[COL_SUP] || '').trim()).filter(Boolean));
-    const totals = rows.map(r => parseFloat(r[COL_TOTAL]) || 0);
-    const grand  = totals.reduce((a, b) => a + b, 0);
-    const avg    = totals.length ? Math.round(grand / totals.length) : 0;
-    tx('kpiAssociates', rows.length);
-    tx('kpiSupervisors', supSet.size + ' supervisors on floor');
-    tx('kpiTotal', grand.toLocaleString());
-    tx('kpiAvg', avg.toLocaleString());
-    tx('lastUpdate', 'Updated: ' + (rawRows[rawRows.length - 1]?.[0] || 'N/A'));
-
-    // Build hourly maps
-    teamTotals = new Array(24).fill(0);
+    // Build supervisor set + hourly maps
+    const supSet = new Set();
+    teamTotals   = new Array(24).fill(0);
     associateMap = {};
+    supTotalsMap = {};
+
     rows.forEach(r => {
+        const name = (r[COL_NAME] || '').trim();
+        const sup  = (r[COL_SUP]  || '').trim();
+        if (sup) supSet.add(sup);
+
         const hrs = [];
         for (let j = COL_H_START; j <= COL_H_END; j++) {
             const v = parseFloat(r[j]) || 0;
             hrs.push(v);
             teamTotals[j - COL_H_START] += v;
         }
-        associateMap[(r[COL_NAME] || '').trim()] = hrs;
+        associateMap[name] = hrs;
+
+        // Accumulate per-supervisor hourly totals
+        if (sup) {
+            if (!supTotalsMap[sup]) supTotalsMap[sup] = new Array(24).fill(0);
+            hrs.forEach((v, i) => { supTotalsMap[sup][i] += v; });
+        }
     });
 
-    // Populate tables
-    const top    = rows.slice(0, PIN_COUNT);
-    const rest   = rows.slice(PIN_COUNT);
-    $('pinnedBody').innerHTML = top.map((r, i) => buildRow(r, i)).join('');
-    $('scrollBody').innerHTML = rest.map((r, i) => buildRow(r, i + PIN_COUNT)).join('');
+    // Rebuild supervisor dropdown (preserve current selection if still valid)
+    const currentSup = $('supFilter').value;
+    $('supFilter').innerHTML = '<option value="">All Supervisors</option>';
+    [...supSet].sort().forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s; opt.textContent = s;
+        if (s === currentSup) opt.selected = true;
+        $('supFilter').appendChild(opt);
+    });
+    activeSup = $('supFilter').value;
 
-    attachRowClicks($('pinnedBody'));
-    attachRowClicks($('scrollBody'));
+    // Apply current supervisor filter to get visible rows
+    applySupFilter(false);   // false = don't re-render chart (we'll do it below)
 
-    // Restore selection if one was active before refresh
+    // KPIs — always show whole-team stats regardless of sup filter
+    const totals = rows.map(r => parseFloat(r[COL_TOTAL]) || 0);
+    const grand  = totals.reduce((a, b) => a + b, 0);
+    const avgAssoc = totals.length ? Math.round(grand / totals.length) : 0;
+
+    // Active hours: hours where the team total > 0
+    const activeHours = teamTotals.filter(v => v > 0);
+    const avgHour = activeHours.length
+        ? Math.round(activeHours.reduce((a, b) => a + b, 0) / activeHours.length)
+        : 0;
+
+    tx('kpiAssociates', rows.length);
+    tx('kpiSupervisors', supSet.size + ' supervisors on floor');
+    tx('kpiTotal', grand.toLocaleString());
+    tx('kpiAvgAssoc', avgAssoc.toLocaleString());
+    tx('kpiAvgHour', avgHour.toLocaleString());
+    tx('kpiAvgHourSub', `across ${activeHours.length} active hour${activeHours.length !== 1 ? 's' : ''}`);
+
+    // Restore or reset active associate
     if (activeAssociate && associateMap[activeAssociate]) {
         highlightRow(activeAssociate);
         renderChart(associateMap[activeAssociate], activeAssociate);
     } else {
         activeAssociate = null;
-        renderChart(teamTotals, null);
+        renderChartForContext();
     }
 
     startScroll();
     $('loadingOverlay').classList.add('hidden');
 }
 
+// ── SUPERVISOR FILTER ─────────────────────────────────────────────────────────
+function applySupFilter(redrawChart = true) {
+    activeSup = $('supFilter').value;
+
+    filteredRows = activeSup
+        ? processedRows.filter(r => (r[COL_SUP] || '').trim() === activeSup)
+        : processedRows;
+
+    // Rebuild both table sections with filtered + re-ranked rows
+    const top  = filteredRows.slice(0, PIN_COUNT);
+    const rest = filteredRows.slice(PIN_COUNT);
+    $('pinnedBody').innerHTML = top.map((r, i) => buildRow(r, i)).join('');
+    $('scrollBody').innerHTML = rest.map((r, i) => buildRow(r, i + PIN_COUNT)).join('');
+    attachRowClicks($('pinnedBody'));
+    attachRowClicks($('scrollBody'));
+
+    // If active associate isn't in this filter, reset
+    if (activeAssociate) {
+        const stillVisible = filteredRows.some(r => (r[COL_NAME] || '').trim() === activeAssociate);
+        if (!stillVisible) {
+            activeAssociate = null;
+            $('resetBtn').classList.remove('visible');
+            $('chartSubjectLabel').innerHTML = activeSup
+                ? `Showing: <strong>${activeSup}'s Team</strong>`
+                : 'Showing: <strong>Overall Team</strong>';
+        } else {
+            highlightRow(activeAssociate);
+        }
+    }
+
+    scrollOffset = 0;
+    applyScroll();
+
+    if (redrawChart) renderChartForContext();
+}
+
+// Decide what to show on chart based on current state
+function renderChartForContext() {
+    if (activeAssociate && associateMap[activeAssociate]) {
+        renderChart(associateMap[activeAssociate], activeAssociate);
+    } else if (activeSup && supTotalsMap[activeSup]) {
+        renderChart(supTotalsMap[activeSup], null, activeSup);
+    } else {
+        renderChart(teamTotals, null, null);
+    }
+}
+
+$('supFilter').addEventListener('change', () => {
+    // Clear associate selection when supervisor changes
+    activeAssociate = null;
+    $('resetBtn').classList.remove('visible');
+    const label = $('supFilter').value
+        ? `Showing: <strong>${$('supFilter').value}'s Team</strong>`
+        : 'Showing: <strong>Overall Team</strong>';
+    $('chartSubjectLabel').innerHTML = label;
+    applySupFilter(true);
+});
+
+// ── TABLE HELPERS ──────────────────────────────────────────────────────────────
 function buildRow(row, globalIdx) {
     const name     = (row[COL_NAME] || '').trim();
     const sup      = (row[COL_SUP]  || '—').trim();
@@ -794,28 +919,36 @@ function resetToTeam() {
         tr.classList.remove('active-row')
     );
     $('resetBtn').classList.remove('visible');
-    $('chartSubjectLabel').innerHTML = 'Showing: <strong>Overall Team</strong>';
-    renderChart(teamTotals, null);
+    const label = activeSup
+        ? `Showing: <strong>${activeSup}'s Team</strong>`
+        : 'Showing: <strong>Overall Team</strong>';
+    $('chartSubjectLabel').innerHTML = label;
+    renderChartForContext();
 }
 
-// ── CHART ─────────────────────────────────────────────────────────────────────
-function renderChart(data, name) {
-    const ctx    = $('productivityChart').getContext('2d');
+// ── CHART ──────────────────────────────────────────────────────────────────────
+// name = string (associate) → navy theme
+// supLabel = string (supervisor) → teal-ish (use red for contrast)
+// both null → full team → red theme
+function renderChart(data, associateName, supLabel) {
+    const ctx = $('productivityChart').getContext('2d');
     if (myChart) myChart.destroy();
 
-    const isTeam  = name === null;
-    const maxVal  = Math.max(...data, 0);
-    const lineClr = isTeam ? '#C8102E' : '#003057';
-    const peakClr = isTeam ? '#003057' : '#C8102E';
+    const isAssoc = !!associateName;
+    const isSup   = !associateName && !!supLabel;
+    // Color scheme: associate = navy, supervisor filter = red-tinted, team = red
+    const lineClr = isAssoc ? '#003057' : '#C8102E';
+    const peakClr = isAssoc ? '#C8102E' : '#003057';
 
-    const grad = ctx.createLinearGradient(0, 0, 0, 400);
-    grad.addColorStop(0, isTeam ? 'rgba(200,16,46,0.20)' : 'rgba(0,48,87,0.20)');
+    const maxVal = Math.max(...data, 0);
+    const grad   = ctx.createLinearGradient(0, 0, 0, 400);
+    grad.addColorStop(0, isAssoc ? 'rgba(0,48,87,0.20)' : 'rgba(200,16,46,0.20)');
     grad.addColorStop(1, 'rgba(255,255,255,0.0)');
 
     const barBg = data.map(v =>
         (v === maxVal && v > 0)
-            ? (isTeam ? 'rgba(200,16,46,0.38)' : 'rgba(0,48,87,0.38)')
-            : (isTeam ? 'rgba(200,16,46,0.13)' : 'rgba(0,48,87,0.13)')
+            ? (isAssoc ? 'rgba(0,48,87,0.40)' : 'rgba(200,16,46,0.40)')
+            : (isAssoc ? 'rgba(0,48,87,0.13)' : 'rgba(200,16,46,0.13)')
     );
 
     myChart = new Chart(ctx, {
@@ -852,10 +985,7 @@ function renderChart(data, name) {
             maintainAspectRatio: false,
             animation: { duration: 500 },
             interaction: { mode: 'none' },
-            plugins: {
-                legend:  { display: false },
-                tooltip: { enabled: false }
-            },
+            plugins: { legend: { display: false }, tooltip: { enabled: false } },
             scales: {
                 x: {
                     grid:  { color: 'rgba(0,48,87,0.06)' },
@@ -877,7 +1007,7 @@ function startScroll() {
     scrollOffset = 0;
     applyScroll();
     scrollTimer = setInterval(() => {
-        const restCount = Math.max(0, processedRows.length - PIN_COUNT);
+        const restCount = Math.max(0, filteredRows.length - PIN_COUNT);
         if (restCount <= SCROLL_ROWS) return;
         scrollOffset += SCROLL_ROWS;
         if (scrollOffset >= restCount) scrollOffset = 0;
@@ -886,8 +1016,8 @@ function startScroll() {
 }
 
 function applyScroll() {
-    const rows     = $('scrollBody').querySelectorAll('tr');
-    const total    = rows.length;
+    const rows  = $('scrollBody').querySelectorAll('tr');
+    const total = rows.length;
     if (!total) {
         $('scrollZone').style.display = 'none';
         tx('scrollLabel', '');
@@ -900,9 +1030,9 @@ function applyScroll() {
     rows.forEach((tr, i) => { tr.style.display = (i >= scrollOffset && i < end) ? '' : 'none'; });
 
     const overallFrom = scrollOffset + PIN_COUNT + 1;
-    const overallTo   = end + PIN_COUNT;
+    const overallTo   = Math.min(end + PIN_COUNT, filteredRows.length);
     const pct = total <= SCROLL_ROWS ? 100 : Math.round((end / total) * 100);
-    tx('scrollLabel', `#${overallFrom}–#${overallTo} of ${processedRows.length}`);
+    tx('scrollLabel', `#${overallFrom}–#${overallTo} of ${filteredRows.length}`);
     $('progressFill').style.width = pct + '%';
 }
 
@@ -922,10 +1052,10 @@ function renderExcludedList() {
     excluded.forEach(name => {
         const div = document.createElement('div');
         div.className = 'excluded-item';
-        div.innerHTML = `<span>${name}</span><button class="remove-btn" data-name="${name}">✕</button>`;
+        div.innerHTML = `<span>${name}</span><button class="remove-btn-x" data-name="${name}">✕</button>`;
         list.appendChild(div);
     });
-    list.querySelectorAll('.remove-btn').forEach(btn =>
+    list.querySelectorAll('.remove-btn-x').forEach(btn =>
         btn.addEventListener('click', () => {
             excluded = excluded.filter(n => n !== btn.dataset.name);
             renderExcludedList();
@@ -951,7 +1081,9 @@ $('addInput').addEventListener('input', function () {
         item.addEventListener('click', () => { $('addInput').value = item.textContent; ac.classList.remove('open'); })
     );
 });
-document.addEventListener('click', e => { if (!e.target.closest('.autocomplete-wrap')) $('acList').classList.remove('open'); });
+document.addEventListener('click', e => {
+    if (!e.target.closest('.autocomplete-wrap')) $('acList').classList.remove('open');
+});
 $('addInput').addEventListener('keydown', e => { if (e.key === 'Enter') addExclusion(); });
 $('addBtn').addEventListener('click', addExclusion);
 $('settingsBtn').addEventListener('click', openModal);
