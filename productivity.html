@@ -23,7 +23,7 @@
             --silver:    #7a8898;
             --bronze:    #a0622a;
             --green:     #22c55e;
-            --row-h:     52px;
+            --circumference: 113.1;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -36,7 +36,7 @@
             font-family: 'Open Sans', sans-serif;
         }
 
-        /* ── PAGE LAYOUT ──────────────────────────────────────────────────── */
+        /* ── PAGE ─────────────────────────────────────────────────────────── */
         .page {
             display: flex;
             flex-direction: column;
@@ -52,35 +52,22 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 36px;
-            height: 78px;
+            padding: 0 32px;
+            height: 72px;
             box-shadow: 0 4px 24px rgba(0,0,0,0.2);
         }
-        .header-left { display: flex; align-items: center; gap: 26px; }
-        .logo-img { height: 46px; object-fit: contain; filter: brightness(0) invert(1); }
-        .logo-divider { width: 1px; height: 38px; background: rgba(255,255,255,0.2); }
+        .header-left { display: flex; align-items: center; gap: 22px; }
+        .logo-img { height: 44px; object-fit: contain; filter: brightness(0) invert(1); }
+        .logo-divider { width: 1px; height: 36px; background: rgba(255,255,255,0.2); }
         .header-title h1 {
             font-family: 'Titillium Web', sans-serif;
-            font-size: 21px; font-weight: 700; color: var(--white);
+            font-size: 20px; font-weight: 700; color: var(--white);
         }
         .header-title p {
             font-size: 11px; color: rgba(255,255,255,0.45);
             letter-spacing: 2.5px; text-transform: uppercase; margin-top: 2px;
         }
-        .header-right { display: flex; align-items: center; gap: 16px; }
-
-        /* countdown ring */
-        .countdown-ring { position: relative; width: 44px; height: 44px; cursor: default; }
-        .countdown-ring svg { position: absolute; top:0; left:0; transform: rotate(-90deg); }
-        .ring-bg   { fill: none; stroke: rgba(255,255,255,0.12); stroke-width: 3; }
-        .ring-fill { fill: none; stroke: var(--red); stroke-width: 3; stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
-        .countdown-text {
-            position: absolute; inset: 0;
-            display: flex; align-items: center; justify-content: center;
-            font-family: 'Titillium Web', sans-serif;
-            font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.75);
-        }
-
+        .header-right { display: flex; align-items: center; gap: 14px; }
         .sync-badge {
             display: flex; align-items: center; gap: 7px;
             background: rgba(255,255,255,0.08);
@@ -98,6 +85,16 @@
             0%,100% { opacity:1; box-shadow: 0 0 0 0 rgba(34,197,94,0.5); }
             50%      { opacity:0.8; box-shadow: 0 0 0 5px rgba(34,197,94,0); }
         }
+        .countdown-ring { position: relative; width: 44px; height: 44px; }
+        .countdown-ring svg { position: absolute; top:0; left:0; transform: rotate(-90deg); }
+        .ring-bg   { fill: none; stroke: rgba(255,255,255,0.12); stroke-width: 3; }
+        .ring-fill { fill: none; stroke: var(--red); stroke-width: 3; stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
+        .countdown-text {
+            position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Titillium Web', sans-serif;
+            font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.75);
+        }
         .settings-btn {
             background: rgba(255,255,255,0.1);
             border: 1px solid rgba(255,255,255,0.2);
@@ -113,14 +110,14 @@
             flex-shrink: 0;
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 14px;
-            padding: 14px 36px 0;
+            gap: 12px;
+            padding: 12px 32px 0;
         }
         .kpi-card {
             background: var(--white);
             border: 1px solid var(--border);
             border-radius: 10px;
-            padding: 16px 20px;
+            padding: 14px 20px;
             position: relative; overflow: hidden;
             box-shadow: 0 2px 10px rgba(0,48,87,0.07);
         }
@@ -134,27 +131,27 @@
         .kpi-label {
             font-size: 11px; font-weight: 600;
             letter-spacing: 2px; text-transform: uppercase;
-            color: var(--gray-dk); margin-bottom: 4px;
+            color: var(--gray-dk); margin-bottom: 3px;
         }
         .kpi-value {
             font-family: 'Titillium Web', sans-serif;
-            font-size: 42px; font-weight: 900;
+            font-size: 40px; font-weight: 900;
             color: var(--navy); line-height: 1;
         }
-        .kpi-sub { font-size: 12px; color: var(--gray-dk); margin-top: 4px; }
+        .kpi-sub { font-size: 12px; color: var(--gray-dk); margin-top: 3px; }
         .kpi-icon {
             position: absolute; right: 16px; top: 50%;
             transform: translateY(-50%);
-            font-size: 38px; opacity: 0.06;
+            font-size: 36px; opacity: 0.06;
         }
 
-        /* ── BODY ROW ─────────────────────────────────────────────────────── */
+        /* ── BODY: 50 / 50 ────────────────────────────────────────────────── */
         .body-row {
             flex: 1;
             display: grid;
-            grid-template-columns: 400px 1fr;
-            gap: 14px;
-            padding: 14px 36px 16px;
+            grid-template-columns: 1fr 1fr;   /* ← exact 50/50 */
+            gap: 12px;
+            padding: 12px 32px 14px;
             min-height: 0;
         }
 
@@ -172,32 +169,31 @@
             font-family: 'Titillium Web', sans-serif;
             font-size: 12px; font-weight: 700;
             letter-spacing: 2px; text-transform: uppercase;
-            color: var(--navy); margin-bottom: 6px;
+            color: var(--navy);
             display: flex; align-items: center; gap: 9px;
-            flex-shrink: 0;
+            flex-shrink: 0; margin-bottom: 4px;
         }
         .panel-title::before {
             content: '';
             width: 4px; height: 15px;
             background: var(--red); border-radius: 2px; flex-shrink: 0;
         }
-        .chart-subject {
+        .chart-meta {
+            display: flex; align-items: center; gap: 10px;
+            margin-bottom: 10px; flex-shrink: 0; min-height: 22px;
+        }
+        .chart-subject-label {
             font-size: 12px; color: var(--gray-dk);
-            margin-bottom: 10px; flex-shrink: 0;
-            min-height: 18px;
-            display: flex; align-items: center; gap: 8px;
         }
-        .chart-subject .subject-name {
-            font-weight: 600; color: var(--navy);
-        }
+        .chart-subject-label strong { color: var(--navy); font-weight: 600; }
         .reset-btn {
             background: var(--red); color: white;
             border: none; border-radius: 5px;
             padding: 3px 10px; font-size: 11px;
             font-family: 'Titillium Web', sans-serif;
-            font-weight: 700; letter-spacing: 1px;
-            cursor: pointer; transition: background 0.15s;
-            display: none;
+            font-weight: 700; letter-spacing: 0.5px;
+            cursor: pointer; display: none;
+            transition: background 0.15s;
         }
         .reset-btn.visible { display: inline-block; }
         .reset-btn:hover { background: #a00d24; }
@@ -217,15 +213,16 @@
         .table-header-bar {
             flex-shrink: 0;
             display: flex; align-items: center; justify-content: space-between;
-            padding: 13px 20px 10px;
+            padding: 12px 18px 10px;
             border-bottom: 1px solid var(--gray-lt);
         }
         .scroll-meta {
             display: flex; align-items: center; gap: 10px;
             font-size: 11px; color: var(--gray-dk);
         }
+        .click-hint { font-style: italic; color: var(--gray); }
         .progress-bar {
-            width: 100px; height: 4px;
+            width: 90px; height: 4px;
             background: var(--gray-lt); border-radius: 2px; overflow: hidden;
         }
         .progress-fill {
@@ -233,59 +230,38 @@
             transition: width 0.4s ease;
         }
 
-        /* table */
+        /* ── SHARED TABLE STYLES ──────────────────────────────────────────── */
         table.lb {
             width: 100%; border-collapse: collapse;
-            font-size: 14px;
+            table-layout: fixed;
         }
+
+        /* Column widths — consistent across both pinned and scroll tables */
+        table.lb col.col-rank  { width: 56px; }
+        table.lb col.col-name  { width: auto; }   /* fills remaining */
+        table.lb col.col-sup   { width: 28%; }
+        table.lb col.col-total { width: 80px; }
+
         table.lb thead th {
             background: var(--navy);
             color: rgba(255,255,255,0.65);
             font-size: 10px; font-weight: 600;
             letter-spacing: 1.5px; text-transform: uppercase;
-            padding: 9px 14px;
+            padding: 9px 12px;
             text-align: left; white-space: nowrap;
         }
         table.lb thead th.right { text-align: right; }
 
-        /* TOP-5 pinned section */
-        .pinned-body tr, .scroll-body tr {
-            border-bottom: 1px solid var(--gray-lt);
-            transition: background 0.12s;
-        }
-        .pinned-body { display: table-row-group; }
-        .pinned-body tr { background: var(--white); }
-        .pinned-body tr:hover { background: #eef3f8; cursor: pointer; }
-        .pinned-body tr.rank-1-row { background: #fffbea; }
-        .pinned-body tr.rank-2-row { background: #f9fafb; }
-        .pinned-body tr.rank-3-row { background: #fdf6f0; }
-        .pinned-body tr:hover,
-        .pinned-body tr.rank-1-row:hover,
-        .pinned-body tr.rank-2-row:hover,
-        .pinned-body tr.rank-3-row:hover { background: #dce8f4; cursor: pointer; }
-
-        /* divider between top-5 and scroll zone */
-        .pinned-divider td {
-            padding: 0 !important;
-            background: var(--navy) !important;
-            height: 3px !important;
-        }
-
-        /* scroll zone */
-        .scroll-zone {
-            flex: 1;
-            overflow: hidden;
-            position: relative;
-            min-height: 0;
-        }
-        .scroll-zone table.lb { table-layout: fixed; }
-        .scroll-body tr { background: var(--white); }
-        .scroll-body tr:hover { background: #eef3f8; cursor: pointer; }
-        .scroll-body tr.active-row { background: #dce8f4; }
-
         table.lb tbody td {
-            padding: 10px 14px; border: none;
-            color: var(--text); vertical-align: middle;
+            padding: 0 12px;
+            height: 46px;                 /* fixed row height — same for both tables */
+            border: none;
+            text-align: left;
+            color: var(--text);
+            vertical-align: middle;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
         }
         table.lb tbody td.right { text-align: right; }
         table.lb tbody td.sup-cell { color: var(--gray-dk); font-size: 12px; }
@@ -295,6 +271,36 @@
             color: var(--navy); text-align: right;
         }
         .name-cell { font-weight: 600; }
+
+        /* Row colours — pinned */
+        .pinned-body tr {
+            border-bottom: 1px solid var(--gray-lt);
+            cursor: pointer;
+            transition: background 0.12s;
+        }
+        .pinned-body tr.rank-1-row  { background: #fffbea; }
+        .pinned-body tr.rank-2-row  { background: #f9fafb; }
+        .pinned-body tr.rank-3-row  { background: #fdf6f0; }
+        .pinned-body tr:hover       { background: #dce8f4 !important; }
+        .pinned-body tr.active-row  { background: #c8dff5 !important; }
+
+        /* Navy divider between pinned and scroll */
+        .pin-divider { height: 3px; background: var(--navy); flex-shrink: 0; }
+
+        /* Scroll zone */
+        .scroll-zone {
+            flex: 1; overflow: hidden;
+            position: relative; min-height: 0;
+        }
+        .scroll-body tr {
+            border-bottom: 1px solid var(--gray-lt);
+            cursor: pointer;
+            transition: background 0.12s;
+        }
+        .scroll-body tr:hover      { background: #dce8f4 !important; }
+        .scroll-body tr.active-row { background: #c8dff5 !important; }
+
+        /* Rank badge */
         .rank-badge {
             display: inline-flex; align-items: center; justify-content: center;
             width: 30px; height: 30px; border-radius: 6px;
@@ -305,12 +311,6 @@
         .rb-2 { background: rgba(122,136,152,0.14); color: var(--silver); border: 1px solid rgba(122,136,152,0.3); }
         .rb-3 { background: rgba(160,98,42,0.14);   color: var(--bronze); border: 1px solid rgba(160,98,42,0.3); }
         .rb-n { background: var(--off-white); color: var(--gray-dk);      border: 1px solid var(--border); }
-
-        /* click-to-filter hint */
-        .click-hint {
-            font-size: 11px; color: var(--gray);
-            font-style: italic; letter-spacing: 0.3px;
-        }
 
         /* ── SETTINGS MODAL ───────────────────────────────────────────────── */
         .modal-overlay {
@@ -541,61 +541,84 @@
     <!-- BODY -->
     <div class="body-row">
 
-        <!-- CHART PANEL -->
+        <!-- LEFT: CHART -->
         <div class="chart-panel">
             <div class="panel-title">Hourly Confirmations</div>
-            <div class="chart-subject" id="chartSubject">
-                <span>Showing: <span class="subject-name">Overall Team</span></span>
+            <div class="chart-meta">
+                <div class="chart-subject-label" id="chartSubjectLabel">
+                    Showing: <strong>Overall Team</strong>
+                </div>
+                <button class="reset-btn" id="resetBtn">✕ Reset to Team</button>
             </div>
-            <button class="reset-btn" id="resetBtn">✕ Reset to Team</button>
             <div class="chart-wrap">
                 <canvas id="productivityChart"></canvas>
             </div>
         </div>
 
-        <!-- LEADERBOARD PANEL -->
+        <!-- RIGHT: LEADERBOARD -->
         <div class="table-panel">
             <div class="table-header-bar">
                 <div class="panel-title" style="margin:0;">Associate Leaderboard</div>
                 <div class="scroll-meta">
                     <span class="click-hint">Click a name to view hourly chart</span>
-                    <span id="scrollLabel" style="margin-left:8px;"></span>
+                    <span id="scrollLabel"></span>
                     <div class="progress-bar">
                         <div class="progress-fill" id="progressFill" style="width:0%"></div>
                     </div>
                 </div>
             </div>
 
-            <!-- TOP 5 — pinned, always visible -->
+            <!-- PINNED TOP 10 -->
             <table class="lb" id="pinnedTable" style="flex-shrink:0;">
+                <colgroup>
+                    <col class="col-rank">
+                    <col class="col-name">
+                    <col class="col-sup">
+                    <col class="col-total">
+                </colgroup>
                 <thead>
-                    <tr id="tableHeader"></tr>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Associate</th>
+                        <th>Supervisor</th>
+                        <th class="right">Total</th>
+                    </tr>
                 </thead>
                 <tbody class="pinned-body" id="pinnedBody"></tbody>
             </table>
 
-            <!-- SCROLL ZONE — remaining associates -->
+            <!-- DIVIDER -->
+            <div class="pin-divider"></div>
+
+            <!-- SCROLL ZONE -->
             <div class="scroll-zone" id="scrollZone">
                 <table class="lb" id="scrollTable">
+                    <colgroup>
+                        <col class="col-rank">
+                        <col class="col-name">
+                        <col class="col-sup">
+                        <col class="col-total">
+                    </colgroup>
                     <tbody class="scroll-body" id="scrollBody"></tbody>
                 </table>
             </div>
-
         </div>
-    </div>
-</div>
+
+    </div><!-- /body-row -->
+</div><!-- /page -->
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-
 <script>
 // ── CONFIG ────────────────────────────────────────────────────────────────────
 const CSV_URL     = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQSCLwK71k52Yc_Sfnz3qzycsuHKn23n7ywFNEWzowh2jYCpfS23jpwz0po4E3b_OdLt6fkNAN-JEVU/pub?gid=0&single=true&output=csv';
 const REFRESH_MS  = 5 * 60 * 1000;
-const SCROLL_MS   = 5000;   // 5 seconds per page
-const PIN_COUNT   = 5;      // always-visible top rows
-const SCROLL_ROWS = 8;      // rows shown per page in scroll zone
+const SCROLL_MS   = 5000;
+const PIN_COUNT   = 10;
+const SCROLL_ROWS = 8;
+const CIRCUMFERENCE = 2 * Math.PI * 18;
 
+// Column indices (0-based, data starts at CSV row 2)
 const COL_NAME    = 1;
 const COL_SUP     = 3;
 const COL_H_START = 4;
@@ -609,23 +632,20 @@ const HOUR_LABELS = [
 ];
 
 const DEFAULT_EXCLUDED = ["System Admin","Internal Test","Training User","Vernester Shipp RF"];
-const CIRCUMFERENCE    = 2 * Math.PI * 18;
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
-let excluded       = [...DEFAULT_EXCLUDED];
-let allNames       = [];
-let processedRows  = [];
-let associateMap   = {};
-let teamTotals     = [];
+let excluded        = [...DEFAULT_EXCLUDED];
+let allNames        = [];
+let processedRows   = [];
+let associateMap    = {};
+let teamTotals      = [];
 let myChart;
-let scrollOffset   = 0;
-let scrollTimer;
-let refreshTimer;
-let countdownSec   = REFRESH_MS / 1000;
-let countdownInterval;
-let activeAssociate = null;   // null = team view
+let scrollOffset    = 0;
+let scrollTimer, refreshTimer, countdownInterval;
+let countdownSec    = REFRESH_MS / 1000;
+let activeAssociate = null;
 
-// ── SHORTCUTS ─────────────────────────────────────────────────────────────────
+// ── UTILS ─────────────────────────────────────────────────────────────────────
 const $  = id => document.getElementById(id);
 const tx = (id, v) => $(id).textContent = v;
 
@@ -640,7 +660,7 @@ function startCountdown() {
     }, 1000);
 }
 function tickRing() {
-    const pct    = countdownSec / (REFRESH_MS / 1000);
+    const pct = countdownSec / (REFRESH_MS / 1000);
     $('ringFill').style.strokeDashoffset = CIRCUMFERENCE * (1 - pct);
     const m = Math.floor(countdownSec / 60);
     const s = String(countdownSec % 60).padStart(2, '0');
@@ -655,6 +675,7 @@ function fetchData() {
             Papa.parse(csv, {
                 header: false, skipEmptyLines: true,
                 complete: res => {
+                    // Row 0 = sheet row 1 (skip), Row 1 = headers (skip), Row 2+ = data
                     const rows = res.data.slice(2);
                     if (!rows.length) { showError('No data rows found.'); return; }
                     allNames = rows.map(r => (r[COL_NAME] || '').trim()).filter(Boolean);
@@ -676,7 +697,6 @@ function showError(msg) {
 
 // ── RENDER ────────────────────────────────────────────────────────────────────
 function renderDashboard(rawRows) {
-    // Filter & sort
     const rows = rawRows
         .filter(r => r[COL_NAME] && !excluded.includes(r[COL_NAME].trim()))
         .sort((a, b) => (parseFloat(b[COL_TOTAL]) || 0) - (parseFloat(a[COL_TOTAL]) || 0));
@@ -693,7 +713,7 @@ function renderDashboard(rawRows) {
     tx('kpiAvg', avg.toLocaleString());
     tx('lastUpdate', 'Updated: ' + (rawRows[rawRows.length - 1]?.[0] || 'N/A'));
 
-    // Build associate hourly data
+    // Build hourly maps
     teamTotals = new Array(24).fill(0);
     associateMap = {};
     rows.forEach(r => {
@@ -703,57 +723,44 @@ function renderDashboard(rawRows) {
             hrs.push(v);
             teamTotals[j - COL_H_START] += v;
         }
-        associateMap[r[COL_NAME].trim()] = hrs;
+        associateMap[(r[COL_NAME] || '').trim()] = hrs;
     });
 
-    // Table header (rank | name | supervisor | total only)
-    $('tableHeader').innerHTML =
-        '<th style="width:52px;">Rank</th>' +
-        '<th>Associate</th>' +
-        '<th>Supervisor</th>' +
-        '<th class="right" style="width:90px;">Total</th>';
-
-    // Build pinned (top 5) and scroll rows
-    const top5    = rows.slice(0, PIN_COUNT);
-    const rest    = rows.slice(PIN_COUNT);
-
-    $('pinnedBody').innerHTML = top5.map((r, i) => buildRow(r, i)).join('');
+    // Populate tables
+    const top    = rows.slice(0, PIN_COUNT);
+    const rest   = rows.slice(PIN_COUNT);
+    $('pinnedBody').innerHTML = top.map((r, i) => buildRow(r, i)).join('');
     $('scrollBody').innerHTML = rest.map((r, i) => buildRow(r, i + PIN_COUNT)).join('');
 
-    // Attach click listeners
     attachRowClicks($('pinnedBody'));
     attachRowClicks($('scrollBody'));
 
-    // Restore active associate highlight if one was selected
-    if (activeAssociate) {
+    // Restore selection if one was active before refresh
+    if (activeAssociate && associateMap[activeAssociate]) {
         highlightRow(activeAssociate);
         renderChart(associateMap[activeAssociate], activeAssociate);
     } else {
+        activeAssociate = null;
         renderChart(teamTotals, null);
     }
 
-    // Progress
-    updateScrollMeta();
-
-    // Restart scroll
     startScroll();
-
     $('loadingOverlay').classList.add('hidden');
 }
 
 function buildRow(row, globalIdx) {
-    const badgeCls = globalIdx === 0 ? 'rb-1' : globalIdx === 1 ? 'rb-2' : globalIdx === 2 ? 'rb-3' : 'rb-n';
-    const medal    = globalIdx === 0 ? '🥇' : globalIdx === 1 ? '🥈' : globalIdx === 2 ? '🥉' : (globalIdx + 1);
-    const rowCls   = globalIdx === 0 ? 'rank-1-row' : globalIdx === 1 ? 'rank-2-row' : globalIdx === 2 ? 'rank-3-row' : '';
     const name     = (row[COL_NAME] || '').trim();
     const sup      = (row[COL_SUP]  || '—').trim();
-    const total    = row[COL_TOTAL] || 0;
+    const total    = parseFloat(row[COL_TOTAL]) || 0;
+    const rowCls   = globalIdx === 0 ? 'rank-1-row' : globalIdx === 1 ? 'rank-2-row' : globalIdx === 2 ? 'rank-3-row' : '';
+    const badgeCls = globalIdx === 0 ? 'rb-1' : globalIdx === 1 ? 'rb-2' : globalIdx === 2 ? 'rb-3' : 'rb-n';
+    const medal    = globalIdx === 0 ? '🥇' : globalIdx === 1 ? '🥈' : globalIdx === 2 ? '🥉' : (globalIdx + 1);
 
     return `<tr class="${rowCls}" data-name="${name}">
         <td><span class="rank-badge ${badgeCls}">${medal}</span></td>
         <td class="name-cell">${name}</td>
         <td class="sup-cell">${sup}</td>
-        <td class="total-cell">${parseFloat(total).toLocaleString()}</td>
+        <td class="total-cell">${total.toLocaleString()}</td>
     </tr>`;
 }
 
@@ -763,45 +770,53 @@ function attachRowClicks(tbody) {
             const name = tr.dataset.name;
             if (!name || !associateMap[name]) return;
             if (activeAssociate === name) {
-                // Second click = reset
                 resetToTeam();
             } else {
                 activeAssociate = name;
                 highlightRow(name);
                 renderChart(associateMap[name], name);
                 $('resetBtn').classList.add('visible');
-                $('chartSubject').innerHTML = `Showing: <span class="subject-name">${name}</span>`;
+                $('chartSubjectLabel').innerHTML = `Showing: <strong>${name}</strong>`;
             }
         });
     });
 }
 
 function highlightRow(name) {
-    document.querySelectorAll('#pinnedBody tr, #scrollBody tr').forEach(tr => {
-        tr.classList.toggle('active-row', tr.dataset.name === name);
-    });
+    document.querySelectorAll('#pinnedBody tr, #scrollBody tr').forEach(tr =>
+        tr.classList.toggle('active-row', tr.dataset.name === name)
+    );
 }
 
 function resetToTeam() {
     activeAssociate = null;
-    document.querySelectorAll('#pinnedBody tr, #scrollBody tr').forEach(tr => tr.classList.remove('active-row'));
+    document.querySelectorAll('#pinnedBody tr, #scrollBody tr').forEach(tr =>
+        tr.classList.remove('active-row')
+    );
     $('resetBtn').classList.remove('visible');
-    $('chartSubject').innerHTML = 'Showing: <span class="subject-name">Overall Team</span>';
+    $('chartSubjectLabel').innerHTML = 'Showing: <strong>Overall Team</strong>';
     renderChart(teamTotals, null);
 }
 
 // ── CHART ─────────────────────────────────────────────────────────────────────
 function renderChart(data, name) {
-    const ctx = $('productivityChart').getContext('2d');
+    const ctx    = $('productivityChart').getContext('2d');
     if (myChart) myChart.destroy();
 
-    const isTeam   = name === null;
-    const maxVal   = Math.max(...data);
-    const lineClr  = isTeam ? '#C8102E' : '#003057';
-    const grad     = ctx.createLinearGradient(0, 0, 0, 300);
-    grad.addColorStop(0, isTeam ? 'rgba(200,16,46,0.18)' : 'rgba(0,48,87,0.18)');
-    grad.addColorStop(1, isTeam ? 'rgba(200,16,46,0.0)'  : 'rgba(0,48,87,0.0)');
-    const peakClr  = isTeam ? '#003057' : '#C8102E';
+    const isTeam  = name === null;
+    const maxVal  = Math.max(...data, 0);
+    const lineClr = isTeam ? '#C8102E' : '#003057';
+    const peakClr = isTeam ? '#003057' : '#C8102E';
+
+    const grad = ctx.createLinearGradient(0, 0, 0, 400);
+    grad.addColorStop(0, isTeam ? 'rgba(200,16,46,0.20)' : 'rgba(0,48,87,0.20)');
+    grad.addColorStop(1, 'rgba(255,255,255,0.0)');
+
+    const barBg = data.map(v =>
+        (v === maxVal && v > 0)
+            ? (isTeam ? 'rgba(200,16,46,0.38)' : 'rgba(0,48,87,0.38)')
+            : (isTeam ? 'rgba(200,16,46,0.13)' : 'rgba(0,48,87,0.13)')
+    );
 
     myChart = new Chart(ctx, {
         type: 'bar',
@@ -812,24 +827,22 @@ function renderChart(data, name) {
                     type: 'line',
                     data: data,
                     borderColor: lineClr,
-                    borderWidth: 2.5,
+                    borderWidth: 3,
                     backgroundColor: grad,
                     fill: true,
                     tension: 0.4,
-                    pointBackgroundColor: data.map(v => v === maxVal && v > 0 ? peakClr : lineClr),
-                    pointRadius: data.map(v => v === maxVal && v > 0 ? 7 : 3),
+                    pointBackgroundColor: data.map(v => (v === maxVal && v > 0) ? peakClr : lineClr),
+                    pointBorderColor:     data.map(v => (v === maxVal && v > 0) ? peakClr : lineClr),
+                    pointRadius:      data.map(v => (v === maxVal && v > 0) ? 8 : 3),
                     pointHoverRadius: 0,
                     order: 1,
                 },
                 {
                     type: 'bar',
                     data: data,
-                    backgroundColor: data.map(v =>
-                        v === maxVal && v > 0 ? (isTeam ? 'rgba(200,16,46,0.35)' : 'rgba(0,48,87,0.35)')
-                                              : (isTeam ? 'rgba(200,16,46,0.12)' : 'rgba(0,48,87,0.12)')
-                    ),
+                    backgroundColor: barBg,
                     borderColor: 'transparent',
-                    borderRadius: 3,
+                    borderRadius: 4,
                     order: 2,
                 }
             ]
@@ -840,17 +853,17 @@ function renderChart(data, name) {
             animation: { duration: 500 },
             interaction: { mode: 'none' },
             plugins: {
-                legend: { display: false },
+                legend:  { display: false },
                 tooltip: { enabled: false }
             },
             scales: {
                 x: {
                     grid:  { color: 'rgba(0,48,87,0.06)' },
-                    ticks: { color: '#5e6e82', font: { size: 10 } }
+                    ticks: { color: '#5e6e82', font: { size: 11 }, maxRotation: 45 }
                 },
                 y: {
                     grid:  { color: 'rgba(0,48,87,0.06)' },
-                    ticks: { color: '#5e6e82', font: { size: 10 } },
+                    ticks: { color: '#5e6e82', font: { size: 11 } },
                     beginAtZero: true
                 }
             }
@@ -858,13 +871,13 @@ function renderChart(data, name) {
     });
 }
 
-// ── AUTO-SCROLL (scroll zone only) ────────────────────────────────────────────
+// ── AUTO-SCROLL ────────────────────────────────────────────────────────────────
 function startScroll() {
     clearInterval(scrollTimer);
     scrollOffset = 0;
     applyScroll();
     scrollTimer = setInterval(() => {
-        const restCount = processedRows.length - PIN_COUNT;
+        const restCount = Math.max(0, processedRows.length - PIN_COUNT);
         if (restCount <= SCROLL_ROWS) return;
         scrollOffset += SCROLL_ROWS;
         if (scrollOffset >= restCount) scrollOffset = 0;
@@ -875,34 +888,25 @@ function startScroll() {
 function applyScroll() {
     const rows     = $('scrollBody').querySelectorAll('tr');
     const total    = rows.length;
-    if (!total) { $('scrollZone').style.display = 'none'; return; }
-    $('scrollZone').style.display = '';
-
-    const end = Math.min(scrollOffset + SCROLL_ROWS, total);
-    rows.forEach((tr, i) => {
-        tr.style.display = (i >= scrollOffset && i < end) ? '' : 'none';
-    });
-    updateScrollMeta(end, total);
-}
-
-function updateScrollMeta(end, total) {
-    end   = end   ?? Math.min(scrollOffset + SCROLL_ROWS, processedRows.length - PIN_COUNT);
-    total = total ?? Math.max(0, processedRows.length - PIN_COUNT);
-
-    const showFrom = scrollOffset + 1 + PIN_COUNT;
-    const showTo   = end + PIN_COUNT;
-
-    if (total <= 0) {
+    if (!total) {
+        $('scrollZone').style.display = 'none';
         tx('scrollLabel', '');
         $('progressFill').style.width = '100%';
         return;
     }
-    tx('scrollLabel', `#${showFrom}–#${showTo} of ${processedRows.length}`);
+    $('scrollZone').style.display = '';
+
+    const end = Math.min(scrollOffset + SCROLL_ROWS, total);
+    rows.forEach((tr, i) => { tr.style.display = (i >= scrollOffset && i < end) ? '' : 'none'; });
+
+    const overallFrom = scrollOffset + PIN_COUNT + 1;
+    const overallTo   = end + PIN_COUNT;
     const pct = total <= SCROLL_ROWS ? 100 : Math.round((end / total) * 100);
+    tx('scrollLabel', `#${overallFrom}–#${overallTo} of ${processedRows.length}`);
     $('progressFill').style.width = pct + '%';
 }
 
-// ── SETTINGS MODAL ────────────────────────────────────────────────────────────
+// ── SETTINGS MODAL ─────────────────────────────────────────────────────────────
 function openModal() {
     renderExcludedList();
     $('modalOverlay').classList.add('open');
@@ -944,24 +948,23 @@ $('addInput').addEventListener('input', function () {
     ac.innerHTML = matches.map(n => `<div class="ac-item">${n}</div>`).join('');
     ac.classList.add('open');
     ac.querySelectorAll('.ac-item').forEach(item =>
-        item.addEventListener('click', () => {
-            $('addInput').value = item.textContent;
-            ac.classList.remove('open');
-        })
+        item.addEventListener('click', () => { $('addInput').value = item.textContent; ac.classList.remove('open'); })
     );
 });
-document.addEventListener('click', e => {
-    if (!e.target.closest('.autocomplete-wrap')) $('acList').classList.remove('open');
-});
+document.addEventListener('click', e => { if (!e.target.closest('.autocomplete-wrap')) $('acList').classList.remove('open'); });
 $('addInput').addEventListener('keydown', e => { if (e.key === 'Enter') addExclusion(); });
 $('addBtn').addEventListener('click', addExclusion);
 $('settingsBtn').addEventListener('click', openModal);
 $('modalClose').addEventListener('click', closeModal);
 $('modalOverlay').addEventListener('click', e => { if (e.target === $('modalOverlay')) closeModal(); });
-$('applyBtn').addEventListener('click', () => { closeModal(); activeAssociate = null; fetchData(); });
+$('applyBtn').addEventListener('click', () => {
+    closeModal();
+    activeAssociate = null;
+    fetchData();
+});
 $('resetBtn').addEventListener('click', resetToTeam);
 
-// ── BOOT ──────────────────────────────────────────────────────────────────────
+// ── BOOT ───────────────────────────────────────────────────────────────────────
 fetchData();
 </script>
 </body>
