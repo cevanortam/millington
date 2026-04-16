@@ -654,6 +654,31 @@ const HOUR_LABELS = [
 
 const DEFAULT_EXCLUDED = ["System Admin","Internal Test","Training User","Vernester Shipp RF"];
 
+// ── HOUR CUTOFF ────────────────────────────────────────────────────────────────
+// HOUR_LABELS starts at 4am. The shift spans 4am → 3am (next day), which maps
+// to indices 0–23. We want to show only hours up to and including the current hour.
+//
+// Hour-index mapping:
+//   index 0  = 4am,  index 1  = 5am,  …  index 7  = 11am
+//   index 8  = 12pm, index 9  = 1pm,  …  index 19 = 11pm
+//   index 20 = 12am, index 21 = 1am,  index 22 = 2am, index 23 = 3am
+//
+// The shift "resets" at 4am, so hours 0–3 (midnight–3am) are the tail end
+// of the same shift and live at indices 20–23.
+function getHourCutoff() {
+    const h = new Date().getHours(); // 0–23 (local)
+    let idx;
+    if (h >= 4) {
+        // 4am–11pm → indices 0–19
+        idx = h - 4;
+    } else {
+        // 12am–3am → indices 20–23; hours beyond 3am (shouldn't occur) → show all
+        idx = h <= 3 ? 20 + h : 23;
+    }
+    // +1 because slice end is exclusive; cap at 24
+    return Math.min(idx + 1, 24);
+}
+
 // ── STATE ──────────────────────────────────────────────────────────────────────
 let excluded        = [...DEFAULT_EXCLUDED];
 let allNames        = [];
@@ -934,18 +959,23 @@ function renderChart(data, associateName, supLabel) {
     const ctx = $('productivityChart').getContext('2d');
     if (myChart) myChart.destroy();
 
+    // Trim to current hour only — don't show future hours
+    const cutoff      = getHourCutoff();
+    const visLabels   = HOUR_LABELS.slice(0, cutoff);
+    const visData     = data.slice(0, cutoff);
+
     const isAssoc = !!associateName;
     const isSup   = !associateName && !!supLabel;
     // Color scheme: associate = navy, supervisor filter = red-tinted, team = red
     const lineClr = isAssoc ? '#003057' : '#C8102E';
     const peakClr = isAssoc ? '#C8102E' : '#003057';
 
-    const maxVal = Math.max(...data, 0);
+    const maxVal = Math.max(...visData, 0);
     const grad   = ctx.createLinearGradient(0, 0, 0, 400);
     grad.addColorStop(0, isAssoc ? 'rgba(0,48,87,0.20)' : 'rgba(200,16,46,0.20)');
     grad.addColorStop(1, 'rgba(255,255,255,0.0)');
 
-    const barBg = data.map(v =>
+    const barBg = visData.map(v =>
         (v === maxVal && v > 0)
             ? (isAssoc ? 'rgba(0,48,87,0.40)' : 'rgba(200,16,46,0.40)')
             : (isAssoc ? 'rgba(0,48,87,0.13)' : 'rgba(200,16,46,0.13)')
@@ -954,25 +984,25 @@ function renderChart(data, associateName, supLabel) {
     myChart = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: HOUR_LABELS,
+            labels: visLabels,
             datasets: [
                 {
                     type: 'line',
-                    data: data,
+                    data: visData,
                     borderColor: lineClr,
                     borderWidth: 3,
                     backgroundColor: grad,
                     fill: true,
                     tension: 0.4,
-                    pointBackgroundColor: data.map(v => (v === maxVal && v > 0) ? peakClr : lineClr),
-                    pointBorderColor:     data.map(v => (v === maxVal && v > 0) ? peakClr : lineClr),
-                    pointRadius:      data.map(v => (v === maxVal && v > 0) ? 8 : 3),
+                    pointBackgroundColor: visData.map(v => (v === maxVal && v > 0) ? peakClr : lineClr),
+                    pointBorderColor:     visData.map(v => (v === maxVal && v > 0) ? peakClr : lineClr),
+                    pointRadius:      visData.map(v => (v === maxVal && v > 0) ? 8 : 3),
                     pointHoverRadius: 0,
                     order: 1,
                 },
                 {
                     type: 'bar',
-                    data: data,
+                    data: visData,
                     backgroundColor: barBg,
                     borderColor: 'transparent',
                     borderRadius: 4,
