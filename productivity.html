@@ -6,117 +6,111 @@
     <title>CEVA Logistics — Millington Productivity</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700;900&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
     <style>
         :root {
-            --navy:    #003057;
-            --navy-dk: #001e3a;
-            --navy-lt: #004477;
-            --red:     #C8102E;
-            --red-dk:  #a00d24;
-            --white:   #ffffff;
-            --off-white: #f5f7fa;
-            --gray-lt: #e8ecf0;
-            --gray:    #b0bac4;
-            --gray-dk: #6b7a8d;
-            --text:    #1a2535;
-            --border:  #d0d8e2;
-            --gold:    #d4a017;
-            --silver:  #7a8898;
-            --bronze:  #a0622a;
+            --navy:      #003057;
+            --navy-dk:   #001e3a;
+            --navy-lt:   #004477;
+            --red:       #C8102E;
+            --white:     #ffffff;
+            --off-white: #f4f7fb;
+            --gray-lt:   #e4eaf1;
+            --gray:      #a8b4c2;
+            --gray-dk:   #5e6e82;
+            --text:      #1a2535;
+            --border:    #cdd6e0;
+            --gold:      #d4a017;
+            --silver:    #7a8898;
+            --bronze:    #a0622a;
+            --green:     #22c55e;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        body {
+        html, body {
+            width: 100%; height: 100%;
+            overflow: hidden;
             background: var(--off-white);
             color: var(--text);
             font-family: 'Open Sans', sans-serif;
-            min-height: 100vh;
         }
 
-        /* ─── HEADER ─── */
+        /* ── LAYOUT ─────────────────────────────────────────────────────── */
+        .page {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* ── HEADER ─────────────────────────────────────────────────────── */
         .header {
+            flex-shrink: 0;
             background: var(--navy);
-            padding: 0 32px;
+            border-bottom: 5px solid var(--red);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            border-bottom: 4px solid var(--red);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.18);
+            padding: 0 36px;
+            height: 80px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.2);
         }
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 24px;
-            padding: 18px 0;
+        .header-left { display: flex; align-items: center; gap: 28px; }
+        .logo-img {
+            height: 48px;
+            object-fit: contain;
+            filter: brightness(0) invert(1);
         }
-        .logo-wrap {
-            display: flex;
-            align-items: center;
-            border-right: 1px solid rgba(255,255,255,0.2);
-            padding-right: 24px;
-        }
-        .ceva-logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .ceva-triangle {
-            width: 0; height: 0;
-            border-left: 20px solid transparent;
-            border-right: 20px solid transparent;
-            border-bottom: 36px solid var(--red);
-        }
-        .ceva-wordmark {
-            display: flex;
-            flex-direction: column;
-            line-height: 1;
-        }
-        .ceva-wordmark span:first-child {
-            font-family: 'Titillium Web', sans-serif;
-            font-size: 28px;
-            font-weight: 900;
-            color: var(--white);
-            letter-spacing: 2px;
-        }
-        .ceva-wordmark span:last-child {
-            font-family: 'Titillium Web', sans-serif;
-            font-size: 10px;
-            font-weight: 600;
-            color: rgba(255,255,255,0.55);
-            letter-spacing: 4px;
-            text-transform: uppercase;
+        .logo-divider {
+            width: 1px; height: 40px;
+            background: rgba(255,255,255,0.2);
         }
         .header-title h1 {
             font-family: 'Titillium Web', sans-serif;
-            font-size: 19px;
-            font-weight: 700;
+            font-size: 22px; font-weight: 700;
             color: var(--white);
+            letter-spacing: 0.3px;
         }
         .header-title p {
             font-size: 11px;
             color: rgba(255,255,255,0.45);
-            letter-spacing: 2px;
+            letter-spacing: 2.5px;
             text-transform: uppercase;
-            margin-top: 3px;
+            margin-top: 2px;
+        }
+        .header-right { display: flex; align-items: center; gap: 20px; }
+        .countdown-ring {
+            position: relative;
+            width: 44px; height: 44px;
+        }
+        .countdown-ring svg {
+            position: absolute; top: 0; left: 0;
+            transform: rotate(-90deg);
+        }
+        .countdown-ring .ring-bg { fill: none; stroke: rgba(255,255,255,0.12); stroke-width: 3; }
+        .countdown-ring .ring-fill { fill: none; stroke: var(--red); stroke-width: 3; stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
+        .countdown-text {
+            position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Titillium Web', sans-serif;
+            font-size: 13px; font-weight: 700;
+            color: rgba(255,255,255,0.8);
+        }
+        .sync-info {
+            display: flex; flex-direction: column; align-items: flex-end; gap: 3px;
         }
         .sync-badge {
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            display: flex; align-items: center; gap: 7px;
             background: rgba(255,255,255,0.08);
             border: 1px solid rgba(255,255,255,0.14);
             border-radius: 6px;
-            padding: 8px 14px;
+            padding: 7px 13px;
             font-size: 12px;
             color: rgba(255,255,255,0.65);
         }
         .sync-dot {
-            width: 8px; height: 8px;
-            background: #22c55e;
-            border-radius: 50%;
-            flex-shrink: 0;
+            width: 8px; height: 8px; border-radius: 50%;
+            background: var(--green); flex-shrink: 0;
             animation: pulse 2s infinite;
         }
         .sync-dot.error { background: var(--red); animation: none; }
@@ -124,387 +118,416 @@
             0%,100% { opacity:1; box-shadow: 0 0 0 0 rgba(34,197,94,0.5); }
             50%      { opacity:0.8; box-shadow: 0 0 0 5px rgba(34,197,94,0); }
         }
+        .settings-btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 6px;
+            color: rgba(255,255,255,0.7);
+            cursor: pointer;
+            padding: 8px 12px;
+            font-size: 18px;
+            line-height: 1;
+            transition: background 0.2s;
+        }
+        .settings-btn:hover { background: rgba(255,255,255,0.2); }
 
-        /* ─── MAIN ─── */
-        .main { padding: 28px 32px; max-width: 1700px; margin: 0 auto; }
-
-        /* ─── KPI CARDS ─── */
+        /* ── KPI ROW ─────────────────────────────────────────────────────── */
         .kpi-row {
+            flex-shrink: 0;
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 16px;
-            margin-bottom: 24px;
+            padding: 16px 36px 0;
         }
         .kpi-card {
             background: var(--white);
             border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 20px 22px;
+            border-radius: 10px;
+            padding: 18px 22px;
             position: relative;
             overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,48,87,0.06);
-            transition: box-shadow 0.2s, transform 0.2s;
+            box-shadow: 0 2px 10px rgba(0,48,87,0.07);
         }
-        .kpi-card:hover { box-shadow: 0 6px 20px rgba(0,48,87,0.12); transform: translateY(-2px); }
         .kpi-card::before {
             content: '';
             position: absolute;
             top: 0; left: 0;
-            width: 4px; height: 100%;
+            width: 5px; height: 100%;
             background: var(--navy);
-            border-radius: 8px 0 0 8px;
+            border-radius: 10px 0 0 10px;
         }
-        .kpi-card.red-accent::before { background: var(--red); }
         .kpi-label {
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            color: var(--gray-dk);
-            margin-bottom: 10px;
+            font-size: 11px; font-weight: 600;
+            letter-spacing: 2px; text-transform: uppercase;
+            color: var(--gray-dk); margin-bottom: 6px;
         }
         .kpi-value {
             font-family: 'Titillium Web', sans-serif;
-            font-size: 40px;
-            font-weight: 900;
-            color: var(--navy);
-            line-height: 1;
+            font-size: 44px; font-weight: 900;
+            color: var(--navy); line-height: 1;
         }
-        .kpi-value.red { color: var(--red); }
-        .kpi-sub { font-size: 12px; color: var(--gray-dk); margin-top: 6px; }
+        .kpi-sub { font-size: 12px; color: var(--gray-dk); margin-top: 5px; }
         .kpi-icon {
-            position: absolute;
-            right: 18px; top: 50%;
+            position: absolute; right: 16px; top: 50%;
             transform: translateY(-50%);
-            font-size: 36px;
-            opacity: 0.07;
+            font-size: 40px; opacity: 0.06;
         }
 
-        /* ─── CHART + SIDEBAR ─── */
-        .mid-row {
+        /* ── BODY (chart + table) ────────────────────────────────────────── */
+        .body-row {
+            flex: 1;
             display: grid;
-            grid-template-columns: 1fr 280px;
+            grid-template-columns: 420px 1fr;
             gap: 16px;
-            margin-bottom: 24px;
+            padding: 16px 36px 16px;
+            min-height: 0;
         }
-        .card {
+
+        /* ── CHART PANEL ─────────────────────────────────────────────────── */
+        .chart-panel {
+            display: flex; flex-direction: column;
             background: var(--white);
             border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 22px;
-            box-shadow: 0 2px 8px rgba(0,48,87,0.06);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,48,87,0.07);
+            min-height: 0;
         }
-        .card-title {
+        .panel-title {
             font-family: 'Titillium Web', sans-serif;
-            font-size: 13px;
-            font-weight: 700;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            color: var(--navy);
-            margin-bottom: 18px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .card-title::before {
-            content: '';
-            display: inline-block;
-            width: 4px; height: 16px;
-            background: var(--red);
-            border-radius: 2px;
+            font-size: 12px; font-weight: 700;
+            letter-spacing: 2px; text-transform: uppercase;
+            color: var(--navy); margin-bottom: 14px;
+            display: flex; align-items: center; gap: 9px;
             flex-shrink: 0;
         }
+        .panel-title::before {
+            content: '';
+            width: 4px; height: 15px;
+            background: var(--red); border-radius: 2px; flex-shrink: 0;
+        }
+        .chart-wrap { flex: 1; position: relative; min-height: 0; }
+        .chart-wrap canvas { width: 100% !important; height: 100% !important; }
 
-        .filter-label {
-            display: block;
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            color: var(--gray-dk);
-            margin-bottom: 7px;
-        }
-        select {
-            width: 100%;
-            background: var(--off-white);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            color: var(--text);
-            padding: 9px 32px 9px 12px;
-            font-family: 'Open Sans', sans-serif;
-            font-size: 13px;
-            appearance: none;
-            cursor: pointer;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7a8d' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 10px center;
-            transition: border-color 0.2s;
-        }
-        select:focus { outline: none; border-color: var(--navy); }
-        select option { background: white; }
-
-        /* Supervisor pills */
-        .sup-pill {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 9px 12px;
-            border-radius: 6px;
-            border: 1px solid var(--border);
-            background: var(--off-white);
-            font-size: 13px;
-            cursor: pointer;
-            transition: all 0.15s;
-            margin-bottom: 6px;
-        }
-        .sup-pill:hover { border-color: var(--navy); background: #e8eef5; }
-        .sup-pill.active {
-            background: var(--navy);
-            border-color: var(--navy);
-            color: var(--white);
-        }
-        .sup-pill.active .pill-count { background: rgba(255,255,255,0.18); color: var(--white); }
-        .pill-count {
-            font-size: 11px;
-            font-weight: 600;
-            background: var(--gray-lt);
-            border-radius: 4px;
-            padding: 2px 7px;
-            color: var(--gray-dk);
-        }
-        .pills-scroll { max-height: 300px; overflow-y: auto; padding-right: 2px; }
-        .pills-scroll::-webkit-scrollbar { width: 4px; }
-        .pills-scroll::-webkit-scrollbar-track { background: var(--off-white); }
-        .pills-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-        /* ─── TABLE ─── */
-        .table-card {
+        /* ── LEADERBOARD PANEL ───────────────────────────────────────────── */
+        .table-panel {
+            display: flex; flex-direction: column;
             background: var(--white);
             border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 22px;
-            box-shadow: 0 2px 8px rgba(0,48,87,0.06);
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,48,87,0.07);
+            overflow: hidden;
+            min-height: 0;
         }
-        .table-controls {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 16px;
-            gap: 16px;
-            flex-wrap: wrap;
+        .table-header-row {
+            flex-shrink: 0;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 16px 20px 12px;
+            border-bottom: 1px solid var(--gray-lt);
         }
-        .search-wrap { position: relative; }
-        .search-wrap::before {
-            content: '🔍';
-            position: absolute;
-            left: 10px; top: 50%;
-            transform: translateY(-50%);
-            font-size: 12px;
-            pointer-events: none;
+        .scroll-progress {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 11px; color: var(--gray-dk);
         }
-        .search-input {
-            background: var(--off-white);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            color: var(--text);
-            padding: 9px 12px 9px 34px;
-            font-family: 'Open Sans', sans-serif;
-            font-size: 13px;
-            width: 250px;
-            transition: border-color 0.2s;
+        .progress-bar {
+            width: 120px; height: 4px;
+            background: var(--gray-lt); border-radius: 2px; overflow: hidden;
         }
-        .search-input:focus { outline: none; border-color: var(--navy); }
-        .search-input::placeholder { color: var(--gray); }
+        .progress-fill {
+            height: 100%; background: var(--red);
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
 
-        #productivityTable {
-            width: 100% !important;
-            border-collapse: collapse;
-            font-size: 12.5px;
+        /* Table itself */
+        .table-scroll { flex: 1; overflow: hidden; position: relative; }
+        table.lb {
+            width: 100%; border-collapse: collapse;
+            font-size: 13.5px;
         }
-        #productivityTable thead th {
+        table.lb thead th {
             background: var(--navy);
-            color: rgba(255,255,255,0.7);
-            font-size: 10px;
-            font-weight: 600;
-            letter-spacing: 1.2px;
-            text-transform: uppercase;
-            padding: 10px 8px;
-            border: none;
-            white-space: nowrap;
-            text-align: center;
-            cursor: pointer;
-            user-select: none;
+            color: rgba(255,255,255,0.65);
+            font-size: 10px; font-weight: 600;
+            letter-spacing: 1.5px; text-transform: uppercase;
+            padding: 10px 10px;
+            text-align: center; white-space: nowrap;
+            position: sticky; top: 0; z-index: 2;
+        }
+        table.lb thead th.left { text-align: left; }
+        table.lb tbody tr {
+            border-bottom: 1px solid var(--gray-lt);
             transition: background 0.15s;
         }
-        #productivityTable thead th:hover { background: var(--navy-lt); color: white; }
-        #productivityTable thead th:nth-child(2),
-        #productivityTable thead th:nth-child(3) { text-align: left; }
-
-        #productivityTable tbody tr {
-            border-bottom: 1px solid var(--gray-lt);
-            transition: background 0.1s;
+        table.lb tbody tr.visible-row.highlight {
+            background: rgba(0,48,87,0.04);
         }
-        #productivityTable tbody tr:hover { background: #eef3f8; }
-        #productivityTable tbody tr.rank-1-row { background: #fffbea; }
-        #productivityTable tbody tr.rank-2-row { background: #f9fafb; }
-        #productivityTable tbody tr.rank-3-row { background: #fdf6f0; }
-        #productivityTable tbody tr.rank-1-row:hover,
-        #productivityTable tbody tr.rank-2-row:hover,
-        #productivityTable tbody tr.rank-3-row:hover { background: #eef3f8; }
-
-        #productivityTable tbody td {
-            padding: 8px 8px;
-            border: none;
-            text-align: center;
-            color: var(--text);
+        table.lb tbody tr.rank-1-row { background: #fffbea; }
+        table.lb tbody tr.rank-2-row { background: #f9fafb; }
+        table.lb tbody tr.rank-3-row { background: #fdf6f0; }
+        table.lb tbody td {
+            padding: 9px 10px; border: none;
+            text-align: center; color: var(--text);
         }
-        #productivityTable tbody td:nth-child(2) { text-align: left; font-weight: 600; }
-        #productivityTable tbody td:nth-child(3) { text-align: left; color: var(--gray-dk); }
-        #productivityTable tbody td.zero { color: var(--gray-lt); }
+        table.lb tbody td.left { text-align: left; }
+        table.lb tbody td.name-cell { font-weight: 600; }
+        table.lb tbody td.sup-cell { color: var(--gray-dk); font-size: 12px; }
+        table.lb tbody td.zero { color: var(--gray-lt); }
+        table.lb tbody td.total-cell {
+            font-family: 'Titillium Web', sans-serif;
+            font-size: 19px; font-weight: 900; color: var(--navy);
+        }
 
         .rank-badge {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 28px; height: 28px;
-            border-radius: 6px;
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 30px; height: 30px; border-radius: 6px;
             font-family: 'Titillium Web', sans-serif;
-            font-weight: 700;
-            font-size: 13px;
+            font-weight: 700; font-size: 14px;
         }
-        .rb-1 { background: rgba(212,160,23,0.14); color: var(--gold); border: 1px solid rgba(212,160,23,0.3); }
+        .rb-1 { background: rgba(212,160,23,0.14); color: var(--gold);   border: 1px solid rgba(212,160,23,0.3); }
         .rb-2 { background: rgba(122,136,152,0.14); color: var(--silver); border: 1px solid rgba(122,136,152,0.3); }
-        .rb-3 { background: rgba(160,98,42,0.14); color: var(--bronze); border: 1px solid rgba(160,98,42,0.3); }
-        .rb-n { background: var(--off-white); color: var(--gray-dk); border: 1px solid var(--border); }
+        .rb-3 { background: rgba(160,98,42,0.14); color: var(--bronze);  border: 1px solid rgba(160,98,42,0.3); }
+        .rb-n { background: var(--off-white); color: var(--gray-dk);      border: 1px solid var(--border); }
 
-        .total-cell {
+        /* hour heat cells */
+        .h-peak { background: rgba(200,16,46,0.13); }
+        .h-high  { background: rgba(0,48,87,0.09);  }
+        .h-mid   { background: rgba(0,48,87,0.04);  }
+
+        /* ── SETTINGS MODAL ──────────────────────────────────────────────── */
+        .modal-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.55);
+            backdrop-filter: blur(4px);
+            z-index: 100;
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.2s;
+        }
+        .modal-overlay.open { opacity: 1; pointer-events: all; }
+        .modal {
+            background: var(--white);
+            border-radius: 12px;
+            width: 480px; max-width: 95vw;
+            box-shadow: 0 24px 60px rgba(0,0,0,0.25);
+            overflow: hidden;
+            transform: translateY(16px);
+            transition: transform 0.2s;
+        }
+        .modal-overlay.open .modal { transform: translateY(0); }
+        .modal-head {
+            background: var(--navy);
+            padding: 18px 22px;
+            display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 3px solid var(--red);
+        }
+        .modal-head h2 {
             font-family: 'Titillium Web', sans-serif;
-            font-size: 17px;
-            font-weight: 900;
-            color: var(--navy);
+            font-size: 16px; font-weight: 700; color: var(--white);
+            letter-spacing: 1px;
         }
+        .modal-close {
+            background: none; border: none;
+            color: rgba(255,255,255,0.6); font-size: 22px;
+            cursor: pointer; line-height: 1; padding: 0 4px;
+            transition: color 0.15s;
+        }
+        .modal-close:hover { color: white; }
+        .modal-body { padding: 22px; }
+        .modal-section-label {
+            font-size: 11px; font-weight: 600;
+            letter-spacing: 2px; text-transform: uppercase;
+            color: var(--gray-dk); margin-bottom: 10px;
+        }
+        .excluded-list {
+            border: 1px solid var(--border); border-radius: 8px;
+            overflow: hidden; margin-bottom: 14px;
+            max-height: 240px; overflow-y: auto;
+        }
+        .excluded-list:empty::after {
+            content: 'No names excluded';
+            display: block; padding: 12px 14px;
+            font-size: 13px; color: var(--gray);
+            font-style: italic;
+        }
+        .excluded-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--gray-lt);
+            font-size: 13.5px;
+        }
+        .excluded-item:last-child { border-bottom: none; }
+        .excluded-item:nth-child(even) { background: var(--off-white); }
+        .remove-btn {
+            background: none; border: none;
+            color: var(--red); cursor: pointer;
+            font-size: 18px; line-height: 1; padding: 0 4px;
+            transition: opacity 0.15s;
+        }
+        .remove-btn:hover { opacity: 0.7; }
+        .add-row {
+            display: flex; gap: 8px;
+        }
+        .add-input {
+            flex: 1;
+            border: 1px solid var(--border); border-radius: 6px;
+            padding: 9px 12px;
+            font-family: 'Open Sans', sans-serif; font-size: 13px;
+            color: var(--text); background: var(--off-white);
+            transition: border-color 0.2s;
+        }
+        .add-input:focus { outline: none; border-color: var(--navy); }
+        .add-input::placeholder { color: var(--gray); }
+        .add-btn {
+            background: var(--navy); color: white;
+            border: none; border-radius: 6px;
+            padding: 9px 18px;
+            font-family: 'Titillium Web', sans-serif; font-size: 14px; font-weight: 700;
+            cursor: pointer; transition: background 0.15s; white-space: nowrap;
+        }
+        .add-btn:hover { background: var(--navy-lt); }
 
-        /* DataTables */
-        .dataTables_wrapper { color: var(--text); }
-        .dataTables_info, .dataTables_length { color: var(--gray-dk); font-size: 12px; }
-        .dataTables_length select { width: auto; display: inline-block; }
-        .dataTables_paginate .paginate_button {
-            color: var(--navy) !important;
-            background: var(--off-white) !important;
-            border: 1px solid var(--border) !important;
-            border-radius: 4px !important;
-            margin: 2px !important;
-            padding: 4px 10px !important;
-            font-size: 12px !important;
+        /* Autocomplete dropdown */
+        .autocomplete-wrap { position: relative; flex: 1; }
+        .autocomplete-list {
+            position: absolute; top: 100%; left: 0; right: 0;
+            background: white; border: 1px solid var(--border);
+            border-radius: 6px; z-index: 200;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+            max-height: 180px; overflow-y: auto;
+            display: none;
         }
-        .dataTables_paginate .paginate_button.current {
-            background: var(--navy) !important;
-            color: white !important;
-            border-color: var(--navy) !important;
+        .autocomplete-list.open { display: block; }
+        .ac-item {
+            padding: 9px 12px; font-size: 13px;
+            cursor: pointer; transition: background 0.1s;
         }
-        .dataTables_paginate .paginate_button:hover:not(.current) {
-            background: var(--gray-lt) !important;
-            color: var(--navy) !important;
-        }
-        table.dataTable.no-footer { border-bottom: 1px solid var(--border); }
+        .ac-item:hover { background: var(--off-white); color: var(--navy); }
 
-        /* Loading */
+        .modal-footer {
+            padding: 14px 22px;
+            border-top: 1px solid var(--gray-lt);
+            display: flex; justify-content: flex-end;
+        }
+        .apply-btn {
+            background: var(--red); color: white;
+            border: none; border-radius: 6px;
+            padding: 10px 24px;
+            font-family: 'Titillium Web', sans-serif; font-size: 15px; font-weight: 700;
+            cursor: pointer; transition: background 0.15s;
+        }
+        .apply-btn:hover { background: #a00d24; }
+
+        /* ── LOADING ─────────────────────────────────────────────────────── */
         .loading-overlay {
             position: fixed; inset: 0;
             background: var(--navy-dk);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 999;
-            transition: opacity 0.4s;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            z-index: 999; transition: opacity 0.5s;
         }
         .loading-overlay.hidden { opacity: 0; pointer-events: none; }
-        .loading-logo {
-            display: flex; align-items: center; gap: 12px;
-            margin-bottom: 32px;
+        .load-logo {
+            display: flex; align-items: center; gap: 12px; margin-bottom: 32px;
         }
-        .loading-tri {
+        .load-tri {
             width: 0; height: 0;
-            border-left: 16px solid transparent;
-            border-right: 16px solid transparent;
-            border-bottom: 30px solid var(--red);
+            border-left: 18px solid transparent;
+            border-right: 18px solid transparent;
+            border-bottom: 32px solid var(--red);
         }
-        .loading-wordmark {
+        .load-name {
             font-family: 'Titillium Web', sans-serif;
-            font-size: 30px; font-weight: 900;
-            color: white; letter-spacing: 3px;
+            font-size: 34px; font-weight: 900; color: white; letter-spacing: 3px;
         }
-        .loading-spinner {
-            width: 40px; height: 40px;
+        .load-spinner {
+            width: 44px; height: 44px;
             border: 3px solid rgba(255,255,255,0.12);
             border-top-color: var(--red);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
+            border-radius: 50%; animation: spin 0.8s linear infinite;
             margin-bottom: 14px;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .loading-text {
+        .load-text {
             font-family: 'Titillium Web', sans-serif;
-            font-size: 12px; letter-spacing: 3px;
-            text-transform: uppercase;
-            color: rgba(255,255,255,0.4);
-        }
-
-        @media (max-width: 1100px) {
-            .kpi-row { grid-template-columns: repeat(2, 1fr); }
-            .mid-row  { grid-template-columns: 1fr; }
-        }
-        @media (max-width: 600px) {
-            .main { padding: 16px; }
-            .header { padding: 0 16px; }
-            .kpi-row { grid-template-columns: 1fr 1fr; }
+            font-size: 12px; letter-spacing: 3px; text-transform: uppercase;
+            color: rgba(255,255,255,0.35);
         }
     </style>
 </head>
 <body>
 
+<!-- LOADING -->
 <div class="loading-overlay" id="loadingOverlay">
-    <div class="loading-logo">
-        <div class="loading-tri"></div>
-        <div class="loading-wordmark">CEVA</div>
+    <div class="load-logo">
+        <div class="load-tri"></div>
+        <div class="load-name">CEVA</div>
     </div>
-    <div class="loading-spinner"></div>
-    <div class="loading-text">Loading productivity data…</div>
+    <div class="load-spinner"></div>
+    <div class="load-text">Loading productivity data…</div>
 </div>
 
-<!-- HEADER -->
-<div class="header">
-    <div class="header-left">
-        <div class="logo-wrap">
-            <div class="ceva-logo">
-                <img src="https://www.freelogovectors.net/wp-content/uploads/2022/07/ceva-logistics-logo-freelogovectors.net_.png"
-                     alt="CEVA Logistics"
-                     style="height:44px; object-fit:contain; filter: brightness(0) invert(1);"
-                     onerror="this.style.display='none'; document.getElementById('logoFallback').style.display='flex';">
-                <div id="logoFallback" style="display:none; align-items:center; gap:10px;">
-                    <div class="ceva-triangle"></div>
-                    <div class="ceva-wordmark">
-                        <span>CEVA</span>
-                        <span>Logistics</span>
-                    </div>
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+        <div class="modal-head">
+            <h2>⚙ Exclusion Settings</h2>
+            <button class="modal-close" id="modalClose">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="modal-section-label">Excluded from leaderboard</div>
+            <div class="excluded-list" id="excludedList"></div>
+            <div class="modal-section-label" style="margin-top:16px;">Add a name to exclude</div>
+            <div class="add-row">
+                <div class="autocomplete-wrap">
+                    <input type="text" class="add-input" id="addInput" placeholder="Type a name…" autocomplete="off">
+                    <div class="autocomplete-list" id="acList"></div>
                 </div>
+                <button class="add-btn" id="addBtn">Exclude</button>
             </div>
         </div>
-        <div class="header-title">
-            <h1>Millington Warehouse — Productivity Dashboard</h1>
-            <p>Associate Performance · Current Shift</p>
+        <div class="modal-footer">
+            <button class="apply-btn" id="applyBtn">Apply &amp; Close</button>
         </div>
-    </div>
-    <div class="sync-badge">
-        <div class="sync-dot" id="syncDot"></div>
-        <span id="lastUpdate">Initializing…</span>
     </div>
 </div>
 
-<div class="main">
+<!-- PAGE -->
+<div class="page">
 
-    <!-- KPI CARDS -->
+    <!-- HEADER -->
+    <div class="header">
+        <div class="header-left">
+            <img class="logo-img"
+                 src="https://www.freelogovectors.net/wp-content/uploads/2022/07/ceva-logistics-logo-freelogovectors.net_.png"
+                 alt="CEVA Logistics"
+                 onerror="this.style.display='none'">
+            <div class="logo-divider"></div>
+            <div class="header-title">
+                <h1>Millington Warehouse — Productivity Dashboard</h1>
+                <p>Associate Confirmations · Current Shift</p>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="sync-info">
+                <div class="sync-badge">
+                    <div class="sync-dot" id="syncDot"></div>
+                    <span id="lastUpdate">Initializing…</span>
+                </div>
+            </div>
+            <div class="countdown-ring" title="Next refresh">
+                <svg width="44" height="44" viewBox="0 0 44 44">
+                    <circle class="ring-bg" cx="22" cy="22" r="18"/>
+                    <circle class="ring-fill" id="ringFill" cx="22" cy="22" r="18"
+                            stroke-dasharray="113.1" stroke-dashoffset="0"/>
+                </svg>
+                <div class="countdown-text" id="countdownText">5:00</div>
+            </div>
+            <button class="settings-btn" id="settingsBtn" title="Exclusion settings">⚙</button>
+        </div>
+    </div>
+
+    <!-- KPIs -->
     <div class="kpi-row">
         <div class="kpi-card">
             <div class="kpi-label">Active Associates</div>
@@ -513,344 +536,403 @@
             <div class="kpi-icon">👥</div>
         </div>
         <div class="kpi-card">
-            <div class="kpi-label">Total Units</div>
+            <div class="kpi-label">Total Confirmations</div>
             <div class="kpi-value" id="kpiTotal">—</div>
             <div class="kpi-sub">combined output</div>
-            <div class="kpi-icon">📦</div>
-        </div>
-        <div class="kpi-card red-accent">
-            <div class="kpi-label">Top Performer</div>
-            <div class="kpi-value red" id="kpiTopName" style="font-size:22px; padding-top:4px; line-height:1.2;">—</div>
-            <div class="kpi-sub" id="kpiTopUnits">— units</div>
-            <div class="kpi-icon">🏆</div>
+            <div class="kpi-icon">✅</div>
         </div>
         <div class="kpi-card">
             <div class="kpi-label">Team Average</div>
             <div class="kpi-value" id="kpiAvg">—</div>
-            <div class="kpi-sub">units per associate</div>
+            <div class="kpi-sub">confirmations per associate</div>
             <div class="kpi-icon">📊</div>
         </div>
     </div>
 
-    <!-- CHART + SUPERVISOR FILTER -->
-    <div class="mid-row">
-        <div class="card">
-            <div class="card-title" id="chartTitle">Hourly Production Volume</div>
-            <div style="position:relative; height:280px;">
+    <!-- BODY -->
+    <div class="body-row">
+
+        <!-- CHART -->
+        <div class="chart-panel">
+            <div class="panel-title">Hourly Confirmations</div>
+            <div class="chart-wrap">
                 <canvas id="productivityChart"></canvas>
             </div>
-            <div style="margin-top:16px;">
-                <label class="filter-label">Drill Down — Associate</label>
-                <select id="associateFilter">
-                    <option value="TEAM">Overall Team View</option>
-                </select>
-            </div>
         </div>
 
-        <div class="card">
-            <div class="card-title">Filter by Supervisor</div>
-            <div class="pills-scroll" id="supervisorPills">
-                <div class="sup-pill active" id="pillAll">
-                    <span>All Teams</span>
-                    <span class="pill-count" id="allCount">0</span>
+        <!-- LEADERBOARD -->
+        <div class="table-panel">
+            <div class="table-header-row">
+                <div class="panel-title" style="margin:0;">Associate Leaderboard</div>
+                <div class="scroll-progress">
+                    <span id="scrollLabel">1 – 10</span>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill" style="width:0%"></div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- LEADERBOARD TABLE -->
-    <div class="table-card">
-        <div class="table-controls">
-            <div class="card-title" style="margin:0;">Associate Leaderboard</div>
-            <div class="search-wrap">
-                <input type="text" class="search-input" id="searchInput" placeholder="Search associate…">
+            <div class="table-scroll" id="tableScroll">
+                <table class="lb">
+                    <thead>
+                        <tr id="tableHeader"></tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
             </div>
         </div>
-        <div style="overflow-x:auto;">
-            <table id="productivityTable">
-                <thead><tr id="tableHeader"></tr></thead>
-                <tbody id="tableBody"></tbody>
-            </table>
-        </div>
-    </div>
 
+    </div>
 </div>
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 
 <script>
-    /*
-     * ── COLUMN MAPPING (0-indexed, after slicing to data rows) ──────────────
-     *   Sheet Row 1  → CSV row 0  → OMITTED (blank/metadata row)
-     *   Sheet Row 2  → CSV row 1  → Column headers → OMITTED
-     *   Sheet Row 3+ → CSV row 2+ → Associate data
-     *
-     *   Col 0  (A) = User ID
-     *   Col 1  (B) = User Name
-     *   Col 2  (C) = Supervisor ID
-     *   Col 3  (D) = Supervisor Name
-     *   Col 4  (E) = 4:00am
-     *   Col 5  (F) = 5:00am
-     *   Col 6  (G) = 6:00am
-     *   …
-     *   Col 27 (AB) = 3:00am
-     *   Col 28 (AC) = Total
-     */
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+const CSV_URL      = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQSCLwK71k52Yc_Sfnz3qzycsuHKn23n7ywFNEWzowh2jYCpfS23jpwz0po4E3b_OdLt6fkNAN-JEVU/pub?gid=0&single=true&output=csv';
+const REFRESH_MS   = 5 * 60 * 1000;   // 5 minutes
+const SCROLL_ROWS  = 10;              // rows visible at a time
+const SCROLL_MS    = 4000;            // ms per page
 
-    const CSV_URL         = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQSCLwK71k52Yc_Sfnz3qzycsuHKn23n7ywFNEWzowh2jYCpfS23jpwz0po4E3b_OdLt6fkNAN-JEVU/pub?gid=0&single=true&output=csv';
-    const NAME_COL        = 1;
-    const SUP_NAME_COL    = 3;
-    const HOUR_START      = 4;   // Col E = 4am
-    const HOUR_END        = 27;  // Col AB = 3am
-    const TOTAL_COL       = 28;  // Col AC
-    const EXCLUDED        = ["System Admin", "Internal Test", "Training User"];
+// Column indices (0-based, after slice(2))
+const COL_NAME     = 1;
+const COL_SUP      = 3;
+const COL_H_START  = 4;   // 4am
+const COL_H_END    = 27;  // 3am
+const COL_TOTAL    = 28;
 
-    const HOUR_LABELS = [
-        "4am","5am","6am","7am","8am","9am","10am","11am",
-        "12pm","1pm","2pm","3pm","4pm","5pm","6pm","7pm",
-        "8pm","9pm","10pm","11pm","12am","1am","2am","3am"
-    ];
+const HOUR_LABELS  = [
+    "4am","5am","6am","7am","8am","9am","10am","11am",
+    "12pm","1pm","2pm","3pm","4pm","5pm","6pm","7pm",
+    "8pm","9pm","10pm","11pm","12am","1am","2am","3am"
+];
 
-    let myChart, dataTable;
-    let allRows = [];
-    let associateMap = {};
-    let teamTotals = new Array(24).fill(0);
+// Default excluded names — editable via settings panel
+const DEFAULT_EXCLUDED = ["System Admin","Internal Test","Training User","Vernester Shipp RF"];
 
-    // ── INIT ─────────────────────────────────────────────────────────────────
-    function initDashboard() {
-        fetch(CSV_URL, { mode: 'cors' })
-            .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
-            .then(csv => {
-                Papa.parse(csv, {
-                    header: false,
-                    skipEmptyLines: true,
-                    complete: res => {
-                        // slice(2): skip row 0 (sheet row 1) and row 1 (headers)
-                        const data = res.data.slice(2);
-                        if (data.length) {
-                            processData(data);
-                        } else {
-                            showError('Sheet returned no data rows.');
-                        }
-                    }
-                });
-            })
-            .catch(() => showError('Could not reach data source — check network.'));
-    }
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let excluded    = [...DEFAULT_EXCLUDED];
+let allNames    = [];   // all names in the sheet (for autocomplete)
+let processedRows = [];
+let myChart;
+let scrollOffset  = 0;
+let scrollTimer;
+let refreshTimer;
+let countdownSec  = REFRESH_MS / 1000;
+let countdownInterval;
+const CIRCUMFERENCE = 2 * Math.PI * 18; // r=18
 
-    function showError(msg) {
-        document.getElementById('syncDot').classList.add('error');
-        document.getElementById('lastUpdate').textContent = msg;
-        document.getElementById('loadingOverlay').classList.add('hidden');
-    }
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const setText = (id, v) => $(id).textContent = v;
 
-    // ── PROCESS ──────────────────────────────────────────────────────────────
-    function processData(rows) {
-        // Filter excluded, sort by total desc
-        rows = rows.filter(r => r[NAME_COL] && !EXCLUDED.includes(r[NAME_COL].trim()));
-        rows.sort((a, b) => (parseFloat(b[TOTAL_COL]) || 0) - (parseFloat(a[TOTAL_COL]) || 0));
-        allRows = rows;
+function heatClass(val, max) {
+    if (!val || max === 0) return '';
+    const p = val / max;
+    if (p >= 0.75) return 'h-peak';
+    if (p >= 0.50) return 'h-high';
+    if (p >= 0.25) return 'h-mid';
+    return '';
+}
 
-        // Supervisor counts
-        const supCounts = {};
-        rows.forEach(r => {
-            const s = (r[SUP_NAME_COL] || 'Unknown').trim();
-            supCounts[s] = (supCounts[s] || 0) + 1;
-        });
+// ── COUNTDOWN RING ────────────────────────────────────────────────────────────
+function startCountdown() {
+    clearInterval(countdownInterval);
+    countdownSec = REFRESH_MS / 1000;
+    updateRing();
+    countdownInterval = setInterval(() => {
+        countdownSec--;
+        if (countdownSec < 0) countdownSec = 0;
+        updateRing();
+    }, 1000);
+}
 
-        // KPIs
-        const totals = rows.map(r => parseFloat(r[TOTAL_COL]) || 0);
-        const grand  = totals.reduce((a, b) => a + b, 0);
-        const avg    = totals.length ? Math.round(grand / totals.length) : 0;
+function updateRing() {
+    const pct    = countdownSec / (REFRESH_MS / 1000);
+    const offset = CIRCUMFERENCE * (1 - pct);
+    $('ringFill').style.strokeDashoffset = offset;
+    const m = Math.floor(countdownSec / 60);
+    const s = String(countdownSec % 60).padStart(2, '0');
+    setText('countdownText', `${m}:${s}`);
+}
 
-        setText('kpiAssociates', rows.length);
-        setText('kpiSupervisors', Object.keys(supCounts).length + ' supervisors on floor');
-        setText('kpiTotal',  grand.toLocaleString());
-        setText('kpiTopName', rows[0]?.[NAME_COL] || '—');
-        setText('kpiTopUnits', (rows[0]?.[TOTAL_COL] || '—') + ' units');
-        setText('kpiAvg',  avg.toLocaleString());
-        setText('lastUpdate', 'Updated: ' + (rows[rows.length - 1]?.[0] || 'N/A'));
-
-        // Table header
-        let hdr = '<th>Rank</th><th>Associate</th><th>Supervisor</th>';
-        HOUR_LABELS.forEach(h => hdr += `<th>${h}</th>`);
-        hdr += '<th>Total</th>';
-        document.getElementById('tableHeader').innerHTML = hdr;
-
-        // Max hourly for heat
-        let hourMax = 0;
-        rows.forEach(r => {
-            for (let j = HOUR_START; j <= HOUR_END; j++) hourMax = Math.max(hourMax, parseFloat(r[j]) || 0);
-        });
-
-        // Build rows
-        let html = '';
-        rows.forEach((row, i) => {
-            const hrs = [];
-            for (let j = HOUR_START; j <= HOUR_END; j++) {
-                const v = parseFloat(row[j]) || 0;
-                hrs.push(v);
-                teamTotals[j - HOUR_START] += v;
-            }
-            associateMap[row[NAME_COL]] = hrs;
-
-            const opt = document.createElement('option');
-            opt.value = row[NAME_COL];
-            opt.textContent = row[NAME_COL];
-            document.getElementById('associateFilter').appendChild(opt);
-
-            const rowCls   = i === 0 ? 'rank-1-row' : i === 1 ? 'rank-2-row' : i === 2 ? 'rank-3-row' : '';
-            const badgeCls = i === 0 ? 'rb-1' : i === 1 ? 'rb-2' : i === 2 ? 'rb-3' : 'rb-n';
-            const medal    = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1);
-
-            let cells = '';
-            hrs.forEach(v => {
-                const bg = heatBg(v, hourMax);
-                cells += v === 0
-                    ? `<td class="zero">–</td>`
-                    : `<td${bg ? ` style="background:${bg}"` : ''}>${v}</td>`;
-            });
-
-            html += `<tr class="${rowCls}" data-sup="${(row[SUP_NAME_COL] || '').trim()}">
-                <td><span class="rank-badge ${badgeCls}">${medal}</span></td>
-                <td>${row[NAME_COL]}</td>
-                <td>${(row[SUP_NAME_COL] || '—').trim()}</td>
-                ${cells}
-                <td class="total-cell">${row[TOTAL_COL] || 0}</td>
-            </tr>`;
-        });
-        document.getElementById('tableBody').innerHTML = html;
-
-        // Supervisor pills
-        setText('allCount', rows.length);
-        document.getElementById('pillAll').addEventListener('click', function () {
-            filterSup('', this);
-        });
-        Object.entries(supCounts).sort((a, b) => b[1] - a[1]).forEach(([sup, cnt]) => {
-            const el = document.createElement('div');
-            el.className = 'sup-pill';
-            el.dataset.sup = sup;
-            el.innerHTML = `<span>${sup}</span><span class="pill-count">${cnt}</span>`;
-            el.addEventListener('click', function () { filterSup(sup, this); });
-            document.getElementById('supervisorPills').appendChild(el);
-        });
-
-        // DataTable
-        dataTable = $('#productivityTable').DataTable({
-            pageLength: 25,
-            dom: 'lrtp',
-            order: [[0, 'asc']],
-            columnDefs: [{ orderable: false, targets: '_all' }],
-            language: { info: 'Showing _START_–_END_ of _TOTAL_ associates', lengthMenu: 'Show _MENU_' }
-        });
-
-        document.getElementById('searchInput').addEventListener('input', function () {
-            dataTable.search(this.value).draw();
-        });
-
-        document.getElementById('associateFilter').addEventListener('change', function () {
-            if (this.value === 'TEAM') {
-                renderChart(teamTotals, 'Hourly Production Volume — Team');
-            } else {
-                renderChart(associateMap[this.value], `Hourly Production — ${this.value}`);
-            }
-        });
-
-        renderChart(teamTotals, 'Hourly Production Volume — Team');
-        document.getElementById('loadingOverlay').classList.add('hidden');
-    }
-
-    // ── HELPERS ──────────────────────────────────────────────────────────────
-    function setText(id, val) { document.getElementById(id).textContent = val; }
-
-    function heatBg(val, max) {
-        if (!val || max === 0) return '';
-        const p = val / max;
-        if (p >= 0.75) return 'rgba(200,16,46,0.13)';
-        if (p >= 0.50) return 'rgba(0,48,87,0.09)';
-        if (p >= 0.25) return 'rgba(0,48,87,0.04)';
-        return '';
-    }
-
-    // ── SUPERVISOR FILTER ────────────────────────────────────────────────────
-    function filterSup(sup, pill) {
-        document.querySelectorAll('.sup-pill').forEach(p => p.classList.remove('active'));
-        pill.classList.add('active');
-        dataTable.column(2).search(sup ? `^${sup}$` : '', true, false).draw();
-
-        const subset = sup ? allRows.filter(r => (r[SUP_NAME_COL] || '').trim() === sup) : allRows;
-        const filtered = new Array(24).fill(0);
-        subset.forEach(r => {
-            for (let j = HOUR_START; j <= HOUR_END; j++) filtered[j - HOUR_START] += parseFloat(r[j]) || 0;
-        });
-        renderChart(filtered, sup ? `Hourly Production — ${sup}'s Team` : 'Hourly Production Volume — Team');
-        document.getElementById('associateFilter').value = 'TEAM';
-    }
-
-    // ── CHART ─────────────────────────────────────────────────────────────────
-    function renderChart(data, title) {
-        document.getElementById('chartTitle').textContent = title;
-        const ctx = document.getElementById('productivityChart').getContext('2d');
-        if (myChart) myChart.destroy();
-
-        const maxVal = Math.max(...data);
-        const grad = ctx.createLinearGradient(0, 0, 0, 280);
-        grad.addColorStop(0, 'rgba(200,16,46,0.18)');
-        grad.addColorStop(1, 'rgba(200,16,46,0.0)');
-
-        myChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: HOUR_LABELS,
-                datasets: [{
-                    label: 'Units',
-                    data: data,
-                    borderColor: '#C8102E',
-                    borderWidth: 2.5,
-                    backgroundColor: grad,
-                    fill: true,
-                    tension: 0.4,
-                    pointBackgroundColor: data.map(v => v === maxVal ? '#003057' : '#C8102E'),
-                    pointBorderColor:     data.map(v => v === maxVal ? '#003057' : '#C8102E'),
-                    pointRadius:      data.map(v => v === maxVal ? 7 : 3),
-                    pointHoverRadius: 6,
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: { mode: 'index', intersect: false },
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: '#003057',
-                        titleColor: '#fff',
-                        bodyColor: 'rgba(255,255,255,0.8)',
-                        borderColor: '#C8102E',
-                        borderWidth: 1,
-                        padding: 12,
-                        callbacks: { label: c => ` ${c.parsed.y} units` }
-                    }
-                },
-                scales: {
-                    x: {
-                        grid: { color: 'rgba(0,48,87,0.07)' },
-                        ticks: { color: '#6b7a8d', font: { size: 11 } }
-                    },
-                    y: {
-                        grid: { color: 'rgba(0,48,87,0.07)' },
-                        ticks: { color: '#6b7a8d', font: { size: 11 } },
-                        beginAtZero: true
+// ── FETCH + PARSE ─────────────────────────────────────────────────────────────
+function fetchData() {
+    fetch(CSV_URL + '&t=' + Date.now(), { mode: 'cors' })
+        .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+        .then(csv => {
+            Papa.parse(csv, {
+                header: false, skipEmptyLines: true,
+                complete: res => {
+                    const rows = res.data.slice(2); // skip row1 (metadata) + row2 (headers)
+                    if (rows.length) {
+                        allNames = rows
+                            .map(r => (r[COL_NAME] || '').trim())
+                            .filter(Boolean);
+                        renderDashboard(rows);
+                        startCountdown();
+                        scheduleRefresh();
+                    } else {
+                        showError('No data rows found.');
                     }
                 }
-            }
-        });
-    }
+            });
+        })
+        .catch(() => showError('Data fetch failed.'));
+}
 
-    $(document).ready(initDashboard);
+function scheduleRefresh() {
+    clearTimeout(refreshTimer);
+    refreshTimer = setTimeout(() => fetchData(), REFRESH_MS);
+}
+
+function showError(msg) {
+    $('syncDot').classList.add('error');
+    setText('lastUpdate', msg);
+    $('loadingOverlay').classList.add('hidden');
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+function renderDashboard(rawRows) {
+    // Filter & sort
+    const rows = rawRows
+        .filter(r => r[COL_NAME] && !excluded.includes(r[COL_NAME].trim()))
+        .sort((a, b) => (parseFloat(b[COL_TOTAL]) || 0) - (parseFloat(a[COL_TOTAL]) || 0));
+
+    processedRows = rows;
+
+    // KPIs
+    const supSet  = new Set(rows.map(r => (r[COL_SUP] || '').trim()).filter(Boolean));
+    const totals  = rows.map(r => parseFloat(r[COL_TOTAL]) || 0);
+    const grand   = totals.reduce((a, b) => a + b, 0);
+    const avg     = totals.length ? Math.round(grand / totals.length) : 0;
+
+    setText('kpiAssociates', rows.length);
+    setText('kpiSupervisors', supSet.size + ' supervisors on floor');
+    setText('kpiTotal', grand.toLocaleString());
+    setText('kpiAvg', avg.toLocaleString());
+    setText('lastUpdate', 'Updated: ' + (rawRows[rawRows.length - 1]?.[0] || 'N/A'));
+
+    // Team totals for chart
+    const teamTotals = new Array(24).fill(0);
+    rows.forEach(r => {
+        for (let j = COL_H_START; j <= COL_H_END; j++) {
+            teamTotals[j - COL_H_START] += parseFloat(r[j]) || 0;
+        }
+    });
+
+    // Max hourly value for heat
+    let hourMax = 0;
+    rows.forEach(r => {
+        for (let j = COL_H_START; j <= COL_H_END; j++) hourMax = Math.max(hourMax, parseFloat(r[j]) || 0);
+    });
+
+    // Table header
+    let hdr = '<th>Rank</th><th class="left">Associate</th><th class="left">Supervisor</th>';
+    HOUR_LABELS.forEach(h => hdr += `<th>${h}</th>`);
+    hdr += '<th>Total</th>';
+    $('tableHeader').innerHTML = hdr;
+
+    // Table body
+    let html = '';
+    rows.forEach((row, i) => {
+        const hrs = [];
+        for (let j = COL_H_START; j <= COL_H_END; j++) hrs.push(parseFloat(row[j]) || 0);
+
+        const rowCls   = i === 0 ? 'rank-1-row' : i === 1 ? 'rank-2-row' : i === 2 ? 'rank-3-row' : '';
+        const badgeCls = i === 0 ? 'rb-1' : i === 1 ? 'rb-2' : i === 2 ? 'rb-3' : 'rb-n';
+        const medal    = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1);
+
+        let cells = '';
+        hrs.forEach(v => {
+            const hc = heatClass(v, hourMax);
+            cells += v === 0
+                ? `<td class="zero">–</td>`
+                : `<td class="${hc}">${v}</td>`;
+        });
+
+        html += `<tr class="${rowCls}">
+            <td><span class="rank-badge ${badgeCls}">${medal}</span></td>
+            <td class="left name-cell">${row[COL_NAME]}</td>
+            <td class="left sup-cell">${(row[COL_SUP] || '—').trim()}</td>
+            ${cells}
+            <td class="total-cell">${row[COL_TOTAL] || 0}</td>
+        </tr>`;
+    });
+    $('tableBody').innerHTML = html;
+
+    // Chart
+    renderChart(teamTotals);
+
+    // Restart auto-scroll
+    startScroll();
+
+    $('loadingOverlay').classList.add('hidden');
+}
+
+// ── CHART ─────────────────────────────────────────────────────────────────────
+function renderChart(data) {
+    const ctx = $('productivityChart').getContext('2d');
+    if (myChart) myChart.destroy();
+
+    const maxVal = Math.max(...data);
+    const grad = ctx.createLinearGradient(0, 0, 0, 300);
+    grad.addColorStop(0, 'rgba(200,16,46,0.2)');
+    grad.addColorStop(1, 'rgba(200,16,46,0.0)');
+
+    myChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: HOUR_LABELS,
+            datasets: [{
+                data: data,
+                borderColor: '#C8102E',
+                borderWidth: 3,
+                backgroundColor: grad,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: data.map(v => v === maxVal ? '#003057' : '#C8102E'),
+                pointBorderColor:     data.map(v => v === maxVal ? '#003057' : '#C8102E'),
+                pointRadius:      data.map(v => v === maxVal ? 8 : 4),
+                pointHoverRadius: 0,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 600 },
+            interaction: { mode: 'none' },
+            plugins: {
+                legend:  { display: false },
+                tooltip: { enabled: false }
+            },
+            scales: {
+                x: {
+                    grid:  { color: 'rgba(0,48,87,0.07)' },
+                    ticks: { color: '#5e6e82', font: { size: 11 } }
+                },
+                y: {
+                    grid:  { color: 'rgba(0,48,87,0.07)' },
+                    ticks: { color: '#5e6e82', font: { size: 11 } },
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+// ── AUTO-SCROLL ───────────────────────────────────────────────────────────────
+function startScroll() {
+    clearInterval(scrollTimer);
+    scrollOffset = 0;
+    applyScroll();
+    scrollTimer = setInterval(() => {
+        const rowCount = processedRows.length;
+        if (rowCount <= SCROLL_ROWS) return;
+        scrollOffset += SCROLL_ROWS;
+        if (scrollOffset >= rowCount) scrollOffset = 0;
+        applyScroll();
+    }, SCROLL_MS);
+}
+
+function applyScroll() {
+    const rows     = $('tableBody').querySelectorAll('tr');
+    const total    = rows.length;
+    if (total === 0) return;
+
+    const end      = Math.min(scrollOffset + SCROLL_ROWS, total);
+    const showFrom = scrollOffset;
+    const showTo   = end - 1;
+
+    rows.forEach((tr, i) => {
+        tr.style.display = (i >= showFrom && i <= showTo) ? '' : 'none';
+        tr.classList.toggle('highlight', i >= showFrom && i <= showTo);
+    });
+
+    // progress bar
+    const pct = total <= SCROLL_ROWS ? 100 : Math.round((end / total) * 100);
+    $('progressFill').style.width = pct + '%';
+    setText('scrollLabel', `${showFrom + 1} – ${end} of ${total}`);
+
+    // scroll the table container to top for new "page"
+    $('tableScroll').scrollTop = 0;
+}
+
+// ── SETTINGS MODAL ────────────────────────────────────────────────────────────
+function openModal() {
+    renderExcludedList();
+    $('modalOverlay').classList.add('open');
+    clearInterval(scrollTimer); // pause scroll while settings open
+}
+
+function closeModal() {
+    $('modalOverlay').classList.remove('open');
+    startScroll(); // resume
+}
+
+function renderExcludedList() {
+    const list = $('excludedList');
+    list.innerHTML = '';
+    excluded.forEach(name => {
+        const div = document.createElement('div');
+        div.className = 'excluded-item';
+        div.innerHTML = `<span>${name}</span><button class="remove-btn" data-name="${name}">✕</button>`;
+        list.appendChild(div);
+    });
+    list.querySelectorAll('.remove-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            excluded = excluded.filter(n => n !== btn.dataset.name);
+            renderExcludedList();
+        });
+    });
+}
+
+function addExclusion() {
+    const val = $('addInput').value.trim();
+    if (val && !excluded.includes(val)) {
+        excluded.push(val);
+        renderExcludedList();
+    }
+    $('addInput').value = '';
+    $('acList').classList.remove('open');
+}
+
+// Autocomplete
+$('addInput').addEventListener('input', function () {
+    const q = this.value.trim().toLowerCase();
+    const ac = $('acList');
+    if (!q) { ac.classList.remove('open'); return; }
+    const matches = allNames.filter(n => n.toLowerCase().includes(q) && !excluded.includes(n)).slice(0, 8);
+    if (!matches.length) { ac.classList.remove('open'); return; }
+    ac.innerHTML = matches.map(n => `<div class="ac-item">${n}</div>`).join('');
+    ac.classList.add('open');
+    ac.querySelectorAll('.ac-item').forEach(item => {
+        item.addEventListener('click', () => {
+            $('addInput').value = item.textContent;
+            ac.classList.remove('open');
+        });
+    });
+});
+
+document.addEventListener('click', e => {
+    if (!e.target.closest('.autocomplete-wrap')) $('acList').classList.remove('open');
+});
+
+$('addInput').addEventListener('keydown', e => { if (e.key === 'Enter') addExclusion(); });
+$('addBtn').addEventListener('click', addExclusion);
+$('settingsBtn').addEventListener('click', openModal);
+$('modalClose').addEventListener('click', closeModal);
+$('applyBtn').addEventListener('click', () => {
+    closeModal();
+    // Re-render with updated exclusions if data is loaded
+    if (processedRows.length > 0 || allNames.length > 0) fetchData();
+});
+$('modalOverlay').addEventListener('click', e => {
+    if (e.target === $('modalOverlay')) closeModal();
+});
+
+// ── BOOT ──────────────────────────────────────────────────────────────────────
+fetchData();
 </script>
 </body>
 </html>
