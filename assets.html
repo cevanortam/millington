@@ -418,7 +418,7 @@
 ════════════════════════════════════════════════ -->
 <script>
   const CONFIG = {
-    scriptUrl: 'https://script.google.com/macros/s/AKfycby1Xm4J1IIn7nZRTC31bMSjZGZpsnFzrAc_UbYZuSbipVagFMpRMyQZRBoo-Ri-2gw5XA/exec',
+    scriptUrl: 'https://script.google.com/macros/s/AKfycbzwP-sRxsOyqCiFIENIjLCiibUJ4e5Cfano9e9cwKMlRvi413mNQ6KLPvDCyAEqsetHIg/exec',
     secret:    'Ceva3820'
   };
 </script>
@@ -689,10 +689,17 @@ async function loadAll() {
 // TIME HELPERS
 // ═══════════════════════════════════════════════════
 function toMs(v) {
-  if (!v && v !== 0) return null;
+  if (v == null || v === '') return null;
   if (typeof v === 'number') return v;
-  const n = Number(v);
-  return isNaN(n) ? null : n;
+  if (typeof v === 'string') {
+    // Try as a plain number first (e.g. "1746000000000")
+    const n = Number(v);
+    if (!isNaN(n) && n > 1000000000000) return n;
+    // Try as a date string (fallback if Sheets serialized it)
+    const d = new Date(v);
+    if (!isNaN(d.getTime())) return d.getTime();
+  }
+  return null;
 }
 
 function fmtDuration(ms) {
