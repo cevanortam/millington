@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Warehouse Asset Manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #f5f4f0;
+    --surface: #ffffff;
+    --surface2: #f0efe9;
+    --border: rgba(0,0,0,0.1);
+    --border-med: rgba(0,0,0,0.18);
+    --text: #1a1a18;
+    --text-muted: #6b6a64;
+    --text-hint: #9e9d96;
+    --accent: #e8580c;
+    --accent-bg: #fdf0e8;
+    --green: #1a7a52;
+    --green-bg: #e8f5ee;
+    --amber: #9a6200;
+    --amber-bg: #fdf5e0;
+    --blue: #1a5c9e;
+    --blue-bg: #e8f0fb;
+    --red: #a02525;
+    --red-bg: #fbeaea;
+    --radius: 8px;
+    --radius-lg: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; line-height: 1.5; }
+  code, .mono { font-family: 'DM Mono', monospace; }
+
+  /* Layout */
+  .app-shell { display: flex; flex-direction: column; min-height: 100vh; }
+  .topbar { background: var(--text); color: #fff; padding: 0 24px; display: flex; align-items: center; gap: 16px; height: 52px; }
+  .topbar-logo { font-size: 15px; font-weight: 600; letter-spacing: -0.02em; flex: 1; }
+  .topbar-logo span { color: var(--accent); }
+  .topbar-pill { font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 20px; background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.8); }
+  .topbar-status { width: 8px; height: 8px; border-radius: 50%; background: #888; transition: background 0.3s; }
+  .topbar-status.ok { background: #4caf50; }
+  .topbar-status.err { background: #f44336; }
+  .topbar-status.loading { background: var(--amber); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  .nav-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; gap: 0; overflow-x: auto; }
+  .nav-btn { font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; padding: 13px 16px; border: none; background: none; cursor: pointer; color: var(--text-muted); border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color 0.15s; white-space: nowrap; }
+  .nav-btn.active { color: var(--text); border-bottom-color: var(--accent); }
+  .nav-btn:hover:not(.active) { color: var(--text); }
+
+  .main { flex: 1; padding: 24px; max-width: 1100px; margin: 0 auto; width: 100%; }
+
+  /* Sections */
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* Cards */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; margin-bottom: 16px; box-shadow: var(--shadow); }
+  .card-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); margin-bottom: 14px; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .two-col, .three-col { grid-template-columns: 1fr; } }
+
+  /* Metrics */
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+  @media (max-width: 700px) { .metrics { grid-template-columns: repeat(2, 1fr); } }
+  .metric { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; box-shadow: var(--shadow); }
+  .metric-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 6px; }
+  .metric-value { font-size: 26px; font-weight: 600; letter-spacing: -0.03em; line-height: 1; }
+  .metric-sub { font-size: 11px; color: var(--text-hint); margin-top: 4px; }
+
+  /* Forms */
+  .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+  .form-group label { font-size: 12px; font-weight: 500; color: var(--text-muted); }
+  input[type=text], input[type=date], select, input[type=password] {
+    font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 8px 11px;
+    border: 1px solid var(--border-med); border-radius: var(--radius);
+    background: var(--bg); color: var(--text); width: 100%;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  input:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(232,88,12,0.12); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-row.three { grid-template-columns: 1fr 1fr 1fr; }
+  @media (max-width: 600px) { .form-row, .form-row.three { grid-template-columns: 1fr; } }
+
+  /* Buttons */
+  .btn { font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; padding: 8px 16px;
+    border: 1px solid var(--border-med); border-radius: var(--radius); cursor: pointer;
+    background: var(--surface); color: var(--text); transition: all 0.12s; white-space: nowrap; }
+  .btn:hover { background: var(--surface2); }
+  .btn:active { transform: scale(0.98); }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn-primary:hover { background: #c94a08; border-color: #c94a08; }
+  .btn-danger { color: var(--red); border-color: var(--red); }
+  .btn-danger:hover { background: var(--red-bg); }
+  .btn-success { color: var(--green); border-color: var(--green); }
+  .btn-success:hover { background: var(--green-bg); }
+  .btn-sm { font-size: 11px; padding: 4px 10px; }
+  .btn-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 4px; }
+
+  /* Badges */
+  .badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px; }
+  .badge-out { background: var(--accent-bg); color: var(--accent); }
+  .badge-in { background: var(--green-bg); color: var(--green); }
+  .badge-warn { background: var(--amber-bg); color: var(--amber); }
+  .badge-cat { background: var(--surface2); color: var(--text-muted); }
+  .badge-info { background: var(--blue-bg); color: var(--blue); }
+
+  /* Alerts */
+  .alert { padding: 10px 14px; border-radius: var(--radius); font-size: 13px; margin-bottom: 12px; border: 1px solid; }
+  .alert-error { background: var(--red-bg); color: var(--red); border-color: rgba(160,37,37,0.25); }
+  .alert-success { background: var(--green-bg); color: var(--green); border-color: rgba(26,122,82,0.25); }
+  .alert-info { background: var(--blue-bg); color: var(--blue); border-color: rgba(26,92,158,0.25); }
+  .alert-warn { background: var(--amber-bg); color: var(--amber); border-color: rgba(154,98,0,0.25); }
+
+  /* Flash */
+  #flashBar { position: fixed; top: 0; left: 0; right: 0; z-index: 999; display: none; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border); background: var(--surface2); }
+  td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--text-hint); font-size: 13px; }
+
+  /* Search row */
+  .search-row { display: flex; gap: 8px; margin-bottom: 14px; }
+  .search-row input { flex: 1; }
+
+  /* Utilization bars */
+  .util-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .util-label { font-size: 12px; width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); }
+  .util-track { flex: 1; background: var(--surface2); border-radius: 4px; height: 8px; overflow: hidden; }
+  .util-fill { height: 100%; border-radius: 4px; transition: width 0.4s ease; }
+  .util-pct { font-size: 12px; font-weight: 500; width: 50px; text-align: right; color: var(--text-muted); }
+
+  /* Suggest box */
+  .suggest-box { background: var(--blue-bg); border: 1px solid rgba(26,92,158,0.25); border-radius: var(--radius-lg); padding: 14px 16px; margin-bottom: 16px; display: none; }
+  .suggest-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--blue); margin-bottom: 4px; }
+  .suggest-device { font-size: 16px; font-weight: 600; color: #0d3d6e; }
+  .suggest-reason { font-size: 12px; color: var(--blue); margin-top: 2px; }
+
+  /* Badge list */
+  .badge-entry { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--surface2); border-radius: var(--radius); margin-bottom: 6px; }
+  .badge-entry .be-name { flex: 1; font-weight: 500; font-size: 13px; }
+  .be-id { font-size: 11px; color: var(--text-muted); font-family: 'DM Mono', monospace; }
+
+  /* Config notice */
+  #configNotice { position: fixed; inset: 0; background: rgba(26,26,24,0.85); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+  .config-modal { background: var(--surface); border-radius: var(--radius-lg); padding: 32px; max-width: 480px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+  .config-modal h2 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+  .config-modal p { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.6; }
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════
+     CONFIGURATION — fill in before uploading
+═════════════════════════════════════════════════ -->
+<script>
+  const CONFIG = {
+    scriptUrl: 'https://script.google.com/macros/s/AKfycbzqGXaVcwmhziHBAosaQ6hKlnLxSAJg_MlHZAbBtrVcc4b2GK37uKcM1x87JMQ_6-NLIQ/exec',
+    secret:    'Ceva3820'
+  };
+</script>
+<!-- ════════════════════════════════════════════ -->
+
+<div id="flashBar"></div>
+
+<!-- First-run config notice if placeholders not replaced -->
+<div id="configNotice" style="display:none">
+  <div class="config-modal">
+    <h2>⚙️ Setup Required</h2>
+    <p>Open <code>index.html</code> in a text editor and replace the two placeholder values near the top of the file:<br><br>
+    <strong>scriptUrl</strong> — your Google Apps Script Web App URL<br>
+    <strong>secret</strong> — the secret key you set in the Apps Script<br><br>
+    Then save the file and re-upload it to GitHub.</p>
+    <a href="https://github.com" target="_blank" class="btn btn-primary">Open GitHub</a>
+  </div>
+</div>
+
+<div class="app-shell">
+  <div class="topbar">
+    <div class="topbar-logo">Warehouse <span>Asset</span> Manager</div>
+    <div class="topbar-pill" id="outPill">0 out</div>
+    <div class="topbar-pill" id="devPill">0 devices</div>
+    <div class="topbar-status" id="connStatus" title="Connection status"></div>
+  </div>
+
+  <div class="nav-bar">
+    <button class="nav-btn active" onclick="nav('checkout')">Check Out</button>
+    <button class="nav-btn" onclick="nav('checkin')">Check In</button>
+    <button class="nav-btn" onclick="nav('devices')">Devices</button>
+    <button class="nav-btn" onclick="nav('dashboard')">Dashboard</button>
+    <button class="nav-btn" onclick="nav('settings')">Settings</button>
+  </div>
+
+  <div class="main">
+
+    <!-- ── CHECK OUT ─────────────────────────── -->
+    <div class="section active" id="sec-checkout">
+      <div class="suggest-box" id="suggestBox">
+        <div class="suggest-label">Suggested device</div>
+        <div class="suggest-device" id="suggestSerial"></div>
+        <div class="suggest-reason" id="suggestReason"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Check out a device</div>
+        <div id="coAlert"></div>
+        <div class="form-row three">
+          <div class="form-group">
+            <label>Associate name</label>
+            <input id="coAssoc" type="text" placeholder="Full name" list="assocDatalist" autocomplete="off" />
+            <datalist id="assocDatalist"></datalist>
+          </div>
+          <div class="form-group">
+            <label>Category</label>
+            <select id="coCat" onchange="onCatChange()"><option value="">Select...</option></select>
+          </div>
+          <div class="form-group">
+            <label>Serial number</label>
+            <input id="coSerial" type="text" placeholder="Type or scan..." autocomplete="off" />
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="doCheckout()" id="coBtn">Check Out</button>
+          <button class="btn" onclick="clearCoForm()">Clear</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Currently checked out</div>
+        <div class="table-wrap" id="activeTable"></div>
+      </div>
+    </div>
+
+    <!-- ── CHECK IN ──────────────────────────── -->
+    <div class="section" id="sec-checkin">
+      <div class="card">
+        <div class="card-title">Return a device</div>
+        <div id="ciAlert"></div>
+        <div class="search-row">
+          <input type="text" id="ciSearch" placeholder="Search by serial number or associate name..." oninput="renderCiResults()" />
+        </div>
+        <div class="table-wrap" id="ciResults"></div>
+      </div>
+    </div>
+
+    <!-- ── DEVICES ───────────────────────────── -->
+    <div class="section" id="sec-devices">
+      <div class="two-col" style="margin-bottom:16px">
+        <div class="card" style="margin-bottom:0">
+          <div class="card-title">Register new device</div>
+          <div id="devAlert"></div>
+          <div class="form-group">
+            <label>Serial number</label>
+            <input id="devSerial" type="text" placeholder="Unique serial / asset tag" />
+          </div>
+          <div class="form-group">
+            <label>Category</label>
+            <select id="devCat"><option value="">Select...</option></select>
+          </div>
+          <div class="form-group">
+            <label>Label / nickname (optional)</label>
+            <input id="devLabel" type="text" placeholder="e.g. Scanner 01" />
+          </div>
+          <button class="btn btn-primary" onclick="registerDevice()" id="devRegBtn">Register Device</button>
+        </div>
+        <div class="card" style="margin-bottom:0">
+          <div class="card-title">Inventory by category</div>
+          <div id="invSummary"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">All devices</div>
+        <div class="search-row">
+          <input type="text" id="devSearch" placeholder="Search serial or label..." oninput="renderDevList()" />
+          <select id="devFilterCat" onchange="renderDevList()" style="width:160px"><option value="">All categories</option></select>
+        </div>
+        <div class="table-wrap" id="devList"></div>
+      </div>
+    </div>
+
+    <!-- ── DASHBOARD ─────────────────────────── -->
+    <div class="section" id="sec-dashboard">
+      <div class="metrics" id="dashMetrics"></div>
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title">Device utilization (by checkout time)</div>
+          <div id="utilChart"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Recent history</div>
+          <div class="table-wrap" id="histTable"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Export report</div>
+        <div class="form-row" style="margin-bottom:12px;align-items:flex-end">
+          <div class="form-group" style="margin-bottom:0">
+            <label>Date</label>
+            <input type="date" id="exportDate" oninput="renderExportPreview()" />
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label>Category filter</label>
+            <select id="exportCat" onchange="renderExportPreview()"><option value="">All categories</option></select>
+          </div>
+          <button class="btn btn-primary" onclick="exportCSV()">Export CSV ↓</button>
+        </div>
+        <div id="exportPreview"></div>
+      </div>
+    </div>
+
+    <!-- ── SETTINGS ──────────────────────────── -->
+    <div class="section" id="sec-settings">
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title">Device categories</div>
+          <div class="search-row" style="margin-bottom:12px">
+            <input type="text" id="newCatInput" placeholder="New category name..." />
+            <button class="btn btn-primary" onclick="addCategory()">Add</button>
+          </div>
+          <div id="catList"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Badge registration</div>
+          <div class="alert alert-info" style="margin-bottom:12px;font-size:12px">
+            Register badge IDs to associates. When a badge reader is connected, it will auto-fill the name on checkout.
+          </div>
+          <div class="form-row" style="margin-bottom:10px">
+            <div class="form-group" style="margin-bottom:0">
+              <label>Associate name</label>
+              <input type="text" id="badgeName" placeholder="Full name" />
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label>Badge ID</label>
+              <input type="text" id="badgeId" placeholder="Scan or type..." />
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="registerBadge()" style="margin-bottom:14px">Register Badge</button>
+          <div id="badgeList"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Connection</div>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px">Tests the connection to your Google Apps Script backend.</p>
+        <button class="btn" onclick="testConnection()">Test Connection</button>
+        <div id="connTestResult" style="margin-top:10px"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+let S = {
+  categories: [],
+  devices: [],
+  checkouts: [],
+  history: [],
+  badges: [],
+  loading: false
+};
+
+// ═══════════════════════════════════════════
+// API
+// ═══════════════════════════════════════════
+async function api(action, extra = {}) {
+  setStatus('loading');
+  try {
+    const res = await fetch(CONFIG.scriptUrl, {
+      method: 'POST',
+      body: JSON.stringify({ secret: CONFIG.secret, action, ...extra })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    setStatus('ok');
+    return data;
+  } catch (e) {
+    setStatus('err');
+    throw e;
+  }
+}
+
+async function loadAll() {
+  try {
+    const data = await api('getAll');
+    S.checkouts  = data.checkouts  || [];
+    S.history    = data.history    || [];
+    S.categories = data.categories || ['Scanner'];
+    S.devices    = data.devices    || [];
+    S.badges     = data.badges     || [];
+    render();
+  } catch(e) {
+    flash('Could not connect to Google Sheets. Check your configuration.', 'error');
+  }
+}
+
+// ═══════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════
+function ts(date) {
+  if (!date) return Date.now();
+  return typeof date === 'number' ? date : new Date(date).getTime();
+}
+function now() { return Date.now(); }
+
+function fmtDuration(ms) {
+  if (!ms || ms < 0) return '—';
+  const mins = Math.floor(ms / 60000);
+  if (mins < 60) return mins + 'm';
+  const hrs = Math.floor(mins / 60); const m = mins % 60;
+  if (hrs < 24) return hrs + 'h ' + m + 'm';
+  const d = Math.floor(hrs / 24); const h = hrs % 24;
+  return d + 'd ' + h + 'h';
+}
+function fmtDate(v) {
+  if (!v) return '—';
+  return new Date(typeof v === 'number' ? v : v).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+function fmtTime(v) {
+  if (!v) return '';
+  return new Date(typeof v === 'number' ? v : v).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+}
+function fmtDateTimeLocal(v) {
+  if (!v) return '';
+  const d = new Date(typeof v === 'number' ? v : v);
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' ' + d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+}
+function getCheckoutMs(c) {
+  return c.CheckoutTimestamp ? ts(c.CheckoutTimestamp) : null;
+}
+function getCheckinMs(h) {
+  return h.CheckinTimestamp ? ts(h.CheckinTimestamp) : null;
+}
+function getDuration(h) {
+  const co = getCheckoutMs(h); const ci = getCheckinMs(h);
+  if (!co || !ci) return null;
+  return ci - co;
+}
+
+function setStatus(s) {
+  const el = document.getElementById('connStatus');
+  el.className = 'topbar-status ' + s;
+}
+
+function flash(msg, type = 'success') {
+  const bar = document.getElementById('flashBar');
+  bar.innerHTML = `<div class="alert alert-${type}" style="border-radius:0;margin:0;border-left:none;border-right:none">${msg}</div>`;
+  bar.style.display = 'block';
+  clearTimeout(window._flashT);
+  window._flashT = setTimeout(() => { bar.style.display = 'none'; }, 3500);
+}
+
+function setAlert(id, msg, type = 'error') {
+  const el = document.getElementById(id);
+  el.innerHTML = msg ? `<div class="alert alert-${type}">${msg}</div>` : '';
+}
+
+// ═══════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════
+const NAV_MAP = { checkout:'Check Out', checkin:'Check In', devices:'Devices', dashboard:'Dashboard', settings:'Settings' };
+function nav(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('sec-' + id).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent.trim() === NAV_MAP[id]);
+  });
+  if (id === 'dashboard') renderDashboard();
+  if (id === 'checkin') renderCiResults();
+}
+
+// ═══════════════════════════════════════════
+// POPULATE SELECTS
+// ═══════════════════════════════════════════
+function populateSelects() {
+  ['coCat','devCat','devFilterCat','exportCat'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const cur = el.value;
+    const isFilter = id === 'devFilterCat' || id === 'exportCat';
+    el.innerHTML = isFilter ? '<option value="">All categories</option>' : '<option value="">Select...</option>';
+    S.categories.forEach(c => {
+      const o = document.createElement('option'); o.value = c; o.textContent = c; el.appendChild(o);
+    });
+    if (cur) el.value = cur;
+  });
+  const dl = document.getElementById('assocDatalist');
+  const names = [...new Set([...S.history.map(h => h.Associate), ...S.badges.map(b => b.Name)])].filter(Boolean).sort();
+  dl.innerHTML = names.map(n => `<option value="${n}">`).join('');
+}
+
+// ═══════════════════════════════════════════
+// SUGGEST
+// ═══════════════════════════════════════════
+function onCatChange() {
+  const cat = document.getElementById('coCat').value;
+  if (!cat) { document.getElementById('suggestBox').style.display = 'none'; return; }
+  const available = S.devices.filter(d => d.Category === cat && !S.checkouts.find(c => c.Serial === d.Serial));
+  if (!available.length) { document.getElementById('suggestBox').style.display = 'none'; return; }
+  const scored = available.map(d => {
+    const hist = S.history.filter(h => h.Serial === d.Serial);
+    const totalMs = hist.reduce((a, h) => a + (getDuration(h) || 0), 0);
+    return { d, uses: hist.length, totalMs };
+  }).sort((a, b) => a.totalMs - b.totalMs);
+  const pick = scored[0];
+  document.getElementById('suggestSerial').textContent = pick.d.Serial + (pick.d.Label ? ' — ' + pick.d.Label : '');
+  document.getElementById('suggestReason').textContent = pick.uses === 0 ? 'Never used — bring it into rotation' : `Least used: ${pick.uses} checkout${pick.uses!==1?'s':''}, ${fmtDuration(pick.totalMs)} total`;
+  document.getElementById('coSerial').value = pick.d.Serial;
+  document.getElementById('suggestBox').style.display = 'block';
+}
+
+// ═══════════════════════════════════════════
+// CHECK OUT
+// ═══════════════════════════════════════════
+async function doCheckout() {
+  const assoc  = document.getElementById('coAssoc').value.trim();
+  const cat    = document.getElementById('coCat').value;
+  const serial = document.getElementById('coSerial').value.trim().toUpperCase();
+  setAlert('coAlert', '');
+  if (!assoc || !cat || !serial) { setAlert('coAlert', 'Please fill in all three fields.'); return; }
+  const dev = S.devices.find(d => d.Serial === serial);
+  if (!dev) { setAlert('coAlert', `Serial ${serial} is not registered. Add it in the Devices tab first.`); return; }
+  if (dev.Category !== cat) { setAlert('coAlert', `${serial} is a ${dev.Category}, not a ${cat}.`); return; }
+  if (S.checkouts.find(c => c.Serial === serial)) { setAlert('coAlert', 'This device is already checked out.'); return; }
+  if (S.checkouts.find(c => c.Associate?.toLowerCase() === assoc.toLowerCase() && c.Category === cat)) {
+    setAlert('coAlert', `${assoc} already has a ${cat} checked out. They must return it first.`); return;
+  }
+  const coBtn = document.getElementById('coBtn');
+  coBtn.disabled = true; coBtn.innerHTML = '<span class="spinner"></span>Saving...';
+  const nowMs = now();
+  const coTimeStr = fmtDateTimeLocal(nowMs);
+  try {
+    await api('checkout', { associate: assoc, serial, category: cat, label: dev.Label || '', checkoutTime: coTimeStr, checkoutTimestamp: nowMs });
+    S.checkouts.push({ Associate: assoc, Serial: serial, Category: cat, Label: dev.Label || '', CheckoutTime: coTimeStr, CheckoutTimestamp: nowMs });
+    clearCoForm(); renderActiveTable(); updatePills();
+    flash(`${serial} checked out to ${assoc}`);
+  } catch(e) { setAlert('coAlert', 'Error saving to Google Sheets: ' + e.message); }
+  coBtn.disabled = false; coBtn.textContent = 'Check Out';
+}
+
+function clearCoForm() {
+  document.getElementById('coAssoc').value = '';
+  document.getElementById('coCat').value = '';
+  document.getElementById('coSerial').value = '';
+  document.getElementById('coAlert').innerHTML = '';
+  document.getElementById('suggestBox').style.display = 'none';
+}
+
+function renderActiveTable() {
+  const el = document.getElementById('activeTable');
+  if (!S.checkouts.length) { el.innerHTML = '<div class="empty-state">No devices currently checked out.</div>'; return; }
+  const nowMs = now();
+  el.innerHTML = `<table><thead><tr><th>Associate</th><th>Serial</th><th>Category</th><th>Label</th><th>Checked out</th><th>Duration</th><th>Status</th></tr></thead><tbody>`
+    + S.checkouts.map(c => {
+      const coMs = getCheckoutMs(c);
+      const dur = coMs ? nowMs - coMs : null;
+      const long = dur && dur > 28800000;
+      return `<tr>
+        <td><strong>${c.Associate}</strong></td>
+        <td><code class="mono" style="font-size:12px">${c.Serial}</code></td>
+        <td><span class="badge badge-cat">${c.Category}</span></td>
+        <td style="color:var(--text-muted);font-size:12px">${c.Label||'—'}</td>
+        <td style="font-size:12px;color:var(--text-muted)">${c.CheckoutTime||'—'}</td>
+        <td><strong>${dur ? fmtDuration(dur) : '—'}</strong></td>
+        <td><span class="badge ${long?'badge-warn':'badge-out'}">${long?'Long checkout':'Out'}</span></td>
+      </tr>`;
+    }).join('') + '</tbody></table>';
+}
+
+// ═══════════════════════════════════════════
+// CHECK IN
+// ═══════════════════════════════════════════
+function renderCiResults() {
+  const q = document.getElementById('ciSearch').value.trim().toLowerCase();
+  const el = document.getElementById('ciResults');
+  let rows = S.checkouts;
+  if (q) rows = rows.filter(c => c.Serial?.toLowerCase().includes(q) || c.Associate?.toLowerCase().includes(q));
+  if (!rows.length) { el.innerHTML = `<div class="empty-state">${q ? 'No matching checkouts.' : 'No devices currently checked out.'}</div>`; return; }
+  const nowMs = now();
+  el.innerHTML = `<table><thead><tr><th>Associate</th><th>Serial</th><th>Category</th><th>Checked out</th><th>Duration</th><th>Action</th></tr></thead><tbody>`
+    + rows.map(c => {
+      const dur = getCheckoutMs(c) ? nowMs - getCheckoutMs(c) : null;
+      return `<tr>
+        <td><strong>${c.Associate}</strong></td>
+        <td><code class="mono" style="font-size:12px">${c.Serial}</code></td>
+        <td><span class="badge badge-cat">${c.Category}</span></td>
+        <td style="font-size:12px;color:var(--text-muted)">${c.CheckoutTime||'—'}</td>
+        <td>${dur ? fmtDuration(dur) : '—'}</td>
+        <td><button class="btn btn-success btn-sm" onclick="doCheckin('${c.Serial}')">Check In</button></td>
+      </tr>`;
+    }).join('') + '</tbody></table>';
+}
+
+async function doCheckin(serial) {
+  const c = S.checkouts.find(x => x.Serial === serial);
+  if (!c) return;
+  const nowMs = now();
+  const ciTimeStr = fmtDateTimeLocal(nowMs);
+  const dur = getCheckoutMs(c) ? nowMs - getCheckoutMs(c) : null;
+  try {
+    await api('checkin', { serial, checkinTime: ciTimeStr, checkinTimestamp: nowMs });
+    S.history.push({ ...c, CheckinTime: ciTimeStr, CheckinTimestamp: nowMs });
+    S.checkouts = S.checkouts.filter(x => x.Serial !== serial);
+    renderCiResults(); renderActiveTable(); updatePills();
+    flash(`${serial} checked in${dur ? ' — out for ' + fmtDuration(dur) : ''}`);
+  } catch(e) { setAlert('ciAlert', 'Error saving: ' + e.message); }
+}
+
+// ═══════════════════════════════════════════
+// DEVICES
+// ═══════════════════════════════════════════
+async function registerDevice() {
+  const serial = document.getElementById('devSerial').value.trim().toUpperCase();
+  const cat    = document.getElementById('devCat').value;
+  const label  = document.getElementById('devLabel').value.trim();
+  setAlert('devAlert', '');
+  if (!serial || !cat) { setAlert('devAlert', 'Serial number and category are required.'); return; }
+  if (S.devices.find(d => d.Serial === serial)) { setAlert('devAlert', 'A device with this serial is already registered.'); return; }
+  const btn = document.getElementById('devRegBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Saving...';
+  try {
+    await api('addDevice', { serial, category: cat, label });
+    S.devices.push({ Serial: serial, Category: cat, Label: label });
+    document.getElementById('devSerial').value = '';
+    document.getElementById('devLabel').value = '';
+    renderDevList(); renderInvSummary(); updatePills();
+    flash(`${serial} registered as ${cat}`);
+  } catch(e) { setAlert('devAlert', 'Error saving: ' + e.message); }
+  btn.disabled = false; btn.textContent = 'Register Device';
+}
+
+function renderDevList() {
+  const q    = document.getElementById('devSearch').value.trim().toLowerCase();
+  const catF = document.getElementById('devFilterCat').value;
+  let devs = S.devices;
+  if (q) devs = devs.filter(d => d.Serial?.toLowerCase().includes(q) || (d.Label||'').toLowerCase().includes(q));
+  if (catF) devs = devs.filter(d => d.Category === catF);
+  const el = document.getElementById('devList');
+  if (!devs.length) { el.innerHTML = '<div class="empty-state">No devices found.</div>'; return; }
+  el.innerHTML = `<table><thead><tr><th>Serial</th><th>Label</th><th>Category</th><th>Status</th><th>Uses</th><th>Total time out</th></tr></thead><tbody>`
+    + devs.map(d => {
+      const isOut = !!S.checkouts.find(c => c.Serial === d.Serial);
+      const hist = S.history.filter(h => h.Serial === d.Serial);
+      const uses = hist.length;
+      const totalMs = hist.reduce((a,h) => a + (getDuration(h)||0), 0);
+      return `<tr>
+        <td><code class="mono" style="font-size:12px">${d.Serial}</code></td>
+        <td style="color:var(--text-muted);font-size:13px">${d.Label||'—'}</td>
+        <td><span class="badge badge-cat">${d.Category}</span></td>
+        <td><span class="badge ${isOut?'badge-out':'badge-in'}">${isOut?'Out':'Available'}</span></td>
+        <td style="font-size:13px">${uses}</td>
+        <td style="font-size:13px">${totalMs ? fmtDuration(totalMs) : '—'}</td>
+      </tr>`;
+    }).join('') + '</tbody></table>';
+}
+
+function renderInvSummary() {
+  const el = document.getElementById('invSummary');
+  if (!S.categories.length) { el.innerHTML = '<div class="empty-state">No categories yet.</div>'; return; }
+  el.innerHTML = S.categories.map(c => {
+    const total = S.devices.filter(d => d.Category === c).length;
+    const out   = S.checkouts.filter(x => x.Category === c).length;
+    const pct   = total ? Math.round(out / total * 100) : 0;
+    return `<div class="util-row">
+      <span class="util-label">${c}</span>
+      <div class="util-track"><div class="util-fill" style="width:${pct}%;background:var(--accent)"></div></div>
+      <span class="util-pct">${out}/${total}</span>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════
+function renderDashboard() {
+  const nowMs = now();
+  const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+  const todayHist = S.history.filter(h => { const co = getCheckoutMs(h); return co && co >= todayStart.getTime(); });
+  const avgDurMs = S.history.length ? S.history.reduce((a,h) => a+(getDuration(h)||0),0) / S.history.length : 0;
+
+  document.getElementById('dashMetrics').innerHTML = [
+    { label: 'Devices out', value: S.checkouts.length, sub: `of ${S.devices.length} total` },
+    { label: "Today's checkouts", value: todayHist.length, sub: 'since midnight' },
+    { label: 'Avg checkout time', value: avgDurMs ? fmtDuration(avgDurMs) : '—', sub: 'all time' },
+    { label: 'Total transactions', value: S.history.length, sub: 'all time' }
+  ].map(m => `<div class="metric"><div class="metric-label">${m.label}</div><div class="metric-value">${m.value}</div><div class="metric-sub">${m.sub}</div></div>`).join('');
+
+  // Utilization
+  const utilEl = document.getElementById('utilChart');
+  if (!S.devices.length) { utilEl.innerHTML = '<div class="empty-state">No devices registered yet.</div>'; }
+  else {
+    const devU = S.devices.map(d => {
+      const hist = S.history.filter(h => h.Serial === d.Serial);
+      const totalMs = hist.reduce((a,h) => a+(getDuration(h)||0), 0);
+      return { label: d.Label || d.Serial, totalMs };
+    }).sort((a,b) => b.totalMs - a.totalMs);
+    const maxMs = devU[0]?.totalMs || 1;
+    utilEl.innerHTML = devU.map(d => {
+      const pct   = maxMs > 0 ? Math.round(d.totalMs / maxMs * 100) : 0;
+      const color = pct > 70 ? 'var(--green)' : pct > 25 ? 'var(--amber)' : 'var(--accent)';
+      return `<div class="util-row">
+        <span class="util-label" title="${d.label}">${d.label}</span>
+        <div class="util-track"><div class="util-fill" style="width:${pct}%;background:${color}"></div></div>
+        <span class="util-pct">${d.totalMs ? fmtDuration(d.totalMs) : '—'}</span>
+      </div>`;
+    }).join('');
+  }
+
+  // History
+  const histEl = document.getElementById('histTable');
+  const recent = [...S.history].reverse().slice(0, 15);
+  if (!recent.length) { histEl.innerHTML = '<div class="empty-state">No history yet.</div>'; }
+  else histEl.innerHTML = `<table><thead><tr><th>Associate</th><th>Serial</th><th>Duration</th><th>Date</th></tr></thead><tbody>`
+    + recent.map(h => `<tr>
+      <td style="font-size:13px">${h.Associate}</td>
+      <td><code class="mono" style="font-size:11px">${h.Serial}</code></td>
+      <td style="font-size:13px">${fmtDuration(getDuration(h))}</td>
+      <td style="font-size:12px;color:var(--text-muted)">${fmtDate(getCheckoutMs(h))}</td>
+    </tr>`).join('') + '</tbody></table>';
+
+  // Set today's date as default for export
+  if (!document.getElementById('exportDate').value) {
+    document.getElementById('exportDate').value = new Date().toISOString().split('T')[0];
+    renderExportPreview();
+  }
+}
+
+function renderExportPreview() {
+  const dateVal = document.getElementById('exportDate').value;
+  const catVal  = document.getElementById('exportCat').value;
+  if (!dateVal) return;
+  const dayStart = new Date(dateVal + 'T00:00:00').getTime();
+  const dayEnd   = dayStart + 86400000;
+  let rows = S.history.filter(h => { const co = getCheckoutMs(h); return co && co >= dayStart && co < dayEnd; });
+  if (catVal) rows = rows.filter(h => h.Category === catVal);
+  const el = document.getElementById('exportPreview');
+  if (!rows.length) { el.innerHTML = `<div class="alert alert-info" style="margin-top:10px">No completed checkouts for ${fmtDate(dayStart)}${catVal?' ('+catVal+')':''}.</div>`; return; }
+  el.innerHTML = `<div style="font-size:11px;color:var(--text-muted);margin:10px 0 6px">${rows.length} record${rows.length!==1?'s':''}</div>
+    <div class="table-wrap"><table><thead><tr><th>Associate</th><th>Serial</th><th>Category</th><th>Check-out</th><th>Check-in</th><th>Duration</th></tr></thead><tbody>`
+    + rows.map(h => `<tr>
+      <td style="font-size:13px">${h.Associate}</td>
+      <td><code class="mono" style="font-size:11px">${h.Serial}</code></td>
+      <td><span class="badge badge-cat">${h.Category}</span></td>
+      <td style="font-size:12px">${h.CheckoutTime||'—'}</td>
+      <td style="font-size:12px">${h.CheckinTime||'—'}</td>
+      <td style="font-size:13px">${fmtDuration(getDuration(h))}</td>
+    </tr>`).join('') + '</tbody></table></div>';
+}
+
+function exportCSV() {
+  const dateVal = document.getElementById('exportDate').value;
+  const catVal  = document.getElementById('exportCat').value;
+  if (!dateVal) { flash('Please select a date.', 'warn'); return; }
+  const dayStart = new Date(dateVal + 'T00:00:00').getTime();
+  const dayEnd   = dayStart + 86400000;
+  let rows = S.history.filter(h => { const co = getCheckoutMs(h); return co && co >= dayStart && co < dayEnd; });
+  if (catVal) rows = rows.filter(h => h.Category === catVal);
+  const hdr = 'Associate,Serial,Category,Label,Check-out Date,Check-out Time,Check-in Date,Check-in Time,Duration (min)\n';
+  const lines = rows.map(h => {
+    const dur = getDuration(h);
+    return [
+      h.Associate, h.Serial, h.Category, h.Label||'',
+      fmtDate(getCheckoutMs(h)), fmtTime(getCheckoutMs(h)),
+      fmtDate(getCheckinMs(h)),  fmtTime(getCheckinMs(h)),
+      dur ? Math.round(dur/60000) : ''
+    ].map(v => `"${String(v||'').replace(/"/g,'""')}"`).join(',');
+  });
+  const csv  = hdr + lines.join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = `asset-report-${dateVal}${catVal?'-'+catVal:''}.csv`; a.click();
+  URL.revokeObjectURL(url);
+  flash(`Exported ${rows.length} record${rows.length!==1?'s':''}`);
+}
+
+// ═══════════════════════════════════════════
+// SETTINGS — Categories
+// ═══════════════════════════════════════════
+async function addCategory() {
+  const v = document.getElementById('newCatInput').value.trim();
+  if (!v) return;
+  if (S.categories.find(c => c.toLowerCase() === v.toLowerCase())) { flash('Category already exists.', 'warn'); return; }
+  try {
+    await api('addCategory', { category: v });
+    S.categories.push(v);
+    document.getElementById('newCatInput').value = '';
+    populateSelects(); renderCatList(); renderInvSummary();
+    flash(`Category "${v}" added`);
+  } catch(e) { flash('Error: ' + e.message, 'error'); }
+}
+
+async function deleteCategory(c) {
+  if (!confirm(`Delete category "${c}"? This cannot be undone.`)) return;
+  try {
+    await api('deleteCategory', { category: c });
+    S.categories = S.categories.filter(x => x !== c);
+    populateSelects(); renderCatList(); renderInvSummary();
+    flash(`Category "${c}" removed`);
+  } catch(e) { flash('Error: ' + e.message, 'error'); }
+}
+
+function renderCatList() {
+  const el = document.getElementById('catList');
+  if (!S.categories.length) { el.innerHTML = '<div class="empty-state">No categories yet.</div>'; return; }
+  el.innerHTML = S.categories.map(c => {
+    const count = S.devices.filter(d => d.Category === c).length;
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+      <span style="flex:1;font-weight:500;font-size:13px">${c}</span>
+      <span style="font-size:12px;color:var(--text-muted)">${count} device${count!==1?'s':''}</span>
+      ${count === 0 ? `<button class="btn btn-danger btn-sm" onclick="deleteCategory('${c}')">Remove</button>` : '<span style="font-size:11px;color:var(--text-hint);padding:4px 8px">in use</span>'}
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════
+// SETTINGS — Badges
+// ═══════════════════════════════════════════
+async function registerBadge() {
+  const name = document.getElementById('badgeName').value.trim();
+  const id   = document.getElementById('badgeId').value.trim();
+  if (!name || !id) { flash('Name and badge ID are required.', 'warn'); return; }
+  if (S.badges.find(b => b.BadgeID === id)) { flash('This badge ID is already registered.', 'warn'); return; }
+  try {
+    await api('addBadge', { name, id });
+    S.badges.push({ Name: name, BadgeID: id });
+    document.getElementById('badgeName').value = '';
+    document.getElementById('badgeId').value = '';
+    renderBadgeList(); populateSelects();
+    flash(`Badge registered for ${name}`);
+  } catch(e) { flash('Error: ' + e.message, 'error'); }
+}
+
+async function deleteBadge(id) {
+  try {
+    await api('deleteBadge', { id });
+    S.badges = S.badges.filter(b => b.BadgeID !== id);
+    renderBadgeList();
+    flash('Badge removed');
+  } catch(e) { flash('Error: ' + e.message, 'error'); }
+}
+
+function renderBadgeList() {
+  const el = document.getElementById('badgeList');
+  if (!S.badges.length) { el.innerHTML = '<div style="font-size:12px;color:var(--text-muted);padding:6px 0">No badges registered yet.</div>'; return; }
+  el.innerHTML = S.badges.map(b => `<div class="badge-entry">
+    <span class="be-name">${b.Name}</span>
+    <span class="be-id">${b.BadgeID}</span>
+    <button class="btn btn-danger btn-sm" onclick="deleteBadge('${b.BadgeID}')">✕</button>
+  </div>`).join('');
+}
+
+// ═══════════════════════════════════════════
+// SETTINGS — Connection test
+// ═══════════════════════════════════════════
+async function testConnection() {
+  const el = document.getElementById('connTestResult');
+  el.innerHTML = '<div class="alert alert-info">Testing...</div>';
+  try {
+    await api('getAll');
+    el.innerHTML = '<div class="alert alert-success">✓ Connected successfully to Google Sheets.</div>';
+  } catch(e) {
+    el.innerHTML = `<div class="alert alert-error">✗ Connection failed: ${e.message}</div>`;
+  }
+}
+
+// ═══════════════════════════════════════════
+// TOPBAR PILLS
+// ═══════════════════════════════════════════
+function updatePills() {
+  document.getElementById('outPill').textContent = S.checkouts.length + ' out';
+  document.getElementById('devPill').textContent = S.devices.length + ' devices';
+}
+
+// ═══════════════════════════════════════════
+// FULL RENDER
+// ═══════════════════════════════════════════
+function render() {
+  populateSelects();
+  renderActiveTable();
+  renderCiResults();
+  renderDevList();
+  renderInvSummary();
+  renderCatList();
+  renderBadgeList();
+  updatePills();
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+(function init() {
+  if (CONFIG.scriptUrl === 'YOUR_APPS_SCRIPT_URL_HERE') {
+    document.getElementById('configNotice').style.display = 'flex';
+    return;
+  }
+  setStatus('loading');
+  loadAll();
+  setInterval(loadAll, 60000);
+})();
+</script>
+</body>
+</html>
