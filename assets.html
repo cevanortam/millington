@@ -60,12 +60,19 @@
   }
   .topbar-brand { display: flex; align-items: center; gap: 12px; flex: 1; }
   .topbar-logo-block {
-    background: var(--red);
-    color: var(--white);
-    font-family: 'Barlow Condensed', sans-serif;
-    font-weight: 700; font-size: 18px;
-    letter-spacing: 0.05em;
-    padding: 4px 10px; border-radius: 3px; line-height: 1;
+    background: var(--white);
+    border-radius: 4px;
+    padding: 4px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 36px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+  }
+  .topbar-logo-block img {
+    height: 26px;
+    width: auto;
+    display: block;
   }
   .topbar-title {
     font-family: 'Barlow Condensed', sans-serif;
@@ -320,7 +327,13 @@
 <div class="app-shell">
   <div class="topbar">
     <div class="topbar-brand">
-      <div class="topbar-logo-block">CEVA</div>
+      <div class="topbar-logo-block">
+        <img
+          src="https://www.freelogovectors.net/wp-content/uploads/2022/07/ceva-logistics-logo-freelogovectors.net_.png"
+          alt="CEVA Logistics"
+          onerror="this.parentElement.innerHTML='<span style=\'font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:18px;color:#0a1f3d;letter-spacing:0.05em\'>CEVA</span>'"
+        />
+      </div>
       <div class="topbar-divider"></div>
       <div class="topbar-title">Asset Tracker</div>
     </div>
