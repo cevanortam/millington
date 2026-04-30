@@ -58,46 +58,31 @@
     z-index: 100;
     box-shadow: 0 2px 12px rgba(10,31,61,0.25);
   }
-  .topbar-brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex: 1;
-  }
+  .topbar-brand { display: flex; align-items: center; gap: 12px; flex: 1; }
   .topbar-logo-block {
     background: var(--red);
     color: var(--white);
     font-family: 'Barlow Condensed', sans-serif;
-    font-weight: 700;
-    font-size: 18px;
+    font-weight: 700; font-size: 18px;
     letter-spacing: 0.05em;
-    padding: 4px 10px;
-    border-radius: 3px;
-    line-height: 1;
+    padding: 4px 10px; border-radius: 3px; line-height: 1;
   }
   .topbar-title {
     font-family: 'Barlow Condensed', sans-serif;
-    font-size: 17px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    font-size: 17px; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase;
     color: rgba(255,255,255,0.9);
   }
   .topbar-divider { width: 1px; height: 20px; background: rgba(255,255,255,0.15); }
   .topbar-pill {
-    font-size: 11px;
-    font-weight: 600;
-    padding: 3px 10px;
-    border-radius: 20px;
+    font-size: 11px; font-weight: 600;
+    padding: 3px 10px; border-radius: 20px;
     background: rgba(255,255,255,0.1);
-    color: rgba(255,255,255,0.75);
-    letter-spacing: 0.03em;
+    color: rgba(255,255,255,0.75); letter-spacing: 0.03em;
   }
   .conn-dot {
     width: 8px; height: 8px; border-radius: 50%;
-    background: var(--gray-mid);
-    transition: background 0.3s;
-    flex-shrink: 0;
+    background: var(--gray-mid); transition: background 0.3s; flex-shrink: 0;
   }
   .conn-dot.ok      { background: #4cdb8a; }
   .conn-dot.err     { background: var(--red); }
@@ -107,82 +92,57 @@
   /* ── NAV ── */
   .nav-bar {
     background: var(--navy-mid);
-    padding: 0 28px;
-    display: flex;
-    gap: 0;
+    padding: 0 28px; display: flex; gap: 0;
     overflow-x: auto;
     border-bottom: 1px solid rgba(255,255,255,0.07);
   }
   .nav-btn {
     font-family: 'Barlow', sans-serif;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    padding: 12px 18px;
-    border: none;
-    background: none;
-    cursor: pointer;
+    font-size: 12px; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 12px 18px; border: none; background: none; cursor: pointer;
     color: rgba(255,255,255,0.5);
-    border-bottom: 3px solid transparent;
-    margin-bottom: -1px;
-    transition: color 0.15s, border-color 0.15s;
-    white-space: nowrap;
+    border-bottom: 3px solid transparent; margin-bottom: -1px;
+    transition: color 0.15s, border-color 0.15s; white-space: nowrap;
   }
   .nav-btn.active { color: var(--white); border-bottom-color: var(--red); }
   .nav-btn:hover:not(.active) { color: rgba(255,255,255,0.8); }
 
-  /* ── MAIN ── */
+  /* ── LAYOUT ── */
   .main { padding: 24px 28px; max-width: 1140px; margin: 0 auto; width: 100%; }
   .section { display: none; }
   .section.active { display: block; }
-
-  /* ── PAGE HEADER ── */
   .page-header { margin-bottom: 20px; }
   .page-header h1 {
     font-family: 'Barlow Condensed', sans-serif;
     font-size: 22px; font-weight: 700;
-    letter-spacing: 0.04em; text-transform: uppercase;
-    color: var(--navy);
+    letter-spacing: 0.04em; text-transform: uppercase; color: var(--navy);
   }
   .page-header p { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+  .two-col   { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 720px) { .two-col { grid-template-columns: 1fr; } }
 
   /* ── CARDS ── */
   .card {
-    background: var(--white);
-    border: 1px solid var(--gray-light);
-    border-radius: var(--radius-lg);
-    padding: 20px;
-    margin-bottom: 16px;
-    box-shadow: var(--shadow-sm);
+    background: var(--white); border: 1px solid var(--gray-light);
+    border-radius: var(--radius-lg); padding: 20px;
+    margin-bottom: 16px; box-shadow: var(--shadow-sm);
   }
   .card-title {
     font-family: 'Barlow Condensed', sans-serif;
     font-size: 13px; font-weight: 700;
-    text-transform: uppercase; letter-spacing: 0.08em;
-    color: var(--navy);
-    margin-bottom: 14px;
-    padding-bottom: 10px;
-    border-bottom: 2px solid var(--red);
-    display: inline-block;
+    text-transform: uppercase; letter-spacing: 0.08em; color: var(--navy);
+    margin-bottom: 14px; padding-bottom: 10px;
+    border-bottom: 2px solid var(--red); display: inline-block;
   }
-  .card-title-wrap { margin-bottom: 14px; border-bottom: 1px solid var(--gray-light); padding-bottom: 12px; }
-  .card-title-wrap .card-title { margin-bottom: 0; border-bottom: none; padding-bottom: 0; display: block; }
-
-  .two-col   { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
-  @media (max-width: 720px) { .two-col, .three-col { grid-template-columns: 1fr; } }
 
   /* ── METRICS ── */
   .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
   @media (max-width: 720px) { .metrics { grid-template-columns: repeat(2, 1fr); } }
   .metric {
-    background: var(--white);
-    border: 1px solid var(--gray-light);
-    border-top: 3px solid var(--navy);
-    border-radius: var(--radius-lg);
-    padding: 16px 18px;
-    box-shadow: var(--shadow-sm);
+    background: var(--white); border: 1px solid var(--gray-light);
+    border-top: 3px solid var(--navy); border-radius: var(--radius-lg);
+    padding: 16px 18px; box-shadow: var(--shadow-sm);
   }
   .metric.accent { border-top-color: var(--red); }
   .metric-label {
@@ -193,8 +153,7 @@
   .metric-value {
     font-family: 'Barlow Condensed', sans-serif;
     font-size: 32px; font-weight: 700;
-    color: var(--navy); line-height: 1;
-    letter-spacing: -0.01em;
+    color: var(--navy); line-height: 1; letter-spacing: -0.01em;
   }
   .metric-sub { font-size: 11px; color: var(--text-hint); margin-top: 4px; }
 
@@ -202,70 +161,53 @@
   .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
   .form-group label {
     font-size: 11px; font-weight: 700;
-    text-transform: uppercase; letter-spacing: 0.06em;
-    color: var(--navy-light);
+    text-transform: uppercase; letter-spacing: 0.06em; color: var(--navy-light);
   }
-  input[type=text], input[type=date], select, input[type=password] {
-    font-family: 'Barlow', sans-serif;
-    font-size: 13px; padding: 9px 12px;
-    border: 1.5px solid var(--gray);
-    border-radius: var(--radius);
+  input[type=text], input[type=date], select {
+    font-family: 'Barlow', sans-serif; font-size: 13px; padding: 9px 12px;
+    border: 1.5px solid var(--gray); border-radius: var(--radius);
     background: var(--white); color: var(--text); width: 100%;
     transition: border-color 0.15s, box-shadow 0.15s;
   }
   input:focus, select:focus {
-    outline: none;
-    border-color: var(--navy-light);
+    outline: none; border-color: var(--navy-light);
     box-shadow: 0 0 0 3px rgba(26,63,111,0.12);
   }
-  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-row       { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .form-row.three { grid-template-columns: 1fr 1fr 1fr; }
   @media (max-width: 600px) { .form-row, .form-row.three { grid-template-columns: 1fr; } }
 
   /* ── BUTTONS ── */
   .btn {
-    font-family: 'Barlow', sans-serif;
-    font-size: 13px; font-weight: 600;
-    padding: 9px 18px;
-    border: 1.5px solid var(--gray);
-    border-radius: var(--radius);
-    cursor: pointer;
-    background: var(--white); color: var(--text);
-    transition: all 0.12s; white-space: nowrap;
-    letter-spacing: 0.02em;
+    font-family: 'Barlow', sans-serif; font-size: 13px; font-weight: 600;
+    padding: 9px 18px; border: 1.5px solid var(--gray); border-radius: var(--radius);
+    cursor: pointer; background: var(--white); color: var(--text);
+    transition: all 0.12s; white-space: nowrap; letter-spacing: 0.02em;
   }
-  .btn:hover { background: var(--gray-light); border-color: var(--gray-mid); }
-  .btn:active { transform: scale(0.98); }
+  .btn:hover   { background: var(--gray-light); border-color: var(--gray-mid); }
+  .btn:active  { transform: scale(0.98); }
   .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
-  .btn-primary {
-    background: var(--navy); color: var(--white);
-    border-color: var(--navy);
-  }
+  .btn-primary { background: var(--navy); color: var(--white); border-color: var(--navy); }
   .btn-primary:hover { background: var(--navy-light); border-color: var(--navy-light); }
-  .btn-red {
-    background: var(--red); color: var(--white);
-    border-color: var(--red);
-  }
+  .btn-red     { background: var(--red);  color: var(--white); border-color: var(--red); }
   .btn-red:hover { background: var(--red-dark); border-color: var(--red-dark); }
-  .btn-danger { color: var(--red); border-color: var(--red); }
+  .btn-danger  { color: var(--red); border-color: var(--red); }
   .btn-danger:hover { background: var(--red-light); }
   .btn-success { color: var(--green); border-color: var(--green); }
   .btn-success:hover { background: var(--green-bg); }
-  .btn-sm { font-size: 11px; padding: 4px 10px; }
+  .btn-sm  { font-size: 11px; padding: 4px 10px; }
   .btn-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
 
-  /* ── STATUS BADGES ── */
+  /* ── BADGES ── */
   .badge {
-    display: inline-block;
-    font-size: 10px; font-weight: 700;
+    display: inline-block; font-size: 10px; font-weight: 700;
     padding: 3px 9px; border-radius: 3px;
     text-transform: uppercase; letter-spacing: 0.05em;
   }
-  .badge-out   { background: var(--red-light);  color: var(--red); }
-  .badge-in    { background: var(--green-bg);    color: var(--green); }
-  .badge-warn  { background: var(--amber-bg);    color: var(--amber); }
-  .badge-cat   { background: var(--gray-light);  color: var(--gray-dark); }
-  .badge-info  { background: #e6eef8;            color: var(--navy-light); }
+  .badge-out  { background: var(--red-light);  color: var(--red); }
+  .badge-in   { background: var(--green-bg);   color: var(--green); }
+  .badge-warn { background: var(--amber-bg);   color: var(--amber); }
+  .badge-cat  { background: var(--gray-light); color: var(--gray-dark); }
 
   /* ── ALERTS ── */
   .alert {
@@ -277,8 +219,6 @@
   .alert-success { background: var(--green-bg);    color: var(--green);      border-color: rgba(13,122,78,0.3); }
   .alert-info    { background: #e6eef8;            color: var(--navy-light); border-color: rgba(26,63,111,0.3); }
   .alert-warn    { background: var(--amber-bg);    color: var(--amber);      border-color: rgba(138,92,0,0.3); }
-
-  /* ── FLASH BAR ── */
   #flashBar { position: fixed; top: 0; left: 0; right: 0; z-index: 9999; display: none; }
 
   /* ── TABLES ── */
@@ -289,126 +229,66 @@
     font-family: 'Barlow Condensed', sans-serif;
     font-size: 11px; font-weight: 700;
     text-transform: uppercase; letter-spacing: 0.07em;
-    color: rgba(255,255,255,0.8);
-    text-align: left; padding: 10px 14px;
+    color: rgba(255,255,255,0.8); text-align: left; padding: 10px 14px;
   }
   td { padding: 10px 14px; border-bottom: 1px solid var(--gray-light); vertical-align: middle; }
   tr:last-child td { border-bottom: none; }
   tbody tr:hover td { background: var(--off-white); }
-  .empty-state {
-    text-align: center; padding: 48px 20px;
-    color: var(--text-hint); font-size: 13px;
-  }
-  .empty-state-icon {
-    font-size: 28px; margin-bottom: 8px; opacity: 0.4;
-  }
+  .empty-state { text-align: center; padding: 48px 20px; color: var(--text-hint); font-size: 13px; }
+  .empty-icon  { font-size: 28px; margin-bottom: 8px; opacity: 0.4; }
 
-  /* ── SEARCH ROW ── */
+  /* ── MISC ── */
   .search-row { display: flex; gap: 8px; margin-bottom: 14px; }
   .search-row input { flex: 1; }
+  .util-row   { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .util-label { font-size: 12px; font-weight: 500; width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); }
+  .util-track { flex: 1; background: var(--gray-light); border-radius: 3px; height: 8px; overflow: hidden; }
+  .util-fill  { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
+  .util-pct   { font-size: 12px; font-weight: 600; width: 52px; text-align: right; color: var(--text-muted); }
 
-  /* ── UTILIZATION BARS ── */
-  .util-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
-  .util-label {
-    font-size: 12px; font-weight: 500;
-    width: 110px; overflow: hidden;
-    text-overflow: ellipsis; white-space: nowrap;
-    color: var(--text-muted);
-  }
-  .util-track {
-    flex: 1; background: var(--gray-light);
-    border-radius: 3px; height: 8px; overflow: hidden;
-  }
-  .util-fill { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
-  .util-pct { font-size: 12px; font-weight: 600; width: 52px; text-align: right; color: var(--text-muted); }
-
-  /* ── SUGGEST BOX ── */
   .suggest-box {
     background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
-    border-radius: var(--radius-lg);
-    padding: 16px 20px; margin-bottom: 16px;
-    display: none;
-    border-left: 4px solid var(--red);
-    box-shadow: var(--shadow);
+    border-radius: var(--radius-lg); padding: 16px 20px; margin-bottom: 16px;
+    display: none; border-left: 4px solid var(--red); box-shadow: var(--shadow);
   }
-  .suggest-eyebrow {
-    font-size: 10px; font-weight: 700;
-    text-transform: uppercase; letter-spacing: 0.1em;
-    color: rgba(255,255,255,0.5); margin-bottom: 4px;
-  }
-  .suggest-device {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 20px; font-weight: 700;
-    color: var(--white);
-  }
-  .suggest-reason { font-size: 12px; color: rgba(255,255,255,0.65); margin-top: 3px; }
+  .suggest-eyebrow { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.5); margin-bottom: 4px; }
+  .suggest-device  { font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 700; color: var(--white); }
+  .suggest-reason  { font-size: 12px; color: rgba(255,255,255,0.65); margin-top: 3px; }
 
-  /* ── BADGE ENTRIES ── */
-  .badge-entry {
-    display: flex; align-items: center; gap: 10px;
-    padding: 9px 12px;
-    background: var(--off-white);
-    border: 1px solid var(--gray-light);
-    border-radius: var(--radius); margin-bottom: 6px;
-  }
+  .badge-entry { display: flex; align-items: center; gap: 10px; padding: 9px 12px; background: var(--off-white); border: 1px solid var(--gray-light); border-radius: var(--radius); margin-bottom: 6px; }
   .be-name { flex: 1; font-weight: 600; font-size: 13px; }
-  .be-id { font-size: 11px; color: var(--text-muted); font-family: 'DM Mono', monospace; }
+  .be-id   { font-size: 11px; color: var(--text-muted); font-family: 'DM Mono', monospace; }
 
-  /* ── CATEGORY LIST ── */
-  .cat-row {
-    display: flex; align-items: center; gap: 10px;
-    padding: 10px 0;
-    border-bottom: 1px solid var(--gray-light);
-  }
+  .cat-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--gray-light); }
   .cat-row:last-child { border-bottom: none; }
-  .cat-name { flex: 1; font-weight: 600; font-size: 13px; }
+  .cat-name  { flex: 1; font-weight: 600; font-size: 13px; }
   .cat-count { font-size: 12px; color: var(--text-muted); }
 
-  /* ── SPINNER ── */
   .spinner {
     display: inline-block; width: 13px; height: 13px;
-    border: 2px solid rgba(255,255,255,0.35);
-    border-top-color: #fff;
-    border-radius: 50%;
-    animation: spin 0.65s linear infinite;
+    border: 2px solid rgba(255,255,255,0.35); border-top-color: #fff;
+    border-radius: 50%; animation: spin 0.65s linear infinite;
     vertical-align: middle; margin-right: 6px;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* ── CONFIG MODAL ── */
+  .export-controls { display: flex; gap: 12px; align-items: flex-end; margin-bottom: 14px; flex-wrap: wrap; }
+  .export-controls .form-group { margin-bottom: 0; flex: 1; min-width: 140px; }
+
   #configNotice {
-    position: fixed; inset: 0;
-    background: rgba(10,31,61,0.9);
-    display: flex; align-items: center; justify-content: center;
-    z-index: 99999;
+    position: fixed; inset: 0; background: rgba(10,31,61,0.9);
+    display: flex; align-items: center; justify-content: center; z-index: 99999;
   }
   .config-modal {
-    background: var(--white);
-    border-radius: var(--radius-lg);
-    padding: 36px; max-width: 480px; width: 90%;
-    box-shadow: 0 24px 80px rgba(10,31,61,0.4);
+    background: var(--white); border-radius: var(--radius-lg); padding: 36px;
+    max-width: 480px; width: 90%; box-shadow: 0 24px 80px rgba(10,31,61,0.4);
     border-top: 4px solid var(--red);
   }
   .config-modal h2 {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 22px; font-weight: 700;
-    text-transform: uppercase; letter-spacing: 0.04em;
-    color: var(--navy); margin-bottom: 10px;
+    font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.04em; color: var(--navy); margin-bottom: 10px;
   }
   .config-modal p { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.7; }
-
-  /* ── SECTION DIVIDER ── */
-  .section-divider {
-    height: 1px; background: var(--gray-light);
-    margin: 20px 0;
-  }
-
-  /* ── EXPORT ROW ── */
-  .export-controls {
-    display: flex; gap: 12px; align-items: flex-end;
-    margin-bottom: 14px; flex-wrap: wrap;
-  }
-  .export-controls .form-group { margin-bottom: 0; flex: 1; min-width: 140px; }
 </style>
 </head>
 <body>
@@ -418,7 +298,7 @@
 ════════════════════════════════════════════════ -->
 <script>
   const CONFIG = {
-    scriptUrl: 'https://script.google.com/macros/s/AKfycbzwP-sRxsOyqCiFIENIjLCiibUJ4e5Cfano9e9cwKMlRvi413mNQ6KLPvDCyAEqsetHIg/exec',
+    scriptUrl: 'https://script.google.com/macros/s/AKfycbysABj5havtoE9pZCLXB01XhsqFnuRXOPMYqGoFdWR8bA6nwqYg1zjVpvyFNtKlsgmhCw/exec',
     secret:    'Ceva3820'
   };
 </script>
@@ -429,7 +309,7 @@
 <div id="configNotice" style="display:none">
   <div class="config-modal">
     <h2>⚙ Setup Required</h2>
-    <p>Open <code>index.html</code> in a text editor and fill in the two values near the top of the file:<br><br>
+    <p>Open <code>index.html</code> in a text editor and fill in the two values near the top:<br><br>
     <strong>scriptUrl</strong> — your Google Apps Script Web App URL<br>
     <strong>secret</strong> — the secret key you defined in the Apps Script<br><br>
     Save the file and upload it to GitHub to continue.</p>
@@ -437,9 +317,7 @@
   </div>
 </div>
 
-<!-- ══════════════════════════════════ SHELL ══ -->
 <div class="app-shell">
-
   <div class="topbar">
     <div class="topbar-brand">
       <div class="topbar-logo-block">CEVA</div>
@@ -461,19 +339,17 @@
 
   <div class="main">
 
-    <!-- ══ CHECK OUT ══════════════════════════ -->
+    <!-- ══ CHECK OUT ══════════════════════════════ -->
     <div class="section active" id="sec-checkout">
       <div class="page-header">
         <h1>Check Out</h1>
-        <p>Assign a device to an associate. A suggested device will be recommended based on utilization.</p>
+        <p>Assign a device to an associate. A suggested device will appear based on utilization data.</p>
       </div>
-
       <div class="suggest-box" id="suggestBox">
         <div class="suggest-eyebrow">Suggested Device</div>
         <div class="suggest-device" id="suggestSerial"></div>
         <div class="suggest-reason" id="suggestReason"></div>
       </div>
-
       <div class="card">
         <div class="card-title">New Checkout</div>
         <div id="coAlert"></div>
@@ -499,14 +375,13 @@
           <button class="btn" onclick="clearCoForm()">Clear</button>
         </div>
       </div>
-
       <div class="card">
         <div class="card-title">Currently Checked Out</div>
         <div id="activeTable"></div>
       </div>
     </div>
 
-    <!-- ══ CHECK IN ═══════════════════════════ -->
+    <!-- ══ CHECK IN ════════════════════════════════ -->
     <div class="section" id="sec-checkin">
       <div class="page-header">
         <h1>Check In</h1>
@@ -522,7 +397,7 @@
       </div>
     </div>
 
-    <!-- ══ DEVICES ════════════════════════════ -->
+    <!-- ══ DEVICES ══════════════════════════════════ -->
     <div class="section" id="sec-devices">
       <div class="page-header">
         <h1>Devices</h1>
@@ -563,7 +438,7 @@
       </div>
     </div>
 
-    <!-- ══ DASHBOARD ══════════════════════════ -->
+    <!-- ══ DASHBOARD ════════════════════════════════ -->
     <div class="section" id="sec-dashboard">
       <div class="page-header">
         <h1>Dashboard</h1>
@@ -599,7 +474,7 @@
       </div>
     </div>
 
-    <!-- ══ SETTINGS ═══════════════════════════ -->
+    <!-- ══ SETTINGS ══════════════════════════════════ -->
     <div class="section" id="sec-settings">
       <div class="page-header">
         <h1>Settings</h1>
@@ -641,8 +516,8 @@
       </div>
     </div>
 
-  </div><!-- /.main -->
-</div><!-- /.app-shell -->
+  </div>
+</div>
 
 <script>
 // ═══════════════════════════════════════════════════
@@ -657,23 +532,28 @@ let S = {
 };
 
 // ═══════════════════════════════════════════════════
-// API  — uses GET with encoded payload to avoid CORS
+// API — GET with encoded payload to avoid CORS
 // ═══════════════════════════════════════════════════
 async function api(action, extra = {}) {
   setConn('loading');
-  const payload = encodeURIComponent(
-    JSON.stringify({ secret: CONFIG.secret, action, ...extra })
-  );
-  const res  = await fetch(CONFIG.scriptUrl + '?payload=' + payload);
-  const data = await res.json();
-  if (data.error) { setConn('err'); throw new Error(data.error); }
-  setConn('ok');
-  return data;
+  try {
+    const payload = encodeURIComponent(
+      JSON.stringify({ secret: CONFIG.secret, action, ...extra })
+    );
+    const res  = await fetch(CONFIG.scriptUrl + '?payload=' + payload);
+    const data = await res.json();
+    if (data.error) { setConn('err'); throw new Error(data.error); }
+    setConn('ok');
+    return data;
+  } catch(e) {
+    setConn('err');
+    throw e;
+  }
 }
 
 async function loadAll() {
   try {
-    const data = await api('getAll');
+    const data   = await api('getAll');
     S.checkouts  = data.checkouts  || [];
     S.history    = data.history    || [];
     S.categories = data.categories && data.categories.length ? data.categories : ['Scanner'];
@@ -686,17 +566,23 @@ async function loadAll() {
 }
 
 // ═══════════════════════════════════════════════════
-// TIME HELPERS
+// TIMESTAMP HELPERS
+// Handles all the ways Sheets can return a timestamp:
+//   - Already a number  (ideal)
+//   - A 13-digit string (stored as text — our approach)
+//   - A Date object     (Sheets auto-formatted it)
+//   - A date string     (Date object serialized to JSON)
 // ═══════════════════════════════════════════════════
 function toMs(v) {
   if (v == null || v === '') return null;
-  if (typeof v === 'number') return v;
+  // Already a number
+  if (typeof v === 'number') return v > 0 ? v : null;
   if (typeof v === 'string') {
-    // Try as a plain number first (e.g. "1746000000000")
-    const n = Number(v);
-    if (!isNaN(n) && n > 1000000000000) return n;
-    // Try as a date string (fallback if Sheets serialized it)
-    const d = new Date(v);
+    const trimmed = v.trim();
+    // Plain 13-digit ms timestamp stored as text
+    if (/^\d{13}$/.test(trimmed)) return Number(trimmed);
+    // Try parsing as a date string (fallback for any other format)
+    const d = new Date(trimmed);
     if (!isNaN(d.getTime())) return d.getTime();
   }
   return null;
@@ -705,10 +591,11 @@ function toMs(v) {
 function fmtDuration(ms) {
   if (!ms || ms < 0) return '—';
   const mins = Math.floor(ms / 60000);
+  if (mins < 1)  return '< 1m';
   if (mins < 60) return mins + 'm';
   const hrs = Math.floor(mins / 60); const m = mins % 60;
-  if (hrs < 24) return hrs + 'h ' + (m ? m + 'm' : '');
-  const d = Math.floor(hrs / 24); const h = hrs % 24;
+  if (hrs < 24)  return hrs + 'h ' + (m ? m + 'm' : '');
+  const d = Math.floor(hrs / 24);   const h = hrs % 24;
   return d + 'd ' + (h ? h + 'h' : '');
 }
 
@@ -724,23 +611,21 @@ function fmtTime(ms) {
 
 function fmtDateTime(ms) {
   if (!ms) return '—';
-  return fmtDate(ms) + ' ' + fmtTime(ms);
+  return new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    + ' ' + new Date(ms).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 }
 
 function getCoMs(c) { return toMs(c.CheckoutTimestamp); }
-function getCiMs(h) { return toMs(h.CheckinTimestamp); }
-
+function getCiMs(h) { return toMs(h.CheckinTimestamp);  }
 function getDuration(h) {
   const co = getCoMs(h); const ci = getCiMs(h);
-  return (co && ci) ? ci - co : null;
+  return (co && ci && ci > co) ? ci - co : null;
 }
 
 // ═══════════════════════════════════════════════════
 // UI HELPERS
 // ═══════════════════════════════════════════════════
-function setConn(s) {
-  document.getElementById('connDot').className = 'conn-dot ' + s;
-}
+function setConn(s) { document.getElementById('connDot').className = 'conn-dot ' + s; }
 
 function flash(msg, type = 'success') {
   const bar = document.getElementById('flashBar');
@@ -756,17 +641,20 @@ function setAlert(id, msg, type = 'error') {
   el.innerHTML = msg ? `<div class="alert alert-${type}">${msg}</div>` : '';
 }
 
-function emptyState(icon, msg) {
-  return `<div class="empty-state"><div class="empty-state-icon">${icon}</div>${msg}</div>`;
+function empty(icon, msg) {
+  return `<div class="empty-state"><div class="empty-icon">${icon}</div>${msg}</div>`;
+}
+
+function esc(v) {
+  return String(v == null ? '' : v)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 // ═══════════════════════════════════════════════════
 // NAVIGATION
 // ═══════════════════════════════════════════════════
-const NAV_LABELS = {
-  checkout: 'Check Out', checkin: 'Check In',
-  devices: 'Devices', dashboard: 'Dashboard', settings: 'Settings'
-};
+const NAV_LABELS = { checkout:'Check Out', checkin:'Check In', devices:'Devices', dashboard:'Dashboard', settings:'Settings' };
 function nav(id) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.getElementById('sec-' + id).classList.add('active');
@@ -778,60 +666,49 @@ function nav(id) {
 }
 
 // ═══════════════════════════════════════════════════
-// POPULATE SELECTS & DATALIST
+// SELECTS & DATALIST
 // ═══════════════════════════════════════════════════
 function populateSelects() {
-  ['coCat', 'devCat', 'devFilterCat', 'exportCat'].forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
+  ['coCat','devCat','devFilterCat','exportCat'].forEach(id => {
+    const el = document.getElementById(id); if (!el) return;
     const cur = el.value;
     const isFilter = id === 'devFilterCat' || id === 'exportCat';
-    el.innerHTML = isFilter
-      ? '<option value="">All categories</option>'
-      : '<option value="">Select category...</option>';
-    S.categories.forEach(c => {
-      const o = document.createElement('option'); o.value = c; o.textContent = c; el.appendChild(o);
-    });
+    el.innerHTML = isFilter ? '<option value="">All categories</option>' : '<option value="">Select category...</option>';
+    S.categories.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; el.appendChild(o); });
     if (cur) el.value = cur;
   });
-
-  const dl = document.getElementById('assocDatalist');
-  const names = [...new Set([
-    ...S.history.map(h => h.Associate),
-    ...S.badges.map(b => b.Name)
-  ])].filter(Boolean).sort();
-  dl.innerHTML = names.map(n => `<option value="${n}">`).join('');
+  const dl    = document.getElementById('assocDatalist');
+  const names = [...new Set([...S.history.map(h => h.Associate), ...S.badges.map(b => b.Name)])].filter(Boolean).sort();
+  dl.innerHTML = names.map(n => `<option value="${esc(n)}">`).join('');
 }
 
 // ═══════════════════════════════════════════════════
-// DEVICE SUGGESTION
+// SUGGESTION ENGINE
 // ═══════════════════════════════════════════════════
 function onCatChange() {
   const cat = document.getElementById('coCat').value;
   const box = document.getElementById('suggestBox');
   if (!cat) { box.style.display = 'none'; return; }
-
   const available = S.devices.filter(d =>
     String(d.Category).trim() === cat &&
-    !S.checkouts.find(c => String(c.Serial).trim().toUpperCase() === String(d.Serial).trim().toUpperCase())
+    !S.checkouts.find(c => norm(c.Serial) === norm(d.Serial))
   );
   if (!available.length) { box.style.display = 'none'; return; }
-
   const scored = available.map(d => {
-    const hist   = S.history.filter(h => String(h.Serial).trim().toUpperCase() === String(d.Serial).trim().toUpperCase());
+    const hist    = S.history.filter(h => norm(h.Serial) === norm(d.Serial));
     const totalMs = hist.reduce((a, h) => a + (getDuration(h) || 0), 0);
     return { d, uses: hist.length, totalMs };
   }).sort((a, b) => a.totalMs - b.totalMs);
-
   const pick = scored[0];
-  document.getElementById('suggestSerial').textContent =
-    String(pick.d.Serial).trim() + (pick.d.Label ? ' — ' + pick.d.Label : '');
+  document.getElementById('suggestSerial').textContent = norm(pick.d.Serial) + (pick.d.Label ? ' — ' + pick.d.Label : '');
   document.getElementById('suggestReason').textContent = pick.uses === 0
     ? 'Never used — bring it into rotation'
-    : `Least used: ${pick.uses} checkout${pick.uses !== 1 ? 's' : ''}, ${fmtDuration(pick.totalMs)} total`;
-  document.getElementById('coSerial').value = String(pick.d.Serial).trim();
+    : `Least used: ${pick.uses} checkout${pick.uses!==1?'s':''}, ${fmtDuration(pick.totalMs)} total`;
+  document.getElementById('coSerial').value = norm(pick.d.Serial);
   box.style.display = 'block';
 }
+
+function norm(v) { return String(v == null ? '' : v).trim().toUpperCase(); }
 
 // ═══════════════════════════════════════════════════
 // CHECK OUT
@@ -839,41 +716,23 @@ function onCatChange() {
 async function doCheckout() {
   const assoc  = document.getElementById('coAssoc').value.trim();
   const cat    = document.getElementById('coCat').value.trim();
-  const serial = document.getElementById('coSerial').value.trim().toUpperCase();
+  const serial = norm(document.getElementById('coSerial').value);
   setAlert('coAlert', '');
 
   if (!assoc)  { setAlert('coAlert', 'Please enter the associate\'s name.'); return; }
   if (!cat)    { setAlert('coAlert', 'Please select a category.'); return; }
   if (!serial) { setAlert('coAlert', 'Please enter a serial number.'); return; }
 
-  // Find device — case-insensitive serial match
-  const dev = S.devices.find(d => String(d.Serial).trim().toUpperCase() === serial);
-  if (!dev) {
-    setAlert('coAlert', `Serial <strong>${serial}</strong> is not registered. Add it in the Devices tab first.`);
-    return;
-  }
-
-  if (String(dev.Category).trim() !== cat) {
-    setAlert('coAlert', `${serial} is registered as a <strong>${dev.Category}</strong>, not a <strong>${cat}</strong>.`);
-    return;
-  }
-
-  if (S.checkouts.find(c => String(c.Serial).trim().toUpperCase() === serial)) {
-    setAlert('coAlert', `<strong>${serial}</strong> is already checked out.`);
-    return;
-  }
-
-  if (S.checkouts.find(c =>
-    String(c.Associate).trim().toLowerCase() === assoc.toLowerCase() &&
-    String(c.Category).trim() === cat
-  )) {
-    setAlert('coAlert', `<strong>${assoc}</strong> already has a ${cat} checked out. They must return it first.`);
-    return;
+  const dev = S.devices.find(d => norm(d.Serial) === serial);
+  if (!dev) { setAlert('coAlert', `Serial <strong>${serial}</strong> is not registered. Add it in the Devices tab first.`); return; }
+  if (String(dev.Category).trim() !== cat) { setAlert('coAlert', `${serial} is registered as a <strong>${dev.Category}</strong>, not a <strong>${cat}</strong>.`); return; }
+  if (S.checkouts.find(c => norm(c.Serial) === serial)) { setAlert('coAlert', `<strong>${serial}</strong> is already checked out.`); return; }
+  if (S.checkouts.find(c => String(c.Associate).trim().toLowerCase() === assoc.toLowerCase() && String(c.Category).trim() === cat)) {
+    setAlert('coAlert', `<strong>${assoc}</strong> already has a ${cat} checked out. They must return it first.`); return;
   }
 
   const btn = document.getElementById('coBtn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span>Saving...';
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Saving...';
 
   const nowMs     = Date.now();
   const coTimeStr = fmtDateTime(nowMs);
@@ -885,32 +744,18 @@ async function doCheckout() {
       category:          cat,
       label:             String(dev.Label || '').trim(),
       checkoutTime:      coTimeStr,
-      checkoutTimestamp: nowMs
+      checkoutTimestamp: nowMs          // sent as number; Apps Script stores as String
     });
-
-    S.checkouts.push({
-      Associate:         assoc,
-      Serial:            serial,
-      Category:          cat,
-      Label:             String(dev.Label || '').trim(),
-      CheckoutTime:      coTimeStr,
-      CheckoutTimestamp: nowMs
-    });
-
-    clearCoForm();
-    renderActiveTable();
-    updatePills();
+    S.checkouts.push({ Associate: assoc, Serial: serial, Category: cat, Label: String(dev.Label||'').trim(), CheckoutTime: coTimeStr, CheckoutTimestamp: nowMs });
+    clearCoForm(); renderActiveTable(); updatePills();
     flash(`${serial} checked out to ${assoc}`);
-  } catch(e) {
-    setAlert('coAlert', 'Error saving to Google Sheets: ' + e.message);
-  }
+  } catch(e) { setAlert('coAlert', 'Error saving to Google Sheets: ' + e.message); }
 
-  btn.disabled = false;
-  btn.textContent = 'Check Out Device';
+  btn.disabled = false; btn.textContent = 'Check Out Device';
 }
 
 function clearCoForm() {
-  ['coAssoc', 'coSerial'].forEach(id => document.getElementById(id).value = '');
+  ['coAssoc','coSerial'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('coCat').value = '';
   setAlert('coAlert', '');
   document.getElementById('suggestBox').style.display = 'none';
@@ -918,16 +763,10 @@ function clearCoForm() {
 
 function renderActiveTable() {
   const el = document.getElementById('activeTable');
-  if (!S.checkouts.length) {
-    el.innerHTML = emptyState('📦', 'No devices currently checked out.');
-    return;
-  }
+  if (!S.checkouts.length) { el.innerHTML = empty('📦', 'No devices currently checked out.'); return; }
   const nowMs = Date.now();
   el.innerHTML = `<div class="table-wrap"><table>
-    <thead><tr>
-      <th>Associate</th><th>Serial</th><th>Category</th>
-      <th>Label</th><th>Checked Out</th><th>Duration</th><th>Status</th>
-    </tr></thead><tbody>`
+    <thead><tr><th>Associate</th><th>Serial</th><th>Category</th><th>Label</th><th>Checked Out</th><th>Duration</th><th>Status</th></tr></thead><tbody>`
     + S.checkouts.map(c => {
       const coMs = getCoMs(c);
       const dur  = coMs ? nowMs - coMs : null;
@@ -936,10 +775,10 @@ function renderActiveTable() {
         <td><strong>${esc(c.Associate)}</strong></td>
         <td><code class="mono">${esc(c.Serial)}</code></td>
         <td><span class="badge badge-cat">${esc(c.Category)}</span></td>
-        <td style="color:var(--text-muted);font-size:12px">${esc(c.Label) || '—'}</td>
-        <td style="font-size:12px;color:var(--text-muted)">${esc(c.CheckoutTime) || '—'}</td>
+        <td style="color:var(--text-muted);font-size:12px">${esc(c.Label)||'—'}</td>
+        <td style="font-size:12px;color:var(--text-muted)">${esc(c.CheckoutTime)||'—'}</td>
         <td><strong>${dur ? fmtDuration(dur) : '—'}</strong></td>
-        <td><span class="badge ${long ? 'badge-warn' : 'badge-out'}">${long ? 'Long Checkout' : 'Out'}</span></td>
+        <td><span class="badge ${long?'badge-warn':'badge-out'}">${long?'Long Checkout':'Out'}</span></td>
       </tr>`;
     }).join('') + '</tbody></table></div>';
 }
@@ -951,29 +790,20 @@ function renderCiResults() {
   const q  = document.getElementById('ciSearch').value.trim().toLowerCase();
   const el = document.getElementById('ciResults');
   let rows = S.checkouts;
-  if (q) rows = rows.filter(c =>
-    String(c.Serial).toLowerCase().includes(q) ||
-    String(c.Associate).toLowerCase().includes(q)
-  );
-  if (!rows.length) {
-    el.innerHTML = emptyState('✅', q ? 'No matching checkouts.' : 'No devices currently checked out.');
-    return;
-  }
+  if (q) rows = rows.filter(c => norm(c.Serial).toLowerCase().includes(q) || String(c.Associate).toLowerCase().includes(q));
+  if (!rows.length) { el.innerHTML = empty('✅', q ? 'No matching checkouts.' : 'No devices currently checked out.'); return; }
   const nowMs = Date.now();
   el.innerHTML = `<div class="table-wrap"><table>
-    <thead><tr>
-      <th>Associate</th><th>Serial</th><th>Category</th>
-      <th>Checked Out</th><th>Duration</th><th>Action</th>
-    </tr></thead><tbody>`
+    <thead><tr><th>Associate</th><th>Serial</th><th>Category</th><th>Checked Out</th><th>Duration</th><th>Action</th></tr></thead><tbody>`
     + rows.map(c => {
-      const coMs = getCoMs(c);
-      const dur  = coMs ? nowMs - coMs : null;
-      const serial = String(c.Serial).trim();
+      const coMs   = getCoMs(c);
+      const dur    = coMs ? nowMs - coMs : null;
+      const serial = norm(c.Serial);
       return `<tr>
         <td><strong>${esc(c.Associate)}</strong></td>
         <td><code class="mono">${esc(serial)}</code></td>
         <td><span class="badge badge-cat">${esc(c.Category)}</span></td>
-        <td style="font-size:12px;color:var(--text-muted)">${esc(c.CheckoutTime) || '—'}</td>
+        <td style="font-size:12px;color:var(--text-muted)">${esc(c.CheckoutTime)||'—'}</td>
         <td>${dur ? fmtDuration(dur) : '—'}</td>
         <td><button class="btn btn-success btn-sm" onclick="doCheckin('${esc(serial)}')">Check In</button></td>
       </tr>`;
@@ -981,7 +811,7 @@ function renderCiResults() {
 }
 
 async function doCheckin(serial) {
-  const c = S.checkouts.find(x => String(x.Serial).trim().toUpperCase() === serial.toUpperCase());
+  const c = S.checkouts.find(x => norm(x.Serial) === serial);
   if (!c) return;
   const nowMs     = Date.now();
   const ciTimeStr = fmtDateTime(nowMs);
@@ -989,35 +819,26 @@ async function doCheckin(serial) {
   try {
     await api('checkin', { serial, checkinTime: ciTimeStr, checkinTimestamp: nowMs });
     S.history.push({ ...c, CheckinTime: ciTimeStr, CheckinTimestamp: nowMs });
-    S.checkouts = S.checkouts.filter(x => String(x.Serial).trim().toUpperCase() !== serial.toUpperCase());
+    S.checkouts = S.checkouts.filter(x => norm(x.Serial) !== serial);
     renderCiResults(); renderActiveTable(); updatePills();
     flash(`${serial} checked in${dur ? ' — out for ' + fmtDuration(dur) : ''}`);
-  } catch(e) {
-    setAlert('ciAlert', 'Error saving: ' + e.message);
-  }
+  } catch(e) { setAlert('ciAlert', 'Error saving: ' + e.message); }
 }
 
 // ═══════════════════════════════════════════════════
 // DEVICES
 // ═══════════════════════════════════════════════════
 async function registerDevice() {
-  const serial = document.getElementById('devSerial').value.trim().toUpperCase();
+  const serial = norm(document.getElementById('devSerial').value);
   const cat    = document.getElementById('devCat').value.trim();
   const label  = document.getElementById('devLabel').value.trim();
   setAlert('devAlert', '');
-
   if (!serial) { setAlert('devAlert', 'Serial number is required.'); return; }
   if (!cat)    { setAlert('devAlert', 'Please select a category.'); return; }
-
-  if (S.devices.find(d => String(d.Serial).trim().toUpperCase() === serial)) {
-    setAlert('devAlert', `Serial <strong>${serial}</strong> is already registered.`);
-    return;
-  }
+  if (S.devices.find(d => norm(d.Serial) === serial)) { setAlert('devAlert', `Serial <strong>${serial}</strong> is already registered.`); return; }
 
   const btn = document.getElementById('devRegBtn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span>Saving...';
-
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Saving...';
   try {
     await api('addDevice', { serial, category: cat, label });
     S.devices.push({ Serial: serial, Category: cat, Label: label });
@@ -1025,40 +846,31 @@ async function registerDevice() {
     document.getElementById('devLabel').value  = '';
     renderDevList(); renderInvSummary(); updatePills();
     flash(`${serial} registered as ${cat}`);
-  } catch(e) {
-    setAlert('devAlert', 'Error saving: ' + e.message);
-  }
-  btn.disabled = false;
-  btn.textContent = 'Register Device';
+  } catch(e) { setAlert('devAlert', 'Error saving: ' + e.message); }
+  btn.disabled = false; btn.textContent = 'Register Device';
 }
 
 function renderDevList() {
   const q    = document.getElementById('devSearch').value.trim().toLowerCase();
   const catF = document.getElementById('devFilterCat').value;
   let devs   = S.devices;
-  if (q)    devs = devs.filter(d => String(d.Serial).toLowerCase().includes(q) || String(d.Label||'').toLowerCase().includes(q));
+  if (q)    devs = devs.filter(d => norm(d.Serial).toLowerCase().includes(q) || String(d.Label||'').toLowerCase().includes(q));
   if (catF) devs = devs.filter(d => String(d.Category).trim() === catF);
-
   const el = document.getElementById('devList');
-  if (!devs.length) { el.innerHTML = emptyState('🔍', 'No devices found.'); return; }
-
+  if (!devs.length) { el.innerHTML = empty('🔍', 'No devices found.'); return; }
   el.innerHTML = `<div class="table-wrap"><table>
-    <thead><tr>
-      <th>Serial</th><th>Label</th><th>Category</th>
-      <th>Status</th><th>Checkouts</th><th>Total Time Out</th>
-    </tr></thead><tbody>`
+    <thead><tr><th>Serial</th><th>Label</th><th>Category</th><th>Status</th><th>Checkouts</th><th>Total Time Out</th></tr></thead><tbody>`
     + devs.map(d => {
-      const serial  = String(d.Serial).trim().toUpperCase();
-      const isOut   = !!S.checkouts.find(c => String(c.Serial).trim().toUpperCase() === serial);
-      const hist    = S.history.filter(h => String(h.Serial).trim().toUpperCase() === serial);
-      const uses    = hist.length;
-      const totalMs = hist.reduce((a, h) => a + (getDuration(h) || 0), 0);
+      const serial  = norm(d.Serial);
+      const isOut   = !!S.checkouts.find(c => norm(c.Serial) === serial);
+      const hist    = S.history.filter(h => norm(h.Serial) === serial);
+      const totalMs = hist.reduce((a, h) => a + (getDuration(h)||0), 0);
       return `<tr>
         <td><code class="mono">${esc(serial)}</code></td>
-        <td style="color:var(--text-muted);font-size:13px">${esc(d.Label) || '—'}</td>
+        <td style="color:var(--text-muted);font-size:13px">${esc(d.Label)||'—'}</td>
         <td><span class="badge badge-cat">${esc(d.Category)}</span></td>
-        <td><span class="badge ${isOut ? 'badge-out' : 'badge-in'}">${isOut ? 'Out' : 'Available'}</span></td>
-        <td style="font-size:13px">${uses}</td>
+        <td><span class="badge ${isOut?'badge-out':'badge-in'}">${isOut?'Out':'Available'}</span></td>
+        <td style="font-size:13px">${hist.length}</td>
         <td style="font-size:13px">${totalMs ? fmtDuration(totalMs) : '—'}</td>
       </tr>`;
     }).join('') + '</tbody></table></div>';
@@ -1066,7 +878,7 @@ function renderDevList() {
 
 function renderInvSummary() {
   const el = document.getElementById('invSummary');
-  if (!S.categories.length) { el.innerHTML = emptyState('📋', 'No categories yet.'); return; }
+  if (!S.categories.length) { el.innerHTML = empty('📋', 'No categories yet.'); return; }
   el.innerHTML = S.categories.map(c => {
     const total = S.devices.filter(d => String(d.Category).trim() === c).length;
     const out   = S.checkouts.filter(x => String(x.Category).trim() === c).length;
@@ -1089,25 +901,23 @@ function renderDashboard() {
   const avgDurMs   = allDurs.length ? allDurs.reduce((a,v) => a+v, 0) / allDurs.length : 0;
 
   document.getElementById('dashMetrics').innerHTML = [
-    { label: 'Devices Out',       value: S.checkouts.length,    sub: `of ${S.devices.length} total`,  accent: true },
-    { label: "Today's Checkouts", value: todayHist.length,      sub: 'since midnight' },
-    { label: 'Avg Checkout Time', value: avgDurMs ? fmtDuration(avgDurMs) : '—', sub: 'all time' },
-    { label: 'Total Transactions',value: S.history.length,      sub: 'all time' }
+    { label: 'Devices Out',        value: S.checkouts.length, sub: `of ${S.devices.length} total`, accent: true },
+    { label: "Today's Checkouts",  value: todayHist.length,   sub: 'since midnight' },
+    { label: 'Avg Checkout Time',  value: avgDurMs ? fmtDuration(avgDurMs) : '—', sub: 'all time' },
+    { label: 'Total Transactions', value: S.history.length,   sub: 'all time' }
   ].map(m => `<div class="metric${m.accent?' accent':''}">
     <div class="metric-label">${m.label}</div>
     <div class="metric-value">${m.value}</div>
     <div class="metric-sub">${m.sub}</div>
   </div>`).join('');
 
-  // Utilization
   const utilEl = document.getElementById('utilChart');
-  if (!S.devices.length) {
-    utilEl.innerHTML = emptyState('📊', 'No devices registered yet.');
-  } else {
+  if (!S.devices.length) { utilEl.innerHTML = empty('📊', 'No devices registered yet.'); }
+  else {
     const devU = S.devices.map(d => {
-      const serial  = String(d.Serial).trim().toUpperCase();
-      const hist    = S.history.filter(h => String(h.Serial).trim().toUpperCase() === serial);
-      const totalMs = hist.reduce((a, h) => a + (getDuration(h) || 0), 0);
+      const serial  = norm(d.Serial);
+      const hist    = S.history.filter(h => norm(h.Serial) === serial);
+      const totalMs = hist.reduce((a, h) => a + (getDuration(h)||0), 0);
       return { label: d.Label || d.Serial, totalMs };
     }).sort((a, b) => b.totalMs - a.totalMs);
     const maxMs = devU[0]?.totalMs || 1;
@@ -1122,21 +932,17 @@ function renderDashboard() {
     }).join('');
   }
 
-  // History
   const histEl = document.getElementById('histTable');
   const recent  = [...S.history].reverse().slice(0, 15);
-  if (!recent.length) {
-    histEl.innerHTML = emptyState('📋', 'No history yet.');
-  } else {
-    histEl.innerHTML = `<div class="table-wrap"><table>
-      <thead><tr><th>Associate</th><th>Serial</th><th>Duration</th><th>Date</th></tr></thead>
-      <tbody>` + recent.map(h => `<tr>
-        <td style="font-size:13px">${esc(h.Associate)}</td>
-        <td><code class="mono">${esc(h.Serial)}</code></td>
-        <td style="font-size:13px">${fmtDuration(getDuration(h))}</td>
-        <td style="font-size:12px;color:var(--text-muted)">${fmtDate(getCoMs(h))}</td>
-      </tr>`).join('') + '</tbody></table></div>';
-  }
+  if (!recent.length) { histEl.innerHTML = empty('📋', 'No history yet.'); }
+  else histEl.innerHTML = `<div class="table-wrap"><table>
+    <thead><tr><th>Associate</th><th>Serial</th><th>Duration</th><th>Date</th></tr></thead><tbody>`
+    + recent.map(h => `<tr>
+      <td style="font-size:13px">${esc(h.Associate)}</td>
+      <td><code class="mono">${esc(h.Serial)}</code></td>
+      <td style="font-size:13px">${fmtDuration(getDuration(h))}</td>
+      <td style="font-size:12px;color:var(--text-muted)">${fmtDate(getCoMs(h))}</td>
+    </tr>`).join('') + '</tbody></table></div>';
 
   if (!document.getElementById('exportDate').value) {
     document.getElementById('exportDate').value = new Date().toISOString().split('T')[0];
@@ -1153,19 +959,16 @@ function renderExportPreview() {
   let rows = S.history.filter(h => { const co = getCoMs(h); return co && co >= dayStart && co < dayEnd; });
   if (catVal) rows = rows.filter(h => String(h.Category).trim() === catVal);
   const el = document.getElementById('exportPreview');
-  if (!rows.length) {
-    el.innerHTML = `<div class="alert alert-info" style="margin-top:10px">No completed checkouts on ${fmtDate(dayStart)}${catVal ? ' for ' + catVal : ''}.</div>`;
-    return;
-  }
+  if (!rows.length) { el.innerHTML = `<div class="alert alert-info" style="margin-top:10px">No completed checkouts on ${fmtDate(dayStart)}${catVal?' for '+catVal:''}.</div>`; return; }
   el.innerHTML = `<p style="font-size:11px;color:var(--text-muted);margin:10px 0 8px">${rows.length} record${rows.length!==1?'s':''}</p>
     <div class="table-wrap"><table>
-    <thead><tr><th>Associate</th><th>Serial</th><th>Category</th><th>Check-Out</th><th>Check-In</th><th>Duration</th></tr></thead>
-    <tbody>` + rows.map(h => `<tr>
+    <thead><tr><th>Associate</th><th>Serial</th><th>Category</th><th>Check-Out</th><th>Check-In</th><th>Duration</th></tr></thead><tbody>`
+    + rows.map(h => `<tr>
       <td style="font-size:13px">${esc(h.Associate)}</td>
       <td><code class="mono">${esc(h.Serial)}</code></td>
       <td><span class="badge badge-cat">${esc(h.Category)}</span></td>
-      <td style="font-size:12px">${esc(h.CheckoutTime) || '—'}</td>
-      <td style="font-size:12px">${esc(h.CheckinTime)  || '—'}</td>
+      <td style="font-size:12px">${esc(h.CheckoutTime)||'—'}</td>
+      <td style="font-size:12px">${esc(h.CheckinTime)||'—'}</td>
       <td style="font-size:13px">${fmtDuration(getDuration(h))}</td>
     </tr>`).join('') + '</tbody></table></div>';
 }
@@ -1178,7 +981,7 @@ function exportCSV() {
   const dayEnd   = dayStart + 86400000;
   let rows = S.history.filter(h => { const co = getCoMs(h); return co && co >= dayStart && co < dayEnd; });
   if (catVal) rows = rows.filter(h => String(h.Category).trim() === catVal);
-  const hdr = 'Associate,Serial,Category,Label,Check-out Date,Check-out Time,Check-in Date,Check-in Time,Duration (min)\n';
+  const hdr   = 'Associate,Serial,Category,Label,Check-out Date,Check-out Time,Check-in Date,Check-in Time,Duration (min)\n';
   const lines = rows.map(h => {
     const coMs = getCoMs(h); const ciMs = getCiMs(h);
     const dur  = getDuration(h);
@@ -1186,15 +989,13 @@ function exportCSV() {
       h.Associate, h.Serial, h.Category, h.Label||'',
       fmtDate(coMs), fmtTime(coMs),
       fmtDate(ciMs), fmtTime(ciMs),
-      dur ? Math.round(dur / 60000) : ''
+      dur ? Math.round(dur/60000) : ''
     ].map(v => `"${String(v||'').replace(/"/g,'""')}"`).join(',');
   });
   const blob = new Blob([hdr + lines.join('\n')], { type: 'text/csv' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
-  a.href = url;
-  a.download = `ceva-asset-report-${dateVal}${catVal?'-'+catVal:''}.csv`;
-  a.click();
+  a.href = url; a.download = `ceva-asset-report-${dateVal}${catVal?'-'+catVal:''}.csv`; a.click();
   URL.revokeObjectURL(url);
   flash(`Exported ${rows.length} record${rows.length!==1?'s':''}`);
 }
@@ -1205,9 +1006,7 @@ function exportCSV() {
 async function addCategory() {
   const v = document.getElementById('newCatInput').value.trim();
   if (!v) return;
-  if (S.categories.find(c => c.toLowerCase() === v.toLowerCase())) {
-    flash('That category already exists.', 'warn'); return;
-  }
+  if (S.categories.find(c => c.toLowerCase() === v.toLowerCase())) { flash('That category already exists.', 'warn'); return; }
   try {
     await api('addCategory', { category: v });
     S.categories.push(v);
@@ -1229,7 +1028,7 @@ async function deleteCategory(c) {
 
 function renderCatList() {
   const el = document.getElementById('catList');
-  if (!S.categories.length) { el.innerHTML = emptyState('📋', 'No categories yet.'); return; }
+  if (!S.categories.length) { el.innerHTML = empty('📋', 'No categories yet.'); return; }
   el.innerHTML = S.categories.map(c => {
     const count = S.devices.filter(d => String(d.Category).trim() === c).length;
     return `<div class="cat-row">
@@ -1249,9 +1048,7 @@ async function registerBadge() {
   const name = document.getElementById('badgeName').value.trim();
   const id   = document.getElementById('badgeId').value.trim();
   if (!name || !id) { flash('Name and badge ID are both required.', 'warn'); return; }
-  if (S.badges.find(b => String(b.BadgeID) === id)) {
-    flash('That badge ID is already registered.', 'warn'); return;
-  }
+  if (S.badges.find(b => String(b.BadgeID) === id)) { flash('That badge ID is already registered.', 'warn'); return; }
   try {
     await api('addBadge', { name, id });
     S.badges.push({ Name: name, BadgeID: id });
@@ -1273,10 +1070,7 @@ async function deleteBadge(id) {
 
 function renderBadgeList() {
   const el = document.getElementById('badgeList');
-  if (!S.badges.length) {
-    el.innerHTML = '<p style="font-size:12px;color:var(--text-muted);padding:6px 0">No badges registered yet.</p>';
-    return;
-  }
+  if (!S.badges.length) { el.innerHTML = '<p style="font-size:12px;color:var(--text-muted);padding:6px 0">No badges registered yet.</p>'; return; }
   el.innerHTML = S.badges.map(b => `<div class="badge-entry">
     <span class="be-name">${esc(b.Name)}</span>
     <span class="be-id">${esc(b.BadgeID)}</span>
@@ -1299,25 +1093,13 @@ async function testConnection() {
 }
 
 // ═══════════════════════════════════════════════════
-// PILLS
+// PILLS & RENDER
 // ═══════════════════════════════════════════════════
 function updatePills() {
   document.getElementById('outPill').textContent = S.checkouts.length + ' out';
   document.getElementById('devPill').textContent = S.devices.length + ' devices';
 }
 
-// ═══════════════════════════════════════════════════
-// XSS ESCAPE
-// ═══════════════════════════════════════════════════
-function esc(v) {
-  return String(v == null ? '' : v)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-// ═══════════════════════════════════════════════════
-// FULL RENDER
-// ═══════════════════════════════════════════════════
 function render() {
   populateSelects();
   renderActiveTable();
@@ -1339,7 +1121,9 @@ function render() {
   }
   setConn('loading');
   loadAll();
+  // Refresh every 60s and also update live durations every 30s
   setInterval(loadAll, 60000);
+  setInterval(() => { renderActiveTable(); renderCiResults(); }, 30000);
 })();
 </script>
 </body>
