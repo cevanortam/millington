@@ -535,7 +535,7 @@
 </div>
 
 <!-- Save indicator -->
-<div class="save-indicator" id="saveIndicator">✓ Saved!</div>
+<div class="save-indicator" id="saveIndicator">✓ Saved to Google Sheets</div>
 
 <script>
 // ============================================================
@@ -645,7 +645,7 @@ async function saveToSheets(rows) {
       body: JSON.stringify({ action: 'upsert', rows }),
       headers: { 'Content-Type': 'text/plain' }
     });
-    showSaveIndicator('✓ Saved!');
+    showSaveIndicator('✓ Saved to Google Sheets');
     setConnectionStatus('connected');
     return true;
   } catch(e) {
@@ -848,7 +848,9 @@ function badgeClass(s) {
 // ============================================================
 // INLINE EDIT
 // ============================================================
-let saveTimer = null;
+// Per-row dirty tracking — keys are filteredOrders indices
+const dirtyRows = new Set();
+
 function updateField(idx, field, value) {
   filteredOrders[idx][field] = value;
   // Sync back to allOrders
@@ -857,12 +859,29 @@ function updateField(idx, field, value) {
   if (master) master[field] = value;
   filteredOrders[idx].updated_at = new Date().toISOString();
   localStorage.setItem('vas_orders_cache', JSON.stringify(allOrders));
-
-  clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => {
-    saveToSheets([filteredOrders[idx]]);
-  }, 1200);
+  // Mark this row as needing a save — actual save fires when focus leaves the row
+  dirtyRows.add(idx);
 }
+
+// Flush all dirty rows to Sheets when focus moves away from a row or the table
+function flushDirtyRows() {
+  if (dirtyRows.size === 0) return;
+  const toSave = [...dirtyRows].map(idx => filteredOrders[idx]).filter(Boolean);
+  dirtyRows.clear();
+  if (toSave.length > 0) saveToSheets(toSave);
+}
+
+// Attach a single focusout listener to the table body; fires whenever focus leaves a cell.
+// relatedTarget is where focus is going — if it's still inside the same TR, don't flush yet.
+document.addEventListener('focusout', function(e) {
+  const table = document.getElementById('ordersTable');
+  if (!table || !table.contains(e.target)) return;
+  // Check if focus is moving to another cell in the SAME row
+  const leavingRow = e.target.closest('tr');
+  const enteringRow = e.relatedTarget ? e.relatedTarget.closest('tr') : null;
+  if (leavingRow && leavingRow === enteringRow) return; // still in same row, wait
+  flushDirtyRows();
+}, true);
 
 function deleteOrder(idx) {
   if (!confirm('Delete this order?')) return;
