@@ -456,6 +456,7 @@
             <th style="width:120px">Entered</th>
             <th>DN/SO</th>
             <th>Waived Date</th>
+            <th>Date Released</th>
             <th>Customer</th>
             <th>Route By</th>
             <th>Cancel Date</th>
@@ -464,7 +465,6 @@
             <th>PO</th>
             <th>Routed / Status</th>
             <th>Ship Date</th>
-            <th>Date Released</th>
             <th>S7</th>
             <th>Status</th>
             <th>Days Lost - Hold</th>
@@ -942,6 +942,7 @@ function renderTable() {
       <td style="white-space:nowrap">${fmtEntered(o.created_at)}</td>
       <td class="dn">${esc(o.dn_so||'')}</td>
       <td><input type="date" value="${o.waived_date||''}" onchange="updateField(${absIdx},'waived_date',this.value)"></td>
+      <td><input type="date" value="${o.date_released||''}" onchange="updateField(${absIdx},'date_released',this.value)"></td>
       <td><input type="text" value="${esc(o.customer||'')}" placeholder="Customer" onchange="updateField(${absIdx},'customer',this.value)" style="min-width:100px"></td>
       <td><input type="date" value="${o.route_by_date||''}" onchange="updateField(${absIdx},'route_by_date',this.value)"></td>
       <td><input type="date" value="${o.cancel_date||''}" onchange="updateField(${absIdx},'cancel_date',this.value)"></td>
@@ -958,7 +959,6 @@ function renderTable() {
         </select>
       </td>
       <td><input type="date" value="${o.ship_date||''}" onchange="updateField(${absIdx},'ship_date',this.value)"></td>
-      <td><input type="date" value="${o.date_released||''}" onchange="updateField(${absIdx},'date_released',this.value)"></td>
       <td><input type="text" value="${esc(o.s7||'')}" onchange="updateField(${absIdx},'s7',this.value)" style="width:60px"></td>
       <td><input type="text" value="${esc(o.status||'')}" onchange="updateField(${absIdx},'status',this.value)" style="min-width:90px"></td>
       <td><input type="text" value="${esc(o.days_lost_hold||'')}" onchange="updateField(${absIdx},'days_lost_hold',this.value)" style="width:50px;text-align:center"></td>
