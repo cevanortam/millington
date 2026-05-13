@@ -1134,7 +1134,13 @@ function previewDNs() {
 
 function wizardNext() {
   previewDNs();
-  if (pendingDNs.length === 0) { alert('Please enter at least one DN/SO number.'); return; }
+  if (pendingDNs.length === 0 && document.getElementById('dnInput').value.trim() === '') {
+    alert('Please enter at least one DN/SO number.'); return;
+  }
+  if (pendingDNs.length === 0) {
+    alert('All entered DN/SO numbers already exist in the system. No new orders to add.');
+    return;
+  }
 
   // Build detail grid
   const waived = document.getElementById('bulk_waived_date').value;
@@ -1232,7 +1238,9 @@ async function saveOrders() {
   renderMetrics();
 
   if (toAdd.length > 0) await saveToSheets(toAdd);
-  if (skipped > 0) alert(`${toAdd.length} orders added. ${skipped} skipped (DN/SO already exists).`);
+  if (skipped > 0) {
+    alert(`${toAdd.length} order${toAdd.length !== 1 ? 's' : ''} added. ${skipped} duplicate DN/SO${skipped !== 1 ? 's were' : ' was'} ignored — the original entry has been kept.`);
+  }
 }
 
 // ============================================================
