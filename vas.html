@@ -349,7 +349,7 @@
 
 <!-- Config banner -->
 <div class="config-banner" id="configBanner">
-  <span>⚠️ <strong>Setup required:</strong> Paste your Google Apps Script Web App URL to connect to Google Sheets.</span>
+  <span>⚠️ <strong>Setup required:</strong> Paste your Google Apps Script Web App URL to connect to the database.</span>
   <input type="text" id="gasUrl" placeholder="https://script.google.com/macros/s/AKfy.../exec" />
   <button onclick="saveGASUrl()">Connect</button>
   <button onclick="document.getElementById('configBanner').style.display='none'" style="background:none;color:#7a4f00;border:none;cursor:pointer;font-size:18px;margin-left:4px;">✕</button>
@@ -583,7 +583,7 @@
             </div>
             <div class="form-group">
               <label>Customer</label>
-              <input type="text" id="bulk_customer" placeholder="e.g. Bloomingdales">
+              <input type="text" id="bulk_customer" placeholder="e.g. Bloomingdales" list="customerList" autocomplete="off">
             </div>
           </div>
           <div class="form-row">
@@ -630,7 +630,7 @@
 </div>
 
 <!-- Save indicator -->
-<div class="save-indicator" id="saveIndicator">✓ Saved!</div>
+<div class="save-indicator" id="saveIndicator">✓ Saved</div>
 
 <script>
 // ============================================================
@@ -740,12 +740,12 @@ async function saveToSheets(rows) {
       body: JSON.stringify({ action: 'upsert', rows }),
       headers: { 'Content-Type': 'text/plain' }
     });
-    showSaveIndicator('✓ Saved!');
+    showSaveIndicator('✓ Saved');
     setConnectionStatus('connected');
     return true;
   } catch(e) {
     console.error(e);
-    showSaveIndicator('⚠ Could not reach Google Sheets', true);
+    showSaveIndicator('⚠ Could not save', true);
     setConnectionStatus('error');
     return false;
   }
@@ -759,17 +759,17 @@ async function testConnection() {
     const data = await loadViaJsonp(GAS_URL + '?action=getAll&callback=onSheetsData', 10000);
     if (data && data.rows !== undefined) {
       setConnectionStatus('connected');
-      showSaveIndicator('✓ Connected — ' + data.rows.length + ' rows in sheet');
+      showSaveIndicator('✓ Connected — ' + data.rows.length + ' records loaded');
       allOrders = data.rows;
       localStorage.setItem('vas_orders_cache', JSON.stringify(allOrders));
       renderOrders(); renderMetrics();
     } else {
       setConnectionStatus('error');
-      showSaveIndicator('⚠ Sheet responded but returned unexpected data', true);
+      showSaveIndicator('⚠ Connected but returned unexpected data', true);
     }
   } catch(e) {
     setConnectionStatus('error');
-    showSaveIndicator('⚠ Cannot reach Google Sheets — check deployment', true);
+    showSaveIndicator('⚠ Connection failed — check deployment', true);
   }
   btn.textContent = 'Test Connection';
   btn.disabled = false;
@@ -1064,6 +1064,10 @@ function openAddModal() {
   document.getElementById('bulk_cancel_date').value = '';
   document.getElementById('bulk_route_by_date').value = '';
   document.getElementById('bulk_routed_status').value = '';
+  // Refresh customer autocomplete list from current data
+  const customers = [...new Set(allOrders.map(o => o.customer).filter(Boolean))].sort();
+  const dl = document.getElementById('customerList');
+  if (dl) dl.innerHTML = customers.map(c => `<option value="${esc(c)}">`).join('');
 }
 
 function closeModal() { document.getElementById('addModal').classList.remove('open'); }
@@ -1506,5 +1510,6 @@ document.addEventListener('keydown', function(e) {
 });
 </script>
 
+<datalist id="customerList"></datalist>
 </body>
 </html>
