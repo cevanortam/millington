@@ -374,8 +374,72 @@
     <select onchange="filterOrders()" id="filterCustomer">
       <option value="">All Customers</option>
     </select>
-    <button class="btn btn-outline btn-sm" onclick="clearFilters()">Clear Filters</button>
+    <button class="btn btn-outline btn-sm" id="dateFilterToggle" onclick="toggleDateFilters()" style="display:inline-flex;align-items:center;gap:5px;">
+      📅 Date Filters <span id="dateFilterBadge" style="display:none;background:var(--red);color:white;border-radius:10px;font-size:10px;padding:1px 6px;font-weight:700;"></span>
+    </button>
+    <button class="btn btn-outline btn-sm" onclick="clearFilters()">Clear All</button>
     <span style="margin-left:auto;font-size:12px;color:var(--gray-400)" id="rowCount"></span>
+  </div>
+
+  <!-- Date filter panel (collapsible) -->
+  <div id="dateFilterPanel" style="display:none;background:white;border:1px solid var(--gray-200);border-radius:var(--radius-lg);padding:14px 18px;margin-bottom:12px;box-shadow:var(--shadow);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <span style="font-family:var(--font-condensed);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--navy);">Date Filters</span>
+      <span style="font-size:11px;color:var(--gray-400);">Leave blank to show all. Both From and To are optional.</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;">
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray-500);">Entered (Created)</label>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input type="date" id="df_entered_from" onchange="filterOrders()" style="flex:1;font-size:12px;padding:5px 8px;">
+          <span style="font-size:11px;color:var(--gray-400);">to</span>
+          <input type="date" id="df_entered_to" onchange="filterOrders()" style="flex:1;font-size:12px;padding:5px 8px;">
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray-500);">Waived Date</label>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input type="date" id="df_waived_from" onchange="filterOrders()" style="flex:1;font-size:12px;padding:5px 8px;">
+          <span style="font-size:11px;color:var(--gray-400);">to</span>
+          <input type="date" id="df_waived_to" onchange="filterOrders()" style="flex:1;font-size:12px;padding:5px 8px;">
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray-500);">Route By Date</label>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input type="date" id="df_routeby_from" onchange="filterOrders()" style="flex:1;font-size:12px;padding:5px 8px;">
+          <span style="font-size:11px;color:var(--gray-400);">to</span>
+          <input type="date" id="df_routeby_to" onchange="filterOrders()" style="flex:1;font-size:12px;padding:5px 8px;">
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray-500);">Cancel Date</label>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input type="date" id="df_cancel_from" onchange="filterOrders()" style="flex:1;font-size:12px;padding:5px 8px;">
+          <span style="font-size:11px;color:var(--gray-400);">to</span>
+          <input type="date" id="df_cancel_to" onchange="filterOrders()" style="flex:1;font-size:12px;padding:5px 8px;">
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray-500);">Ship Date</label>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input type="date" id="df_ship_from" onchange="filterOrders()" style="flex:1;font-size:12px;padding:5px 8px;">
+          <span style="font-size:11px;color:var(--gray-400);">to</span>
+          <input type="date" id="df_ship_to" onchange="filterOrders()" style="flex:1;font-size:12px;padding:5px 8px;">
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray-500);">Date Released</label>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input type="date" id="df_released_from" onchange="filterOrders()" style="flex:1;font-size:12px;padding:5px 8px;">
+          <span style="font-size:11px;color:var(--gray-400);">to</span>
+          <input type="date" id="df_released_to" onchange="filterOrders()" style="flex:1;font-size:12px;padding:5px 8px;">
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:10px;text-align:right;">
+      <button class="btn btn-outline btn-sm" onclick="clearDateFilters()">Clear Date Filters</button>
+    </div>
   </div>
 
   <div class="table-wrap">
@@ -750,11 +814,40 @@ function showPage(id, tab) {
 // ============================================================
 // RENDER ORDERS TABLE
 // ============================================================
+// Date filter field definitions: [inputFromId, inputToId, orderField, useTime]
+const DATE_FILTERS = [
+  ['df_entered_from',  'df_entered_to',  'created_at',     true],
+  ['df_waived_from',   'df_waived_to',   'waived_date',    false],
+  ['df_routeby_from',  'df_routeby_to',  'route_by_date',  false],
+  ['df_cancel_from',   'df_cancel_to',   'cancel_date',    false],
+  ['df_ship_from',     'df_ship_to',     'ship_date',      false],
+  ['df_released_from', 'df_released_to', 'date_released',  false],
+];
+
 function filterOrders() {
   const q = (document.getElementById('searchInput').value || '').toLowerCase();
   const fs = (document.getElementById('filterStatus').value || '').toLowerCase();
   const fo = document.getElementById('filterOpen').value;
   const fc = (document.getElementById('filterCustomer').value || '').toLowerCase();
+
+  // Collect active date ranges
+  const dateRanges = DATE_FILTERS.map(([fromId, toId, field, useTime]) => {
+    const fromVal = document.getElementById(fromId)?.value;
+    const toVal   = document.getElementById(toId)?.value;
+    const from = fromVal ? new Date(fromVal) : null;
+    // For "to" date: extend to end of that day for date-only fields
+    let to = null;
+    if (toVal) { to = new Date(toVal); if (!useTime) to.setHours(23, 59, 59, 999); }
+    return { field, from, to, useTime };
+  }).filter(r => r.from || r.to);
+
+  // Update badge
+  const badge = document.getElementById('dateFilterBadge');
+  if (badge) {
+    const active = dateRanges.length;
+    badge.style.display = active ? 'inline-block' : 'none';
+    badge.textContent = active;
+  }
 
   filteredOrders = allOrders.filter(o => {
     if (q && !JSON.stringify(o).toLowerCase().includes(q)) return false;
@@ -762,10 +855,34 @@ function filterOrders() {
     if (fo === 'open' && o.ship_date) return false;
     if (fo === 'closed' && !o.ship_date) return false;
     if (fc && (o.customer || '').toLowerCase() !== fc) return false;
+    // Date range checks
+    for (const { field, from, to } of dateRanges) {
+      const raw = o[field];
+      if (!raw) return false; // field empty — exclude if a date filter is set for it
+      const d = new Date(raw);
+      if (isNaN(d)) return false;
+      if (from && d < from) return false;
+      if (to   && d > to)   return false;
+    }
     return true;
   });
   currentPage = 1;
   renderTable();
+}
+
+function toggleDateFilters() {
+  const panel = document.getElementById('dateFilterPanel');
+  const isOpen = panel.style.display !== 'none';
+  panel.style.display = isOpen ? 'none' : 'block';
+  document.getElementById('dateFilterToggle').style.background = isOpen ? '' : 'var(--navy-light)';
+}
+
+function clearDateFilters() {
+  DATE_FILTERS.forEach(([fromId, toId]) => {
+    const f = document.getElementById(fromId); if (f) f.value = '';
+    const t = document.getElementById(toId);   if (t) t.value = '';
+  });
+  filterOrders();
 }
 
 function clearFilters() {
@@ -773,7 +890,7 @@ function clearFilters() {
   document.getElementById('filterStatus').value = '';
   document.getElementById('filterOpen').value = '';
   document.getElementById('filterCustomer').value = '';
-  filterOrders();
+  clearDateFilters();
 }
 
 function renderOrders() {
