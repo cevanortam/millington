@@ -434,6 +434,8 @@
     <div class="metric-card gold-accent"><div class="metric-label">On Hold</div><div class="metric-value gold" id="m-hold">—</div><div class="metric-sub">Current holds</div></div>
     <div class="metric-card"><div class="metric-label">Routed Today</div><div class="metric-value" id="m-routed-today">—</div><div class="metric-sub">Shipped today</div></div>
     <div class="metric-card green-accent"><div class="metric-label">Closed This Week</div><div class="metric-value green" id="m-week">—</div><div class="metric-sub">Orders with ship date this week</div></div>
+    <div class="metric-card gold-accent"><div class="metric-label">Due Within 48 hrs</div><div class="metric-value gold" id="m-due48">—</div><div class="metric-sub">Open orders, route-by in &lt;48 hours</div></div>
+    <div class="metric-card red-accent"><div class="metric-label">Due Within 24 hrs</div><div class="metric-value red" id="m-due24">—</div><div class="metric-sub">Open orders, route-by in &lt;24 hours</div></div>
   </div>
 
   <div class="charts-grid">
@@ -1044,7 +1046,20 @@ function renderMetrics() {
 
   const open = allOrders.filter(o => !o.ship_date);
   const closed = allOrders.filter(o => o.ship_date);
+  const now = new Date();
   const overdue = open.filter(o => o.route_by_date && new Date(o.route_by_date) < today);
+  const due48 = open.filter(o => {
+    if (!o.route_by_date) return false;
+    const rb = new Date(o.route_by_date);
+    const msUntil = rb - now;
+    return msUntil >= 0 && msUntil <= 48 * 60 * 60 * 1000;
+  });
+  const due24 = open.filter(o => {
+    if (!o.route_by_date) return false;
+    const rb = new Date(o.route_by_date);
+    const msUntil = rb - now;
+    return msUntil >= 0 && msUntil <= 24 * 60 * 60 * 1000;
+  });
   const onHold = allOrders.filter(o => (o.routed_status||'').toUpperCase() === 'HOLD');
   const routedToday = allOrders.filter(o => o.ship_date && new Date(o.ship_date).toDateString() === today.toDateString());
   const closedWeek = closed.filter(o => new Date(o.ship_date) >= weekStart);
@@ -1065,6 +1080,8 @@ function renderMetrics() {
   document.getElementById('m-avgclose').textContent = avgDays === '—' ? '—' : avgDays + 'd';
   document.getElementById('m-overdue').textContent = overdue.length;
   document.getElementById('m-hold').textContent = onHold.length;
+  document.getElementById('m-due48').textContent = due48.length;
+  document.getElementById('m-due24').textContent = due24.length;
   document.getElementById('m-routed-today').textContent = routedToday.length;
   document.getElementById('m-week').textContent = closedWeek.length;
 
