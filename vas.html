@@ -1143,6 +1143,73 @@ function showSaveIndicator(msg, error = false) {
 
 // Refresh from Sheets if URL is set
 if (GAS_URL) setTimeout(loadFromSheets, 100);
+
+// ============================================================
+// ARROW KEY NAVIGATION IN ORDERS TABLE
+// ============================================================
+document.addEventListener('keydown', function(e) {
+  const active = document.activeElement;
+  if (!active) return;
+
+  // Only act inside the orders table
+  const table = document.getElementById('ordersTable');
+  if (!table || !table.contains(active)) return;
+
+  const key = e.key;
+  if (!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Enter'].includes(key)) return;
+
+  // Find the current td and tr
+  const td = active.closest('td');
+  const tr = active.closest('tr');
+  if (!td || !tr) return;
+
+  const tbody = table.querySelector('tbody');
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+  const rowIdx = rows.indexOf(tr);
+
+  // Get all focusable cells in this row (inputs, selects, textareas — not checkboxes which use space)
+  function getFocusables(row) {
+    return Array.from(row.querySelectorAll('input:not([type="checkbox"]), select, textarea'));
+  }
+
+  const cellsInRow = getFocusables(tr);
+  const colIdx = cellsInRow.indexOf(active);
+
+  if (key === 'ArrowDown' || key === 'Enter') {
+    e.preventDefault();
+    const nextRow = rows[rowIdx + 1];
+    if (nextRow) {
+      const targets = getFocusables(nextRow);
+      const target = targets[colIdx] || targets[0];
+      if (target) { target.focus(); if (target.select) target.select(); }
+    }
+  } else if (key === 'ArrowUp') {
+    e.preventDefault();
+    const prevRow = rows[rowIdx - 1];
+    if (prevRow) {
+      const targets = getFocusables(prevRow);
+      const target = targets[colIdx] || targets[0];
+      if (target) { target.focus(); if (target.select) target.select(); }
+    }
+  } else if (key === 'ArrowRight') {
+    // Only move right if at end of text input, or it's a date/select
+    const isText = active.type === 'text' || active.tagName === 'TEXTAREA';
+    const atEnd = !isText || active.selectionStart === active.value.length;
+    if (atEnd) {
+      e.preventDefault();
+      const next = cellsInRow[colIdx + 1];
+      if (next) { next.focus(); if (next.select) next.select(); }
+    }
+  } else if (key === 'ArrowLeft') {
+    const isText = active.type === 'text' || active.tagName === 'TEXTAREA';
+    const atStart = !isText || active.selectionStart === 0;
+    if (atStart) {
+      e.preventDefault();
+      const prev = cellsInRow[colIdx - 1];
+      if (prev) { prev.focus(); if (prev.select) prev.select(); }
+    }
+  }
+});
 </script>
 
 </body>
