@@ -117,6 +117,7 @@
   .btn-red:hover { background: #a50d25; }
   .btn-outline { background: white; color: var(--gray-700); border: 1px solid var(--gray-300); }
   .btn-outline:hover { background: var(--gray-100); }
+  .trend-period-btn.active { background: var(--navy); color: white; border-color: var(--navy); }
   .btn-sm { padding: 4px 10px; font-size: 12px; }
 
   /* Table */
@@ -314,6 +315,7 @@
     .metrics-grid { grid-template-columns: repeat(2, 1fr); }
   }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -426,16 +428,18 @@
 <!-- ====== METRICS PAGE ====== -->
 <div class="page" id="page-metrics">
   <div class="metrics-grid" id="metricsCards">
+    <!-- Row 1: volume / current state -->
     <div class="metric-card"><div class="metric-label">Total Orders</div><div class="metric-value" id="m-total">—</div><div class="metric-sub">All time</div></div>
     <div class="metric-card red-accent"><div class="metric-label">Open Orders</div><div class="metric-value red" id="m-open">—</div><div class="metric-sub">No ship date</div></div>
     <div class="metric-card gold-accent"><div class="metric-label">Open Units</div><div class="metric-value gold" id="m-units">—</div><div class="metric-sub">Units on open orders</div></div>
-    <div class="metric-card green-accent"><div class="metric-label">Avg Close Time</div><div class="metric-value green" id="m-avgclose">—</div><div class="metric-sub" id="m-avgclose-sub">Days waived to ship</div></div>
-    <div class="metric-card red-accent"><div class="metric-label">Overdue</div><div class="metric-value red" id="m-overdue">—</div><div class="metric-sub">Past route-by date</div></div>
     <div class="metric-card gold-accent"><div class="metric-label">On Hold</div><div class="metric-value gold" id="m-hold">—</div><div class="metric-sub">Current holds</div></div>
     <div class="metric-card"><div class="metric-label">Routed Today</div><div class="metric-value" id="m-routed-today">—</div><div class="metric-sub">Shipped today</div></div>
+    <!-- Row 2: urgency / performance -->
+    <div class="metric-card gold-accent"><div class="metric-label">Due Within 48 hrs</div><div class="metric-value gold" id="m-due48">—</div><div class="metric-sub">Open, route-by &lt; 48 hours</div></div>
+    <div class="metric-card red-accent"><div class="metric-label">Due Within 24 hrs</div><div class="metric-value red" id="m-due24">—</div><div class="metric-sub">Open, route-by &lt; 24 hours</div></div>
+    <div class="metric-card red-accent"><div class="metric-label">Overdue</div><div class="metric-value red" id="m-overdue">—</div><div class="metric-sub">Past route-by date</div></div>
+    <div class="metric-card green-accent"><div class="metric-label">Avg Close Time</div><div class="metric-value green" id="m-avgclose">—</div><div class="metric-sub" id="m-avgclose-sub">Days waived to ship</div></div>
     <div class="metric-card green-accent"><div class="metric-label">Closed This Week</div><div class="metric-value green" id="m-week">—</div><div class="metric-sub">Orders with ship date this week</div></div>
-    <div class="metric-card gold-accent"><div class="metric-label">Due Within 48 hrs</div><div class="metric-value gold" id="m-due48">—</div><div class="metric-sub">Open orders, route-by in &lt;48 hours</div></div>
-    <div class="metric-card red-accent"><div class="metric-label">Due Within 24 hrs</div><div class="metric-value red" id="m-due24">—</div><div class="metric-sub">Open orders, route-by in &lt;24 hours</div></div>
   </div>
 
   <div class="charts-grid">
@@ -453,6 +457,26 @@
         <thead><tr><th>DN/SO</th><th>Customer</th><th>Waived Date</th><th>Route By</th><th>Units</th><th>Days Open</th><th>Status</th></tr></thead>
         <tbody id="agingBody"></tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- Trend Charts -->
+  <div style="margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+    <div class="metrics-section-title" style="margin:0">Closure Trends</div>
+    <div style="display:flex;gap:6px;">
+      <button class="btn btn-outline btn-sm trend-period-btn active" data-period="daily" onclick="setTrendPeriod('daily',this)">Daily</button>
+      <button class="btn btn-outline btn-sm trend-period-btn" data-period="weekly" onclick="setTrendPeriod('weekly',this)">Weekly</button>
+      <button class="btn btn-outline btn-sm trend-period-btn" data-period="monthly" onclick="setTrendPeriod('monthly',this)">Monthly</button>
+    </div>
+  </div>
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">Orders Closed</div>
+      <canvas id="trendOrdersChart" height="140"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Units Closed</div>
+      <canvas id="trendUnitsChart" height="140"></canvas>
     </div>
   </div>
 </div>
@@ -1116,6 +1140,8 @@ function renderMetrics() {
     return da - db;
   }).slice(0,20);
 
+  renderTrendCharts();
+
   document.getElementById('agingBody').innerHTML = sorted.map(o => {
     const daysOpen = o.waived_date ? Math.floor((today - new Date(o.waived_date))/86400000) : '—';
     let tagStyle = 'background:var(--navy-light);color:var(--navy)';
@@ -1185,6 +1211,109 @@ function showSaveIndicator(msg, error = false) {
 
 // Refresh from Sheets if URL is set
 if (GAS_URL) setTimeout(loadFromSheets, 100);
+
+// ============================================================
+// TREND CHARTS
+// ============================================================
+let trendPeriod = 'daily';
+let ordersChart = null;
+let unitsChart = null;
+
+function setTrendPeriod(period, btn) {
+  trendPeriod = period;
+  document.querySelectorAll('.trend-period-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTrendCharts();
+}
+
+function renderTrendCharts() {
+  const closed = allOrders.filter(o => o.ship_date);
+  if (!closed.length) {
+    ['trendOrdersChart','trendUnitsChart'].forEach(id => {
+      const ctx = document.getElementById(id);
+      if (ctx) { const c = ctx.getContext('2d'); c.clearRect(0,0,ctx.width,ctx.height); }
+    });
+    return;
+  }
+
+  // Build buckets
+  const buckets = {};
+  closed.forEach(o => {
+    const d = new Date(o.ship_date);
+    if (isNaN(d)) return;
+    let key;
+    if (trendPeriod === 'daily') {
+      key = d.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: '2-digit' });
+    } else if (trendPeriod === 'weekly') {
+      // ISO week start (Monday)
+      const day = d.getDay();
+      const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+      const mon = new Date(d); mon.setDate(diff); mon.setHours(0,0,0,0);
+      key = 'Wk ' + mon.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });
+    } else {
+      key = d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    }
+    if (!buckets[key]) buckets[key] = { orders: 0, units: 0, sortKey: d };
+    buckets[key].orders++;
+    buckets[key].units += parseInt(o.units) || 0;
+  });
+
+  // Sort chronologically using earliest date in each bucket
+  const sorted = Object.entries(buckets).sort((a, b) => a[1].sortKey - b[1].sortKey);
+  // For daily/weekly limit to last 30/16 buckets so chart stays readable
+  const limit = trendPeriod === 'daily' ? 30 : trendPeriod === 'weekly' ? 16 : 24;
+  const display = sorted.slice(-limit);
+  const labels = display.map(e => e[0]);
+  const orderVals = display.map(e => e[1].orders);
+  const unitVals = display.map(e => e[1].units);
+
+  const navy = '#003057';
+  const red = '#C8102E';
+  const navyAlpha = 'rgba(0,48,87,0.15)';
+  const redAlpha = 'rgba(200,16,46,0.15)';
+
+  const baseConfig = (color, fillColor) => ({
+    fill: true,
+    tension: 0.35,
+    borderColor: color,
+    backgroundColor: fillColor,
+    borderWidth: 2,
+    pointBackgroundColor: color,
+    pointRadius: display.length > 20 ? 2 : 4,
+    pointHoverRadius: 6,
+  });
+
+  const axisStyle = {
+    grid: { color: 'rgba(0,0,0,0.06)' },
+    ticks: { font: { family: "'Barlow', sans-serif", size: 11 }, color: '#647a93' }
+  };
+
+  function buildChart(canvasId, label, data, color, fillColor, existing) {
+    const ctx = document.getElementById(canvasId);
+    if (!ctx) return null;
+    if (existing) existing.destroy();
+    return new Chart(ctx, {
+      type: 'line',
+      data: { labels, datasets: [{ label, data, ...baseConfig(color, fillColor) }] },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => ' ' + ctx.parsed.y.toLocaleString() + ' ' + label.toLowerCase()
+            }
+          }
+        },
+        scales: { x: axisStyle, y: { ...axisStyle, beginAtZero: true, ticks: { ...axisStyle.ticks, precision: 0 } } }
+      }
+    });
+  }
+
+  ordersChart = buildChart('trendOrdersChart', 'Orders', orderVals, navy, navyAlpha, ordersChart);
+  unitsChart  = buildChart('trendUnitsChart',  'Units',  unitVals,  red,  redAlpha,  unitsChart);
+}
 
 // ============================================================
 // ARROW KEY NAVIGATION IN ORDERS TABLE
