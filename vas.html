@@ -33,10 +33,10 @@
     --shadow: 0 2px 8px rgba(0,48,87,0.10);
     --shadow-lg: 0 4px 20px rgba(0,48,87,0.15);
   }
-
+ 
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: var(--font); background: var(--gray-100); color: var(--gray-900); min-height: 100vh; }
-
+ 
   /* Header */
   .app-header {
     background: var(--navy);
@@ -61,7 +61,7 @@
   .header-btn:hover { background: rgba(255,255,255,0.18); }
   .header-btn.primary { background: var(--red); border-color: var(--red); }
   .header-btn.primary:hover { background: #a50d25; }
-
+ 
   /* Nav tabs */
   .nav-bar {
     background: var(--navy-mid); display: flex; gap: 2px; padding: 0 28px;
@@ -74,7 +74,7 @@
   }
   .nav-tab:hover { color: white; }
   .nav-tab.active { color: white; border-bottom-color: var(--gold); }
-
+ 
   /* Config banner */
   .config-banner {
     background: #fef3dc; border-bottom: 1px solid #f5a623;
@@ -91,11 +91,11 @@
     border-radius: var(--radius); font-family: var(--font); font-size: 13px;
     font-weight: 600; cursor: pointer;
   }
-
+ 
   /* Main content */
   .page { display: none; padding: 24px 28px; }
   .page.active { display: block; }
-
+ 
   /* ========== ORDERS PAGE ========== */
   .toolbar {
     display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap;
@@ -118,7 +118,7 @@
   .btn-outline { background: white; color: var(--gray-700); border: 1px solid var(--gray-300); }
   .btn-outline:hover { background: var(--gray-100); }
   .btn-sm { padding: 4px 10px; font-size: 12px; }
-
+ 
   /* Table */
   .table-wrap { background: white; border-radius: var(--radius-lg); box-shadow: var(--shadow); overflow: hidden; }
   .table-header {
@@ -127,7 +127,7 @@
   }
   .table-header .title { font-family: var(--font-condensed); font-size: 15px; font-weight: 700; letter-spacing: 0.5px; }
   .table-header .count { font-size: 12px; color: rgba(255,255,255,0.6); }
-
+ 
   .orders-table { width: 100%; border-collapse: collapse; font-size: 13px; }
   .orders-table th {
     background: var(--gray-100); color: var(--gray-500); font-weight: 600;
@@ -160,7 +160,7 @@
     background: transparent; color: var(--gray-900); min-height: 32px;
   }
   .orders-table textarea:focus { outline: none; border-color: var(--navy-mid); background: white; }
-
+ 
   .status-badge {
     display: inline-block; padding: 2px 8px; border-radius: 3px;
     font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase;
@@ -169,12 +169,12 @@
   .badge-hold { background: var(--red-light); color: var(--red); }
   .badge-process { background: var(--gold-light); color: #7a4f00; }
   .badge-open { background: var(--navy-light); color: var(--navy); }
-
+ 
   .overdue-row td { background: #fff5f5; }
   .overdue-row:hover td { background: #ffeaea; }
   .due-soon-row td { background: #fffbf0; }
   .due-soon-row:hover td { background: #fff5dc; }
-
+ 
   .save-indicator {
     position: fixed; bottom: 20px; right: 24px; z-index: 200;
     background: var(--navy); color: white; padding: 10px 18px;
@@ -183,14 +183,14 @@
     transition: all 0.2s; pointer-events: none;
   }
   .save-indicator.show { opacity: 1; transform: translateY(0); }
-
+ 
   /* Empty state */
   .empty-state {
     text-align: center; padding: 60px 20px; color: var(--gray-400);
   }
   .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
   .empty-state p { font-size: 14px; }
-
+ 
   /* ========== ADD ORDERS MODAL ========== */
   .modal-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.5);
@@ -210,7 +210,7 @@
   .modal-close { background: none; border: none; color: rgba(255,255,255,0.6); font-size: 22px; cursor: pointer; line-height: 1; }
   .modal-body { padding: 20px; overflow-y: auto; flex: 1; }
   .modal-foot { padding: 14px 20px; border-top: 1px solid var(--gray-200); display: flex; gap: 10px; justify-content: flex-end; }
-
+ 
   .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
   .form-row.single { grid-template-columns: 1fr; }
   .form-group { display: flex; flex-direction: column; gap: 4px; }
@@ -226,7 +226,7 @@
     text-transform: uppercase; color: var(--navy); letter-spacing: 0.6px;
     margin: 18px 0 10px; padding-bottom: 6px; border-bottom: 2px solid var(--navy-light);
   }
-
+ 
   /* Bulk DN entry */
   .dn-textarea {
     width: 100%; min-height: 120px; padding: 10px; border: 1px solid var(--gray-300);
@@ -242,7 +242,7 @@
     border-radius: 3px; padding: 2px 7px; font-size: 12px; font-weight: 600;
     margin: 2px;
   }
-
+ 
   /* Wizard steps */
   .wizard-steps { display: flex; gap: 0; margin-bottom: 20px; }
   .wizard-step {
@@ -252,7 +252,7 @@
   }
   .wizard-step.active { color: var(--navy); border-bottom-color: var(--navy); }
   .wizard-step.done { color: var(--green); border-bottom-color: var(--green); }
-
+ 
   /* ========== METRICS PAGE ========== */
   .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; margin-bottom: 28px; }
   .metric-card {
@@ -268,17 +268,17 @@
   .metric-value.gold { color: #c07400; }
   .metric-value.green { color: var(--green); }
   .metric-sub { font-size: 13px; color: var(--gray-400); margin-top: 8px; }
-
+ 
   .metrics-section-title {
     font-family: var(--font-condensed); font-size: 14px; font-weight: 700; letter-spacing: 0.5px;
     color: var(--navy); text-transform: uppercase; margin: 0 0 12px;
     padding-bottom: 6px; border-bottom: 2px solid var(--navy-light);
   }
-
+ 
   .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 24px; }
   .chart-card { background: white; border-radius: var(--radius-lg); padding: 18px 20px; box-shadow: var(--shadow); }
   .chart-title { font-family: var(--font-condensed); font-size: 13px; font-weight: 700; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px; }
-
+ 
   /* Bar chart */
   .bar-chart { display: flex; flex-direction: column; gap: 8px; }
   .bar-row { display: flex; align-items: center; gap: 8px; }
@@ -287,28 +287,28 @@
   .bar-fill { height: 100%; border-radius: 3px; background: var(--navy); transition: width 0.4s ease; }
   .bar-fill.red { background: var(--red); }
   .bar-val { font-size: 11px; font-weight: 600; color: var(--gray-500); min-width: 28px; text-align: right; }
-
+ 
   .aging-table { width: 100%; border-collapse: collapse; font-size: 13px; }
   .aging-table th { color: var(--gray-400); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--gray-200); }
   .aging-table td { padding: 7px 8px; border-bottom: 1px solid var(--gray-200); }
   .aging-table tr:last-child td { border-bottom: none; }
   .aging-tag { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 700; }
-
+ 
   /* Table scroll wrapper */
   .table-scroll { overflow-x: auto; max-height: 60vh; overflow-y: auto; }
-
+ 
   /* Loading */
   .loading { text-align: center; padding: 40px; color: var(--gray-400); font-size: 14px; }
   .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid var(--gray-200); border-top-color: var(--navy); border-radius: 50%; animation: spin 0.7s linear infinite; margin-right: 8px; vertical-align: middle; }
   @keyframes spin { to { transform: rotate(360deg); } }
-
+ 
   /* Pagination */
   .pagination { display: flex; align-items: center; gap: 6px; padding: 10px 14px; border-top: 1px solid var(--gray-200); background: var(--gray-100); }
   .page-btn { padding: 4px 10px; border: 1px solid var(--gray-300); border-radius: var(--radius); font-size: 12px; cursor: pointer; background: white; font-family: var(--font); }
   .page-btn:hover { background: var(--gray-100); }
   .page-btn.current { background: var(--navy); color: white; border-color: var(--navy); }
   .page-info { font-size: 12px; color: var(--gray-400); margin-left: auto; }
-
+ 
   @media (max-width: 768px) {
     .charts-grid { grid-template-columns: 1fr; }
     .metrics-grid { grid-template-columns: 1fr 1fr; }
@@ -316,7 +316,7 @@
 </style>
 </head>
 <body>
-
+ 
 <!-- Header -->
 <header class="app-header">
   <div class="header-brand">
@@ -333,13 +333,13 @@
     <button class="header-btn primary" onclick="openAddModal()">+ Add Orders</button>
   </div>
 </header>
-
+ 
 <!-- Nav -->
 <nav class="nav-bar">
   <div class="nav-tab active" onclick="showPage('orders', this)">Orders</div>
   <div class="nav-tab" onclick="showPage('metrics', this)">Metrics</div>
 </nav>
-
+ 
 <!-- Config banner -->
 <div class="config-banner" id="configBanner">
   <span>⚠️ <strong>Setup required:</strong> Paste your Google Apps Script Web App URL to connect to Google Sheets.</span>
@@ -347,7 +347,7 @@
   <button onclick="saveGASUrl()">Connect</button>
   <button onclick="document.getElementById('configBanner').style.display='none'" style="background:none;color:#7a4f00;border:none;cursor:pointer;font-size:18px;margin-left:4px;">✕</button>
 </div>
-
+ 
 <!-- ====== ORDERS PAGE ====== -->
 <div class="page active" id="page-orders">
   <div class="toolbar">
@@ -370,7 +370,7 @@
     <button class="btn btn-outline btn-sm" onclick="clearFilters()">Clear Filters</button>
     <span style="margin-left:auto;font-size:12px;color:var(--gray-400)" id="rowCount"></span>
   </div>
-
+ 
   <div class="table-wrap">
     <div class="table-header">
       <span class="title">VAS Orders</span>
@@ -416,7 +416,7 @@
     </div>
   </div>
 </div>
-
+ 
 <!-- ====== METRICS PAGE ====== -->
 <div class="page" id="page-metrics">
   <div class="metrics-grid" id="metricsCards">
@@ -429,7 +429,7 @@
     <div class="metric-card"><div class="metric-label">Routed Today</div><div class="metric-value" id="m-routed-today">—</div><div class="metric-sub">Shipped today</div></div>
     <div class="metric-card green-accent"><div class="metric-label">Closed This Week</div><div class="metric-value green" id="m-week">—</div><div class="metric-sub">Orders with ship date this week</div></div>
   </div>
-
+ 
   <div class="charts-grid">
     <div class="chart-card">
       <div class="chart-title">Open Orders by Customer</div>
@@ -448,7 +448,7 @@
     </div>
   </div>
 </div>
-
+ 
 <!-- ====== ADD ORDERS MODAL ====== -->
 <div class="modal-overlay" id="addModal">
   <div class="modal">
@@ -461,7 +461,7 @@
         <div class="wizard-step active" id="step1-tab">1. DN/SO Entry</div>
         <div class="wizard-step" id="step2-tab">2. Order Details</div>
       </div>
-
+ 
       <!-- Step 1 -->
       <div id="step1">
         <div style="margin-bottom:12px;">
@@ -513,7 +513,7 @@
           </div>
         </div>
       </div>
-
+ 
       <!-- Step 2 -->
       <div id="step2" style="display:none">
         <div id="detailGrid"></div>
@@ -527,10 +527,10 @@
     </div>
   </div>
 </div>
-
+ 
 <!-- Save indicator -->
 <div class="save-indicator" id="saveIndicator">✓ Saved to Google Sheets</div>
-
+ 
 <script>
 // ============================================================
 // STATE
@@ -543,7 +543,7 @@ let currentPage = 1;
 const PAGE_SIZE = 50;
 let pendingDNs = [];
 let editBuffer = {};
-
+ 
 // ============================================================
 // INIT
 // ============================================================
@@ -554,7 +554,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderOrders();
   renderMetrics();
 });
-
+ 
 // ============================================================
 // GAS URL CONFIG
 // ============================================================
@@ -566,7 +566,7 @@ function saveGASUrl() {
   document.getElementById('configBanner').style.display = 'none';
   loadFromSheets();
 }
-
+ 
 // ============================================================
 // GOOGLE SHEETS I/O
 // ============================================================
@@ -575,22 +575,57 @@ async function loadFromSheets() {
   document.getElementById('tableLoading').style.display = 'block';
   document.getElementById('ordersTable').style.display = 'none';
   setConnectionStatus('checking');
-  try {
-    const res = await fetch(GAS_URL + '?action=getAll');
-    const data = await res.json();
-    if (data.rows) {
-      allOrders = data.rows;
-      localStorage.setItem('vas_orders_cache', JSON.stringify(allOrders));
-      setConnectionStatus('connected');
-    }
-  } catch(e) {
-    console.error('Load error', e);
-    setConnectionStatus('error');
-  }
-  renderOrders();
-  renderMetrics();
+  // Use JSONP via dynamic <script> tag — bypasses CORS entirely for GETs
+  loadViaJsonp(GAS_URL + '?action=getAll&callback=onSheetsData', 8000)
+    .then(data => {
+      if (data && data.rows) {
+        allOrders = data.rows;
+        localStorage.setItem('vas_orders_cache', JSON.stringify(allOrders));
+        setConnectionStatus('connected');
+      }
+      renderOrders();
+      renderMetrics();
+    })
+    .catch(e => {
+      console.error('Load error', e);
+      setConnectionStatus('error');
+      renderOrders();
+      renderMetrics();
+    });
 }
-
+ 
+function loadViaJsonp(url, timeout) {
+  return new Promise((resolve, reject) => {
+    const cbName = 'onSheetsData';
+    let done = false;
+    const timer = setTimeout(() => {
+      if (done) return;
+      done = true;
+      window[cbName] = null;
+      if (s.parentNode) s.parentNode.removeChild(s);
+      reject(new Error('Timeout'));
+    }, timeout);
+    window[cbName] = function(data) {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      window[cbName] = null;
+      if (s.parentNode) s.parentNode.removeChild(s);
+      resolve(data);
+    };
+    const s = document.createElement('script');
+    s.src = url;
+    s.onerror = () => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      window[cbName] = null;
+      reject(new Error('Script load error'));
+    };
+    document.head.appendChild(s);
+  });
+}
+ 
 async function saveToSheets(rows) {
   if (!GAS_URL) {
     showSaveIndicator('✓ Saved locally (no Sheets connected)');
@@ -614,15 +649,14 @@ async function saveToSheets(rows) {
     return false;
   }
 }
-
+ 
 async function testConnection() {
   const btn = document.getElementById('connTestBtn');
   btn.textContent = 'Testing…';
   btn.disabled = true;
   try {
-    const res = await fetch(GAS_URL + '?action=getAll');
-    const data = await res.json();
-    if (data.rows !== undefined) {
+    const data = await loadViaJsonp(GAS_URL + '?action=getAll&callback=onSheetsData', 10000);
+    if (data && data.rows !== undefined) {
       setConnectionStatus('connected');
       showSaveIndicator('✓ Connected — ' + data.rows.length + ' rows in sheet');
       allOrders = data.rows;
@@ -639,7 +673,7 @@ async function testConnection() {
   btn.textContent = 'Test Connection';
   btn.disabled = false;
 }
-
+ 
 function setConnectionStatus(state) {
   const dot = document.getElementById('connDot');
   const label = document.getElementById('connLabel');
@@ -652,7 +686,7 @@ function setConnectionStatus(state) {
     dot.style.background = 'var(--gold)'; label.textContent = 'Checking…';
   }
 }
-
+ 
 async function deleteFromSheets(dn_so) {
   if (!GAS_URL) return;
   try {
@@ -664,7 +698,7 @@ async function deleteFromSheets(dn_so) {
     });
   } catch(e) { console.error(e); }
 }
-
+ 
 // ============================================================
 // PAGES / NAVIGATION
 // ============================================================
@@ -675,7 +709,7 @@ function showPage(id, tab) {
   tab.classList.add('active');
   if (id === 'metrics') renderMetrics();
 }
-
+ 
 // ============================================================
 // RENDER ORDERS TABLE
 // ============================================================
@@ -684,7 +718,7 @@ function filterOrders() {
   const fs = (document.getElementById('filterStatus').value || '').toLowerCase();
   const fo = document.getElementById('filterOpen').value;
   const fc = (document.getElementById('filterCustomer').value || '').toLowerCase();
-
+ 
   filteredOrders = allOrders.filter(o => {
     if (q && !JSON.stringify(o).toLowerCase().includes(q)) return false;
     if (fs && (o.routed_status || '').toLowerCase() !== fs) return false;
@@ -696,7 +730,7 @@ function filterOrders() {
   currentPage = 1;
   renderTable();
 }
-
+ 
 function clearFilters() {
   document.getElementById('searchInput').value = '';
   document.getElementById('filterStatus').value = '';
@@ -704,7 +738,7 @@ function clearFilters() {
   document.getElementById('filterCustomer').value = '';
   filterOrders();
 }
-
+ 
 function renderOrders() {
   // Populate customer filter
   const customers = [...new Set(allOrders.map(o => o.customer).filter(Boolean))].sort();
@@ -712,24 +746,24 @@ function renderOrders() {
   const current = sel.value;
   sel.innerHTML = '<option value="">All Customers</option>' +
     customers.map(c => `<option value="${esc(c)}"${c===current?' selected':''}>${esc(c)}</option>`).join('');
-
+ 
   filteredOrders = [...allOrders];
   renderTable();
   document.getElementById('tableLoading').style.display = 'none';
 }
-
+ 
 function renderTable() {
   const today = new Date(); today.setHours(0,0,0,0);
   const soon = new Date(today); soon.setDate(soon.getDate() + 3);
-
+ 
   const total = filteredOrders.length;
   const start = (currentPage - 1) * PAGE_SIZE;
   const end = Math.min(start + PAGE_SIZE, total);
   const pageRows = filteredOrders.slice(start, end);
-
+ 
   document.getElementById('tableCount').textContent = total + ' orders';
   document.getElementById('rowCount').textContent = total === allOrders.length ? '' : `${total} of ${allOrders.length} shown`;
-
+ 
   const tbody = document.getElementById('ordersBody');
   if (total === 0) {
     document.getElementById('ordersTable').style.display = 'none';
@@ -739,7 +773,7 @@ function renderTable() {
   }
   document.getElementById('ordersTable').style.display = 'table';
   document.getElementById('emptyState').style.display = 'none';
-
+ 
   tbody.innerHTML = pageRows.map((o, idx) => {
     const absIdx = start + idx;
     const rb = o.route_by_date ? new Date(o.route_by_date) : null;
@@ -780,7 +814,7 @@ function renderTable() {
       <td><button class="btn btn-outline btn-sm" onclick="deleteOrder(${absIdx})" title="Delete" style="color:var(--red);border-color:var(--red-light)">✕</button></td>
     </tr>`;
   }).join('');
-
+ 
   // Pagination
   const pages = Math.ceil(total / PAGE_SIZE);
   if (pages <= 1) { document.getElementById('pagination').style.display = 'none'; return; }
@@ -792,9 +826,9 @@ function renderTable() {
   document.getElementById('pageButtons').innerHTML = btns;
   document.getElementById('pageInfo').textContent = `Showing ${start+1}–${end} of ${total}`;
 }
-
+ 
 function goPage(p) { currentPage = p; renderTable(); document.getElementById('tableScroll').scrollTop = 0; }
-
+ 
 function badgeClass(s) {
   if (!s) return 'badge-open';
   const u = s.toUpperCase();
@@ -803,7 +837,7 @@ function badgeClass(s) {
   if (u === 'IN PROCESS') return 'badge-process';
   return 'badge-open';
 }
-
+ 
 // ============================================================
 // INLINE EDIT
 // ============================================================
@@ -816,13 +850,13 @@ function updateField(idx, field, value) {
   if (master) master[field] = value;
   filteredOrders[idx].updated_at = new Date().toISOString();
   localStorage.setItem('vas_orders_cache', JSON.stringify(allOrders));
-
+ 
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
     saveToSheets([filteredOrders[idx]]);
   }, 1200);
 }
-
+ 
 function deleteOrder(idx) {
   if (!confirm('Delete this order?')) return;
   const dn = filteredOrders[idx].dn_so;
@@ -832,7 +866,7 @@ function deleteOrder(idx) {
   filterOrders();
   renderMetrics();
 }
-
+ 
 // ============================================================
 // ADD ORDERS MODAL / WIZARD
 // ============================================================
@@ -856,9 +890,9 @@ function openAddModal() {
   document.getElementById('bulk_route_by_date').value = '';
   document.getElementById('bulk_routed_status').value = '';
 }
-
+ 
 function closeModal() { document.getElementById('addModal').classList.remove('open'); }
-
+ 
 function previewDNs() {
   const raw = document.getElementById('dnInput').value;
   pendingDNs = raw.split(/[\n,\r\t]+/).map(s => s.trim()).filter(s => s.length > 0);
@@ -872,11 +906,11 @@ function previewDNs() {
   count.textContent = pendingDNs.length + ' DN/SO number' + (pendingDNs.length===1?'':'s') + ' detected';
   tags.innerHTML = pendingDNs.map(d => `<span class="dn-preview-tag">${esc(d)}</span>`).join('');
 }
-
+ 
 function wizardNext() {
   previewDNs();
   if (pendingDNs.length === 0) { alert('Please enter at least one DN/SO number.'); return; }
-
+ 
   // Build detail grid
   const waived = document.getElementById('bulk_waived_date').value;
   const customer = document.getElementById('bulk_customer').value;
@@ -884,7 +918,7 @@ function wizardNext() {
   const cancel = document.getElementById('bulk_cancel_date').value;
   const routeBy = document.getElementById('bulk_route_by_date').value;
   const routed = document.getElementById('bulk_routed_status').value;
-
+ 
   const html = pendingDNs.map((dn, i) => `
     <div style="background:var(--gray-100);border-radius:var(--radius);padding:12px 14px;margin-bottom:12px;">
       <div style="font-weight:700;font-family:var(--font-condensed);font-size:14px;color:var(--navy);margin-bottom:10px;letter-spacing:0.3px;">DN/SO: ${esc(dn)}</div>
@@ -906,7 +940,7 @@ function wizardNext() {
       </div>
     </div>
   `).join('');
-
+ 
   document.getElementById('detailGrid').innerHTML = html;
   document.getElementById('step1').style.display = 'none';
   document.getElementById('step2').style.display = 'block';
@@ -917,7 +951,7 @@ function wizardNext() {
   document.getElementById('step2-tab').className = 'wizard-step active';
   document.getElementById('modalTitle').textContent = `Add ${pendingDNs.length} Orders — Step 2: Individual Details`;
 }
-
+ 
 function wizardPrev() {
   document.getElementById('step1').style.display = 'block';
   document.getElementById('step2').style.display = 'none';
@@ -928,7 +962,7 @@ function wizardPrev() {
   document.getElementById('step2-tab').className = 'wizard-step';
   document.getElementById('modalTitle').textContent = 'Add VAS Orders — Step 1: Enter DN/SO Numbers';
 }
-
+ 
 async function saveOrders() {
   const waived = document.getElementById('bulk_waived_date').value;
   const customer = document.getElementById('bulk_customer').value;
@@ -936,7 +970,7 @@ async function saveOrders() {
   const routeBy = document.getElementById('bulk_route_by_date').value;
   const routed = document.getElementById('bulk_routed_status').value;
   const now = new Date().toISOString();
-
+ 
   const newOrders = pendingDNs.map((dn, i) => ({
     dn_so: dn,
     waived_date: waived,
@@ -959,29 +993,29 @@ async function saveOrders() {
     created_at: now,
     updated_at: now
   }));
-
+ 
   // Merge — skip duplicates
   const existingDNs = new Set(allOrders.map(o => o.dn_so));
   const toAdd = newOrders.filter(o => !existingDNs.has(o.dn_so));
   const skipped = newOrders.length - toAdd.length;
-
+ 
   allOrders = [...allOrders, ...toAdd];
   localStorage.setItem('vas_orders_cache', JSON.stringify(allOrders));
   closeModal();
   renderOrders();
   renderMetrics();
-
+ 
   if (toAdd.length > 0) await saveToSheets(toAdd);
   if (skipped > 0) alert(`${toAdd.length} orders added. ${skipped} skipped (DN/SO already exists).`);
 }
-
+ 
 // ============================================================
 // METRICS
 // ============================================================
 function renderMetrics() {
   const today = new Date(); today.setHours(0,0,0,0);
   const weekStart = new Date(today); weekStart.setDate(today.getDate() - today.getDay());
-
+ 
   const open = allOrders.filter(o => !o.ship_date);
   const closed = allOrders.filter(o => o.ship_date);
   const overdue = open.filter(o => o.route_by_date && new Date(o.route_by_date) < today);
@@ -989,7 +1023,7 @@ function renderMetrics() {
   const routedToday = allOrders.filter(o => o.ship_date && new Date(o.ship_date).toDateString() === today.toDateString());
   const closedWeek = closed.filter(o => new Date(o.ship_date) >= weekStart);
   const openUnits = open.reduce((s, o) => s + (parseInt(o.units)||0), 0);
-
+ 
   let avgDays = '—';
   if (closed.length > 0) {
     const diffs = closed.filter(o => o.waived_date && o.ship_date).map(o => {
@@ -998,7 +1032,7 @@ function renderMetrics() {
     }).filter(d => d >= 0);
     if (diffs.length > 0) avgDays = (diffs.reduce((a,b)=>a+b,0)/diffs.length).toFixed(1);
   }
-
+ 
   document.getElementById('m-total').textContent = allOrders.length;
   document.getElementById('m-open').textContent = open.length;
   document.getElementById('m-units').textContent = openUnits.toLocaleString();
@@ -1007,7 +1041,7 @@ function renderMetrics() {
   document.getElementById('m-hold').textContent = onHold.length;
   document.getElementById('m-routed-today').textContent = routedToday.length;
   document.getElementById('m-week').textContent = closedWeek.length;
-
+ 
   // Customer bar chart (open orders)
   const custCounts = {};
   open.forEach(o => { if (o.customer) custCounts[o.customer] = (custCounts[o.customer]||0) + 1; });
@@ -1019,7 +1053,7 @@ function renderMetrics() {
       <div class="bar-track"><div class="bar-fill" style="width:${Math.round(cnt/maxCust*100)}%"></div></div>
       <div class="bar-val">${cnt}</div>
     </div>`).join('') : '<p style="font-size:13px;color:var(--gray-400)">No open orders</p>';
-
+ 
   // Status breakdown
   const statusCounts = {};
   allOrders.forEach(o => { const s = o.routed_status||'No Status'; statusCounts[s] = (statusCounts[s]||0)+1; });
@@ -1031,14 +1065,14 @@ function renderMetrics() {
       <div class="bar-track"><div class="bar-fill${name==='HOLD'?' red':''}" style="width:${Math.round(cnt/maxSt*100)}%"></div></div>
       <div class="bar-val">${cnt}</div>
     </div>`).join('');
-
+ 
   // Aging table
   const sorted = [...open].sort((a,b) => {
     const da = a.waived_date ? new Date(a.waived_date) : new Date('2999-01-01');
     const db = b.waived_date ? new Date(b.waived_date) : new Date('2999-01-01');
     return da - db;
   }).slice(0,20);
-
+ 
   document.getElementById('agingBody').innerHTML = sorted.map(o => {
     const daysOpen = o.waived_date ? Math.floor((today - new Date(o.waived_date))/86400000) : '—';
     let tagStyle = 'background:var(--navy-light);color:var(--navy)';
@@ -1057,7 +1091,7 @@ function renderMetrics() {
     </tr>`;
   }).join('');
 }
-
+ 
 // ============================================================
 // EXPORT CSV
 // ============================================================
@@ -1072,14 +1106,14 @@ function exportCSV() {
   a.download = 'VAS_Orders_' + new Date().toISOString().slice(0,10) + '.csv';
   a.click();
 }
-
+ 
 // ============================================================
 // UTILS
 // ============================================================
 function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-
+ 
 function showSaveIndicator(msg, error = false) {
   const el = document.getElementById('saveIndicator');
   el.textContent = msg;
@@ -1087,10 +1121,11 @@ function showSaveIndicator(msg, error = false) {
   el.classList.add('show');
   setTimeout(() => el.classList.remove('show'), 2500);
 }
-
+ 
 // Refresh from Sheets if URL is set
 if (GAS_URL) setTimeout(loadFromSheets, 100);
 </script>
-
+ 
 </body>
 </html>
+ 
