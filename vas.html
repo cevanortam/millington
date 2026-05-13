@@ -1090,8 +1090,8 @@ function renderMetrics() {
     return `<tr>
       <td style="font-weight:600;font-size:12.5px;color:var(--navy)">${esc(o.dn_so)}</td>
       <td>${esc(o.customer||'—')}</td>
-      <td>${o.waived_date||'—'}</td>
-      <td style="${!o.route_by_date?'':(new Date(o.route_by_date)<today?'color:var(--red);font-weight:600':'')}">${o.route_by_date||'—'}</td>
+      <td>${o.waived_date ? new Date(o.waived_date).toLocaleDateString(undefined,{month:'numeric',day:'numeric',year:'numeric'}) : '—'}</td>
+      <td style="${!o.route_by_date?'':(new Date(o.route_by_date)<today?'color:var(--red);font-weight:600':'')}">${o.route_by_date ? new Date(o.route_by_date).toLocaleDateString(undefined,{month:'numeric',day:'numeric',year:'numeric'}) : '—'}</td>
       <td style="font-weight:600">${o.units?parseInt(o.units).toLocaleString():'—'}</td>
       <td><span class="aging-tag" style="${tagStyle}">${daysOpen} days</span></td>
       <td>${esc(o.routed_status||'—')}</td>
