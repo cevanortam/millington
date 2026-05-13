@@ -638,7 +638,7 @@
 // ============================================================
 const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbzBV0qhKWH6leYg5ND1KgPRbwhhO_5nMGZYdvkYa4gqBTUZpnmMMaIhIhE4xDzWigXqUQ/exec';
 let GAS_URL = localStorage.getItem('vas_gas_url') || DEFAULT_GAS_URL;
-let allOrders = JSON.parse(localStorage.getItem('vas_orders_cache') || '[]');
+let allOrders = []; // Always loaded fresh from the sheet on init
 let filteredOrders = [];
 let currentPage = 1;
 const PAGE_SIZE = 50;
@@ -652,8 +652,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // URL is pre-wired — always hide the config banner
   document.getElementById('configBanner').style.display = 'none';
   document.getElementById('gasUrl').value = GAS_URL;
-  renderOrders();
-  renderMetrics();
+  // Always load fresh from the sheet — never trust the localStorage cache for initial render.
+  // Show the loading spinner until live data arrives.
+  if (GAS_URL) {
+    loadFromSheets();
+  } else {
+    renderOrders();
+    renderMetrics();
+  }
 });
 
 // ============================================================
@@ -681,6 +687,7 @@ async function loadFromSheets() {
     .then(data => {
       if (data && data.rows) {
         allOrders = data.rows;
+        // Always overwrite cache with fresh data from the sheet
         localStorage.setItem('vas_orders_cache', JSON.stringify(allOrders));
         setConnectionStatus('connected');
       }
@@ -690,8 +697,12 @@ async function loadFromSheets() {
     .catch(e => {
       console.error('Load error', e);
       setConnectionStatus('error');
+      // Don't render stale cache — clear it and show empty state so the
+      // user knows the live load failed rather than seeing wrong data
+      allOrders = [];
       renderOrders();
       renderMetrics();
+      showSaveIndicator('⚠ Could not load data — check connection', true);
     });
 }
 
@@ -1347,8 +1358,7 @@ function showSaveIndicator(msg, error = false) {
   setTimeout(() => el.classList.remove('show'), 2500);
 }
 
-// Refresh from Sheets if URL is set
-if (GAS_URL) setTimeout(loadFromSheets, 100);
+// Initial load is handled by DOMContentLoaded above
 
 // ============================================================
 // TREND CHARTS
