@@ -814,9 +814,9 @@ function renderTable() {
       <td><input type="text" value="${esc(o.status||'')}" onchange="updateField(${absIdx},'status',this.value)" style="min-width:90px"></td>
       <td><input type="text" value="${esc(o.days_lost_hold||'')}" onchange="updateField(${absIdx},'days_lost_hold',this.value)" style="width:50px;text-align:center"></td>
       <td><input type="text" value="${esc(o.to_ltl||'')}" onchange="updateField(${absIdx},'to_ltl',this.value)" style="width:70px"></td>
-      <td style="text-align:center"><input type="checkbox" ${o.gridded?'checked':''} onchange="updateField(${absIdx},'gridded',this.checked)"></td>
+      <td style="text-align:center"><input type="checkbox" ${parseBool(o.gridded)?'checked':''} onchange="updateField(${absIdx},'gridded',this.checked)"></td>
       <td><input type="text" value="${esc(o.hold_reason||'')}" onchange="updateField(${absIdx},'hold_reason',this.value)" style="min-width:100px"></td>
-      <td style="text-align:center"><input type="checkbox" ${o.resolved?'checked':''} onchange="updateField(${absIdx},'resolved',this.checked)"></td>
+      <td style="text-align:center"><input type="checkbox" ${parseBool(o.resolved)?'checked':''} onchange="updateField(${absIdx},'resolved',this.checked)"></td>
       <td><textarea rows="1" onchange="updateField(${absIdx},'comments',this.value)">${esc(o.comments||'')}</textarea></td>
       <td><button class="btn btn-outline btn-sm" onclick="deleteOrder(${absIdx})" title="Delete" style="color:var(--red);border-color:var(--red-light)">✕</button></td>
     </tr>`;
@@ -1117,6 +1117,12 @@ function exportCSV() {
 // ============================================================
 // UTILS
 // ============================================================
+function parseBool(val) {
+  if (typeof val === 'boolean') return val;
+  if (typeof val === 'string') return val.toLowerCase() === 'true';
+  return false;
+}
+
 function fmtEntered(iso) {
   if (!iso) return '<span style="color:var(--gray-300)">—</span>';
   const d = new Date(iso);
