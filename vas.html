@@ -930,7 +930,7 @@ function renderTable() {
 
   tbody.innerHTML = pageRows.map((o, idx) => {
     const absIdx = start + idx;
-    const rb = o.route_by_date ? new Date(o.route_by_date) : null;
+    const rb = o.route_by_date ? parseLocalDate(o.route_by_date) : null;
     let rowClass = '';
     if (rb && !o.ship_date) {
       if (rb < today) rowClass = 'overdue-row';
@@ -1199,16 +1199,16 @@ function renderMetrics() {
   const open = allOrders.filter(o => !o.ship_date);
   const closed = allOrders.filter(o => o.ship_date);
   const now = new Date();
-  const overdue = open.filter(o => o.route_by_date && new Date(o.route_by_date) < today);
+  const overdue = open.filter(o => o.route_by_date && parseLocalDate(o.route_by_date) < today);
   const due48 = open.filter(o => {
     if (!o.route_by_date) return false;
-    const rb = new Date(o.route_by_date);
+    const rb = parseLocalDate(o.route_by_date);
     const msUntil = rb - now;
     return msUntil >= 0 && msUntil <= 48 * 60 * 60 * 1000;
   });
   const due24 = open.filter(o => {
     if (!o.route_by_date) return false;
-    const rb = new Date(o.route_by_date);
+    const rb = parseLocalDate(o.route_by_date);
     const msUntil = rb - now;
     return msUntil >= 0 && msUntil <= 24 * 60 * 60 * 1000;
   });
@@ -1306,6 +1306,17 @@ function exportCSV() {
 // ============================================================
 // UTILS
 // ============================================================
+// Parse a date-only string (YYYY-MM-DD) as local midnight, not UTC midnight
+function parseLocalDate(str) {
+  if (!str) return null;
+  // If it looks like a date-only string, parse it as local time
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+    const [y, m, d] = str.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
+  return new Date(str); // fall back for full ISO timestamps
+}
+
 function parseBool(val) {
   if (typeof val === 'boolean') return val;
   if (typeof val === 'string') return val.toLowerCase() === 'true';
