@@ -455,9 +455,9 @@
             <th style="width:32px"></th>
             <th style="width:120px">Entered</th>
             <th>DN/SO</th>
+            <th>Customer</th>
             <th>Waived Date</th>
             <th>Date Released</th>
-            <th>Customer</th>
             <th>Route By</th>
             <th>Cancel Date</th>
             <th>Units</th>
@@ -941,9 +941,9 @@ function renderTable() {
       <td style="color:var(--gray-400);font-size:11px;text-align:center">${start+idx+1}</td>
       <td style="white-space:nowrap">${fmtEntered(o.created_at)}</td>
       <td class="dn">${esc(o.dn_so||'')}</td>
+      <td><input type="text" value="${esc(o.customer||'')}" placeholder="Customer" onchange="updateField(${absIdx},'customer',this.value)" style="min-width:100px"></td>
       <td><input type="date" value="${o.waived_date||''}" onchange="updateField(${absIdx},'waived_date',this.value)"></td>
       <td><input type="date" value="${o.date_released||''}" onchange="updateField(${absIdx},'date_released',this.value)"></td>
-      <td><input type="text" value="${esc(o.customer||'')}" placeholder="Customer" onchange="updateField(${absIdx},'customer',this.value)" style="min-width:100px"></td>
       <td><input type="date" value="${o.route_by_date||''}" onchange="updateField(${absIdx},'route_by_date',this.value)"></td>
       <td><input type="date" value="${o.cancel_date||''}" onchange="updateField(${absIdx},'cancel_date',this.value)"></td>
       <td class="units-cell"><input type="text" value="${esc(o.units||'')}" onchange="updateField(${absIdx},'units',this.value)" style="width:60px;text-align:right"></td>
