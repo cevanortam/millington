@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VAS Order Status — CEVA Logistics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --navy: #003057;
+    --navy-mid: #004a87;
+    --navy-light: #d6e4f0;
+    --red: #C8102E;
+    --red-light: #fbe8eb;
+    --gold: #f5a623;
+    --gold-light: #fef3dc;
+    --white: #ffffff;
+    --gray-100: #f4f6f9;
+    --gray-200: #e8ecf1;
+    --gray-300: #cdd4de;
+    --gray-400: #9aabbe;
+    --gray-500: #647a93;
+    --gray-700: #344a5f;
+    --gray-900: #1a2535;
+    --green: #1a7a4a;
+    --green-light: #e2f5eb;
+    --font: 'Barlow', sans-serif;
+    --font-condensed: 'Barlow Condensed', sans-serif;
+    --radius: 6px;
+    --radius-lg: 10px;
+    --shadow: 0 2px 8px rgba(0,48,87,0.10);
+    --shadow-lg: 0 4px 20px rgba(0,48,87,0.15);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font); background: var(--gray-100); color: var(--gray-900); min-height: 100vh; }
+
+  /* ── Header ── */
+  .app-header {
+    background: var(--navy); display: flex; align-items: center; justify-content: space-between;
+    padding: 0 28px; height: 60px; position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+  }
+  .header-brand { display: flex; align-items: center; gap: 14px; }
+  .header-title { color: white; font-size: 15px; font-weight: 500; letter-spacing: 0.5px; }
+  .header-right { display: flex; align-items: center; gap: 14px; }
+  .last-updated { color: rgba(255,255,255,0.5); font-size: 12px; }
+  .conn-pill {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 6px; padding: 5px 12px;
+  }
+  #connDot { width: 9px; height: 9px; border-radius: 50%; background: var(--gold); flex-shrink: 0; }
+  #connLabel { color: rgba(255,255,255,0.75); font-size: 12px; font-weight: 500; }
+
+  /* ── Nav ── */
+  .nav-bar { background: var(--navy-mid); display: flex; gap: 2px; padding: 0 28px; }
+  .nav-tab {
+    color: rgba(255,255,255,0.65); font-size: 13px; font-weight: 600;
+    padding: 10px 18px; cursor: pointer; border-bottom: 3px solid transparent;
+    letter-spacing: 0.5px; text-transform: uppercase; transition: all 0.15s;
+    font-family: var(--font-condensed);
+  }
+  .nav-tab:hover { color: white; }
+  .nav-tab.active { color: white; border-bottom-color: var(--gold); }
+
+  /* ── Pages ── */
+  .page { display: none; padding: 24px 28px; }
+  .page.active { display: block; }
+
+  /* ── Metric cards ── */
+  .metrics-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 28px; }
+  .metric-card {
+    background: white; border-radius: var(--radius-lg); padding: 22px 20px;
+    box-shadow: var(--shadow); border-top: 4px solid var(--navy);
+  }
+  .metric-card.red-accent   { border-top-color: var(--red); }
+  .metric-card.gold-accent  { border-top-color: var(--gold); }
+  .metric-card.green-accent { border-top-color: var(--green); }
+  .metric-label { font-size: 13px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--gray-400); font-weight: 700; margin-bottom: 10px; }
+  .metric-value { font-size: 56px; font-weight: 700; font-family: var(--font-condensed); color: var(--navy); line-height: 1; }
+  .metric-value.red   { color: var(--red); }
+  .metric-value.gold  { color: #c07400; }
+  .metric-value.green { color: var(--green); }
+  .metric-sub { font-size: 13px; color: var(--gray-400); margin-top: 8px; }
+
+  /* ── Charts ── */
+  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 24px; }
+  .chart-card { background: white; border-radius: var(--radius-lg); padding: 18px 20px; box-shadow: var(--shadow); }
+  .chart-title { font-family: var(--font-condensed); font-size: 13px; font-weight: 700; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px; }
+  .metrics-section-title {
+    font-family: var(--font-condensed); font-size: 14px; font-weight: 700; letter-spacing: 0.5px;
+    color: var(--navy); text-transform: uppercase; margin: 0 0 12px;
+    padding-bottom: 6px; border-bottom: 2px solid var(--navy-light);
+  }
+  .bar-chart { display: flex; flex-direction: column; gap: 8px; }
+  .bar-row { display: flex; align-items: center; gap: 8px; }
+  .bar-label { font-size: 12px; color: var(--gray-500); width: 90px; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-track { flex: 1; background: var(--gray-100); border-radius: 3px; height: 18px; }
+  .bar-fill { height: 100%; border-radius: 3px; background: var(--navy); transition: width 0.4s ease; }
+  .bar-fill.red { background: var(--red); }
+  .bar-val { font-size: 11px; font-weight: 600; color: var(--gray-500); min-width: 28px; text-align: right; }
+
+  /* ── Aging table ── */
+  .aging-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .aging-table th { color: var(--gray-400); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--gray-200); }
+  .aging-table td { padding: 7px 8px; border-bottom: 1px solid var(--gray-200); }
+  .aging-table tr:last-child td { border-bottom: none; }
+  .aging-tag { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 700; }
+
+  /* ── Trend period buttons ── */
+  .btn { padding: 7px 16px; border-radius: var(--radius); font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; }
+  .btn-outline { background: white; color: var(--gray-700); border: 1px solid var(--gray-300); }
+  .btn-outline:hover { background: var(--gray-100); }
+  .btn-sm { padding: 4px 10px; font-size: 12px; }
+  .trend-period-btn.active { background: var(--navy); color: white; border-color: var(--navy); }
+
+  /* ── Orders table ── */
+  .toolbar {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap;
+  }
+  .toolbar input, .toolbar select {
+    padding: 7px 12px; border: 1px solid var(--gray-300); border-radius: var(--radius);
+    font-family: var(--font); font-size: 13px; background: white; color: var(--gray-900);
+  }
+  .toolbar input { width: 200px; }
+  .search-box { flex: 1; min-width: 180px; max-width: 300px; }
+
+  .table-wrap { background: white; border-radius: var(--radius-lg); box-shadow: var(--shadow); overflow: hidden; }
+  .table-header {
+    padding: 12px 16px; background: var(--navy); color: white;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .table-header .title { font-family: var(--font-condensed); font-size: 15px; font-weight: 700; letter-spacing: 0.5px; }
+  .table-header .count { font-size: 12px; color: rgba(255,255,255,0.6); }
+
+  .orders-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .orders-table th {
+    background: var(--gray-100); color: var(--gray-500); font-weight: 600;
+    text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.6px;
+    padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--gray-200);
+    white-space: nowrap; position: sticky; top: 0;
+  }
+  .orders-table td { padding: 8px 10px; border-bottom: 1px solid var(--gray-200); vertical-align: middle; }
+  .orders-table tr:last-child td { border-bottom: none; }
+  .orders-table tr:hover td { background: var(--gray-100); }
+  .orders-table .dn { font-weight: 600; color: var(--navy); font-size: 12.5px; }
+
+  .status-badge {
+    display: inline-block; padding: 2px 8px; border-radius: 3px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase;
+  }
+  .badge-routed  { background: var(--green-light); color: var(--green); }
+  .badge-hold    { background: var(--red-light); color: var(--red); }
+  .badge-process { background: var(--gold-light); color: #7a4f00; }
+  .badge-open    { background: var(--navy-light); color: var(--navy); }
+
+  .overdue-row td   { background: #fff5f5; }
+  .overdue-row:hover td  { background: #ffeaea; }
+  .due-soon-row td  { background: #fffbf0; }
+  .due-soon-row:hover td { background: #fff5dc; }
+
+  .table-scroll { overflow-x: auto; max-height: 60vh; overflow-y: auto; }
+
+  .loading { text-align: center; padding: 40px; color: var(--gray-400); font-size: 14px; }
+  .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid var(--gray-200); border-top-color: var(--navy); border-radius: 50%; animation: spin 0.7s linear infinite; margin-right: 8px; vertical-align: middle; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--gray-400); }
+  .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+
+  .pagination { display: flex; align-items: center; gap: 6px; padding: 10px 14px; border-top: 1px solid var(--gray-200); background: var(--gray-100); }
+  .page-btn { padding: 4px 10px; border: 1px solid var(--gray-300); border-radius: var(--radius); font-size: 12px; cursor: pointer; background: white; font-family: var(--font); }
+  .page-btn:hover { background: var(--gray-100); }
+  .page-btn.current { background: var(--navy); color: white; border-color: var(--navy); }
+  .page-info { font-size: 12px; color: var(--gray-400); margin-left: auto; }
+
+  /* Date filter panel */
+  #dateFilterPanel { display:none; background:white; border:1px solid var(--gray-200); border-radius:var(--radius-lg); padding:14px 18px; margin-bottom:12px; box-shadow:var(--shadow); }
+  #dateFilterBadge { display:none; background:var(--red); color:white; border-radius:10px; font-size:10px; padding:1px 6px; font-weight:700; }
+
+  /* Read-only notice banner */
+  .readonly-banner {
+    background: var(--navy-light); border-bottom: 1px solid var(--navy-mid);
+    padding: 8px 28px; font-size: 12.5px; color: var(--navy-mid);
+    display: flex; align-items: center; gap: 8px; font-weight: 500;
+  }
+
+  @media (max-width: 768px) {
+    .charts-grid { grid-template-columns: 1fr; }
+    .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-brand">
+    <img src="https://www.freelogovectors.net/wp-content/uploads/2022/07/ceva-logistics-logo-freelogovectors.net_.png"
+         alt="CEVA Logistics"
+         style="height:36px;width:auto;object-fit:contain;filter:brightness(0) invert(1);"
+         onerror="this.style.display='none'">
+    <div style="width:1px;height:28px;background:rgba(255,255,255,0.2);margin:0 2px;"></div>
+    <span class="header-title">VAS Order Status Portal</span>
+  </div>
+  <div class="header-right">
+    <span class="last-updated" id="lastUpdated">Loading…</span>
+    <div class="conn-pill">
+      <div id="connDot"></div>
+      <span id="connLabel">Connecting…</span>
+    </div>
+  </div>
+</header>
+
+<nav class="nav-bar">
+  <div class="nav-tab active" onclick="showPage('metrics', this)">Metrics</div>
+  <div class="nav-tab" onclick="showPage('orders', this)">Orders</div>
+</nav>
+
+<div class="readonly-banner">
+  🔒 This is a read-only view. Data cannot be modified from this portal.
+</div>
+
+<!-- ====== METRICS PAGE ====== -->
+<div class="page active" id="page-metrics">
+  <div style="display:flex;justify-content:center;gap:14px;margin-bottom:14px;">
+    <div class="metric-card" style="flex:0 1 calc(20% - 11px);min-width:160px"><div class="metric-label">Open Orders</div><div class="metric-value red" id="m-open">—</div><div class="metric-sub">No ship date</div></div>
+    <div class="metric-card gold-accent" style="flex:0 1 calc(20% - 11px);min-width:160px"><div class="metric-label">Open Units</div><div class="metric-value gold" id="m-units">—</div><div class="metric-sub">Units on open orders</div></div>
+    <div class="metric-card gold-accent" style="flex:0 1 calc(20% - 11px);min-width:160px"><div class="metric-label">On Hold</div><div class="metric-value gold" id="m-hold">—</div><div class="metric-sub">Current holds</div></div>
+    <div class="metric-card" style="flex:0 1 calc(20% - 11px);min-width:160px"><div class="metric-label">Routed Today</div><div class="metric-value" id="m-routed-today">—</div><div class="metric-sub">Shipped today</div></div>
+  </div>
+  <div class="metrics-grid">
+    <div class="metric-card gold-accent"><div class="metric-label">Due Within 48 hrs</div><div class="metric-value gold" id="m-due48">—</div><div class="metric-sub">Open, route-by &lt; 48 hours</div></div>
+    <div class="metric-card red-accent"><div class="metric-label">Due Within 24 hrs</div><div class="metric-value red" id="m-due24">—</div><div class="metric-sub">Open, route-by &lt; 24 hours</div></div>
+    <div class="metric-card red-accent"><div class="metric-label">Overdue</div><div class="metric-value red" id="m-overdue">—</div><div class="metric-sub">Past route-by date</div></div>
+    <div class="metric-card green-accent"><div class="metric-label">Avg Close Time</div><div class="metric-value green" id="m-avgclose">—</div><div class="metric-sub">Days waived to ship</div></div>
+    <div class="metric-card green-accent"><div class="metric-label">Closed This Week</div><div class="metric-value green" id="m-week">—</div><div class="metric-sub">Orders with ship date this week</div></div>
+  </div>
+
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">Open Orders by Customer</div>
+      <div class="bar-chart" id="customerChart"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Order Status Breakdown</div>
+      <div class="bar-chart" id="statusChart"></div>
+    </div>
+  </div>
+
+  <div style="margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+    <div class="metrics-section-title" style="margin:0">Closure Trends</div>
+    <div style="display:flex;gap:6px;">
+      <button class="btn btn-outline btn-sm trend-period-btn active" onclick="setTrendPeriod('daily',this)">Daily</button>
+      <button class="btn btn-outline btn-sm trend-period-btn" onclick="setTrendPeriod('weekly',this)">Weekly</button>
+      <button class="btn btn-outline btn-sm trend-period-btn" onclick="setTrendPeriod('monthly',this)">Monthly</button>
+    </div>
+  </div>
+  <div class="charts-grid" style="margin-bottom:24px;">
+    <div class="chart-card">
+      <div class="chart-title">Orders Closed</div>
+      <canvas id="trendOrdersChart" height="140"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Units Closed</div>
+      <canvas id="trendUnitsChart" height="140"></canvas>
+    </div>
+  </div>
+
+  <div class="chart-card" style="margin-bottom:24px;">
+    <div class="chart-title">Open Order Aging</div>
+    <table class="aging-table">
+      <thead><tr><th>DN/SO</th><th>Customer</th><th>Waived Date</th><th>Route By</th><th>Units</th><th>Days Open</th><th>Status</th></tr></thead>
+      <tbody id="agingBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ====== ORDERS PAGE ====== -->
+<div class="page" id="page-orders">
+  <div class="toolbar">
+    <input type="text" class="search-box" placeholder="🔍  Search DN/SO, PO, customer…" oninput="filterOrders()" id="searchInput">
+    <select onchange="filterOrders()" id="filterStatus">
+      <option value="">All Statuses</option>
+      <option value="ROUTED">Routed</option>
+      <option value="IN PROCESS">In Process</option>
+      <option value="HOLD">Hold</option>
+      <option value="OPEN">Open</option>
+    </select>
+    <select onchange="filterOrders()" id="filterOpen">
+      <option value="">All Orders</option>
+      <option value="open">Open (no ship date)</option>
+      <option value="closed">Closed</option>
+    </select>
+    <select onchange="filterOrders()" id="filterCustomer">
+      <option value="">All Customers</option>
+    </select>
+    <button class="btn btn-outline btn-sm" id="dateFilterToggle" onclick="toggleDateFilters()" style="display:inline-flex;align-items:center;gap:5px;">
+      📅 Date Filters <span id="dateFilterBadge"></span>
+    </button>
+    <button class="btn btn-outline btn-sm" onclick="clearFilters()">Clear All</button>
+    <span style="margin-left:auto;font-size:12px;color:var(--gray-400)" id="rowCount"></span>
+  </div>
+
+  <div id="dateFilterPanel">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <span style="font-family:var(--font-condensed);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--navy);">Date Filters</span>
+      <span style="font-size:11px;color:var(--gray-400);">Leave blank to show all.</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;">
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray-500);">Entered (Created)</label>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input type="date" id="df_entered_from" onchange="filterOrders()" style="flex:1;font-size:12px;padding:5px 8px;">
+          <span style="font-size:11px;color:var(--gray-400);">to</span>
+          <input type="date" id="df_entered_to" onchange="filterOrders()" style="flex:1;font-size:12px;padding:5px 8px;">
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray-500);">Waived Date</label>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input type="date" id="df_waived_from" onchange="filterOrders()" style="flex:1;font-size:12px;padding:5px 8px;">
+          <span style="font-size:11px;color:var(--gray-400);">to</span>
+          <input type="date" id="df_waived_to" onchange="filterOrders()" style="flex:1;font-size:12px;padding:5px 8px;">
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray-500);">Route By Date</label>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input type="date" id="df_routeby_from" onchange="filterOrders()" style="flex:1;font-size:12px;padding:5px 8px;">
+          <span style="font-size:11px;color:var(--gray-400);">to</span>
+          <input type="date" id="df_routeby_to" onchange="filterOrders()" style="flex:1;font-size:12px;padding:5px 8px;">
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray-500);">Cancel Date</label>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input type="date" id="df_cancel_from" onchange="filterOrders()" style="flex:1;font-size:12px;padding:5px 8px;">
+          <span style="font-size:11px;color:var(--gray-400);">to</span>
+          <input type="date" id="df_cancel_to" onchange="filterOrders()" style="flex:1;font-size:12px;padding:5px 8px;">
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray-500);">Ship Date</label>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input type="date" id="df_ship_from" onchange="filterOrders()" style="flex:1;font-size:12px;padding:5px 8px;">
+          <span style="font-size:11px;color:var(--gray-400);">to</span>
+          <input type="date" id="df_ship_to" onchange="filterOrders()" style="flex:1;font-size:12px;padding:5px 8px;">
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray-500);">Date Released</label>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input type="date" id="df_released_from" onchange="filterOrders()" style="flex:1;font-size:12px;padding:5px 8px;">
+          <span style="font-size:11px;color:var(--gray-400);">to</span>
+          <input type="date" id="df_released_to" onchange="filterOrders()" style="flex:1;font-size:12px;padding:5px 8px;">
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:10px;text-align:right;">
+      <button class="btn btn-outline btn-sm" onclick="clearDateFilters()">Clear Date Filters</button>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <div class="table-header">
+      <span class="title">VAS Orders</span>
+      <span class="count" id="tableCount">—</span>
+    </div>
+    <div class="table-scroll">
+      <div class="loading" id="tableLoading"><span class="spinner"></span> Loading orders…</div>
+      <table class="orders-table" id="ordersTable" style="display:none">
+        <thead>
+          <tr>
+            <th style="width:32px">#</th>
+            <th style="width:120px">Entered</th>
+            <th>DN/SO</th>
+            <th>Customer</th>
+            <th>Waived Date</th>
+            <th>Date Released</th>
+            <th>Route By</th>
+            <th>Cancel Date</th>
+            <th>Units</th>
+            <th>CEVA ID</th>
+            <th>PO</th>
+            <th>Routed / Status</th>
+            <th>Ship Date</th>
+            <th>S7</th>
+            <th>Status</th>
+            <th>Days Lost - Hold</th>
+            <th>To LTL</th>
+            <th>Gridded</th>
+            <th>Hold Reason</th>
+            <th>Resolved</th>
+            <th>Comments</th>
+          </tr>
+        </thead>
+        <tbody id="ordersBody"></tbody>
+      </table>
+      <div class="empty-state" id="emptyState" style="display:none">
+        <div class="icon">📦</div>
+        <p>No orders match your current filters.</p>
+      </div>
+    </div>
+    <div class="pagination" id="pagination" style="display:none">
+      <div id="pageButtons"></div>
+      <span class="page-info" id="pageInfo"></span>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Config ──────────────────────────────────────────────────
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzBV0qhKWH6leYg5ND1KgPRbwhhO_5nMGZYdvkYa4gqBTUZpnmMMaIhIhE4xDzWigXqUQ/exec';
+const PAGE_SIZE = 50;
+const DATE_ONLY_FIELDS = ['waived_date','route_by_date','cancel_date','ship_date','date_released'];
+const DATE_FILTERS = [
+  ['df_entered_from',  'df_entered_to',  'created_at',    true],
+  ['df_waived_from',   'df_waived_to',   'waived_date',   false],
+  ['df_routeby_from',  'df_routeby_to',  'route_by_date', false],
+  ['df_cancel_from',   'df_cancel_to',   'cancel_date',   false],
+  ['df_ship_from',     'df_ship_to',     'ship_date',     false],
+  ['df_released_from', 'df_released_to', 'date_released', false],
+];
+
+let allOrders = [];
+let filteredOrders = [];
+let currentPage = 1;
+let trendPeriod = 'daily';
+let ordersChart = null;
+let unitsChart  = null;
+
+// ── Init ────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => { loadFromSheets(); });
+
+// ── Navigation ──────────────────────────────────────────────
+function showPage(id, tab) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  tab.classList.add('active');
+}
+
+// ── JSONP loader ─────────────────────────────────────────────
+function loadViaJsonp(url, timeout) {
+  return new Promise((resolve, reject) => {
+    const cbName = 'onPortalData';
+    let done = false;
+    const timer = setTimeout(() => {
+      if (done) return; done = true;
+      window[cbName] = null;
+      if (s.parentNode) s.parentNode.removeChild(s);
+      reject(new Error('Timeout'));
+    }, timeout);
+    window[cbName] = function(data) {
+      if (done) return; done = true;
+      clearTimeout(timer);
+      window[cbName] = null;
+      if (s.parentNode) s.parentNode.removeChild(s);
+      resolve(data);
+    };
+    const s = document.createElement('script');
+    s.src = url;
+    s.onerror = () => { if (done) return; done = true; clearTimeout(timer); reject(new Error('Load error')); };
+    document.head.appendChild(s);
+  });
+}
+
+// ── Load data ────────────────────────────────────────────────
+async function loadFromSheets() {
+  setConn('checking');
+  try {
+    const data = await loadViaJsonp(GAS_URL + '?action=getAll&callback=onPortalData', 10000);
+    if (data && data.rows) {
+      allOrders = data.rows.map(sanitizeRow);
+      setConn('connected');
+      document.getElementById('lastUpdated').textContent = 'Updated ' + new Date().toLocaleTimeString(undefined, {hour:'numeric',minute:'2-digit'});
+    }
+  } catch(e) {
+    setConn('error');
+    document.getElementById('lastUpdated').textContent = 'Failed to load';
+  }
+  renderAll();
+}
+
+function sanitizeRow(row) {
+  const clean = Object.assign({}, row);
+  DATE_ONLY_FIELDS.forEach(field => {
+    const val = clean[field];
+    if (!val) { clean[field] = ''; return; }
+    if (/^\d{4}-\d{2}-\d{2}$/.test(String(val))) return;
+    const d = new Date(val);
+    if (!isNaN(d)) {
+      clean[field] = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    } else { clean[field] = ''; }
+  });
+  return clean;
+}
+
+function setConn(state) {
+  const dot = document.getElementById('connDot');
+  const label = document.getElementById('connLabel');
+  if (state === 'connected')  { dot.style.background = '#22c55e'; label.textContent = 'Live'; }
+  else if (state === 'error') { dot.style.background = 'var(--red)'; label.textContent = 'Offline'; }
+  else                        { dot.style.background = 'var(--gold)'; label.textContent = 'Connecting…'; }
+}
+
+function renderAll() {
+  renderMetrics();
+  populateCustomerFilter();
+  filterOrders();
+  document.getElementById('tableLoading').style.display = 'none';
+}
+
+// ── Metrics ──────────────────────────────────────────────────
+function renderMetrics() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const weekStart = new Date(today); weekStart.setDate(today.getDate() - today.getDay());
+  const now = new Date();
+  const open   = allOrders.filter(o => !o.ship_date);
+  const closed = allOrders.filter(o => o.ship_date);
+  const overdue = open.filter(o => o.route_by_date && parseLocalDate(o.route_by_date) < today);
+  const due48   = open.filter(o => { if (!o.route_by_date) return false; const ms = parseLocalDate(o.route_by_date) - now; return ms >= 0 && ms <= 172800000; });
+  const due24   = open.filter(o => { if (!o.route_by_date) return false; const ms = parseLocalDate(o.route_by_date) - now; return ms >= 0 && ms <= 86400000; });
+  const onHold  = allOrders.filter(o => (o.routed_status||'').toUpperCase() === 'HOLD');
+  const routedToday = allOrders.filter(o => o.ship_date && new Date(o.ship_date).toDateString() === today.toDateString());
+  const closedWeek  = closed.filter(o => new Date(o.ship_date) >= weekStart);
+  const openUnits   = open.reduce((s,o) => s + (parseInt(o.units)||0), 0);
+
+  let avgDays = '—';
+  const diffs = closed.filter(o => o.waived_date && o.ship_date).map(o => (new Date(o.ship_date) - new Date(o.waived_date)) / 86400000).filter(d => d >= 0);
+  if (diffs.length) avgDays = (diffs.reduce((a,b)=>a+b,0)/diffs.length).toFixed(1) + 'd';
+
+  set('m-open',         open.length);
+  set('m-units',        openUnits.toLocaleString());
+  set('m-hold',         onHold.length);
+  set('m-routed-today', routedToday.length);
+  set('m-due48',        due48.length);
+  set('m-due24',        due24.length);
+  set('m-overdue',      overdue.length);
+  set('m-avgclose',     avgDays);
+  set('m-week',         closedWeek.length);
+
+  // Customer bar
+  const custCounts = {};
+  open.forEach(o => { if (o.customer) custCounts[o.customer] = (custCounts[o.customer]||0)+1; });
+  const sortedCust = Object.entries(custCounts).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const maxC = sortedCust.length ? sortedCust[0][1] : 1;
+  document.getElementById('customerChart').innerHTML = sortedCust.length
+    ? sortedCust.map(([n,c]) => `<div class="bar-row"><div class="bar-label" title="${esc(n)}">${esc(n)}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(c/maxC*100)}%"></div></div><div class="bar-val">${c}</div></div>`).join('')
+    : '<p style="font-size:13px;color:var(--gray-400)">No open orders</p>';
+
+  // Status bar
+  const stCounts = {};
+  allOrders.forEach(o => { const s=o.routed_status||'No Status'; stCounts[s]=(stCounts[s]||0)+1; });
+  const sortedSt = Object.entries(stCounts).sort((a,b)=>b[1]-a[1]);
+  const maxS = sortedSt.length ? sortedSt[0][1] : 1;
+  document.getElementById('statusChart').innerHTML = sortedSt.map(([n,c]) =>
+    `<div class="bar-row"><div class="bar-label">${esc(n)}</div><div class="bar-track"><div class="bar-fill${n==='HOLD'?' red':''}" style="width:${Math.round(c/maxS*100)}%"></div></div><div class="bar-val">${c}</div></div>`).join('');
+
+  // Aging table
+  const sorted = [...open].sort((a,b)=>{
+    const da = a.waived_date ? new Date(a.waived_date) : new Date('2999-01-01');
+    const db = b.waived_date ? new Date(b.waived_date) : new Date('2999-01-01');
+    return da - db;
+  }).slice(0,20);
+  document.getElementById('agingBody').innerHTML = sorted.map(o => {
+    const daysOpen = o.waived_date ? Math.floor((today - new Date(o.waived_date))/86400000) : '—';
+    let tagStyle = 'background:var(--navy-light);color:var(--navy)';
+    if (typeof daysOpen === 'number') {
+      if (daysOpen > 14) tagStyle = 'background:var(--red-light);color:var(--red)';
+      else if (daysOpen > 7) tagStyle = 'background:var(--gold-light);color:#7a4f00';
+    }
+    return `<tr>
+      <td style="font-weight:600;font-size:12.5px;color:var(--navy)">${esc(o.dn_so)}</td>
+      <td>${esc(o.customer||'—')}</td>
+      <td>${fmtDate(o.waived_date)}</td>
+      <td style="${!o.route_by_date?'':(parseLocalDate(o.route_by_date)<today?'color:var(--red);font-weight:600':'')}">${fmtDate(o.route_by_date)}</td>
+      <td style="font-weight:600">${o.units?parseInt(o.units).toLocaleString():'—'}</td>
+      <td><span class="aging-tag" style="${tagStyle}">${daysOpen} days</span></td>
+      <td>${esc(o.routed_status||'—')}</td>
+    </tr>`;
+  }).join('');
+
+  renderTrendCharts();
+}
+
+// ── Trend charts ─────────────────────────────────────────────
+function setTrendPeriod(period, btn) {
+  trendPeriod = period;
+  document.querySelectorAll('.trend-period-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTrendCharts();
+}
+
+function renderTrendCharts() {
+  const closed = allOrders.filter(o => o.ship_date);
+  if (!closed.length) return;
+  const buckets = {};
+  closed.forEach(o => {
+    const d = new Date(o.ship_date); if (isNaN(d)) return;
+    let key;
+    if (trendPeriod === 'daily') {
+      key = d.toLocaleDateString('en-US', {month:'numeric',day:'numeric',year:'2-digit'});
+    } else if (trendPeriod === 'weekly') {
+      const diff = d.getDate() - d.getDay() + (d.getDay()===0?-6:1);
+      const mon = new Date(d); mon.setDate(diff); mon.setHours(0,0,0,0);
+      key = 'Wk ' + mon.toLocaleDateString('en-US',{month:'numeric',day:'numeric'});
+    } else {
+      key = d.toLocaleDateString('en-US',{month:'short',year:'numeric'});
+    }
+    if (!buckets[key]) buckets[key] = {orders:0,units:0,sortKey:d};
+    buckets[key].orders++;
+    buckets[key].units += parseInt(o.units)||0;
+  });
+  const limit = trendPeriod==='daily'?30:trendPeriod==='weekly'?16:24;
+  const display = Object.entries(buckets).sort((a,b)=>a[1].sortKey-b[1].sortKey).slice(-limit);
+  const labels = display.map(e=>e[0]);
+  const navy='#003057', red='#C8102E';
+  const cfg = (color,fill) => ({fill:true,tension:0.35,borderColor:color,backgroundColor:fill,borderWidth:2,pointBackgroundColor:color,pointRadius:display.length>20?2:4,pointHoverRadius:6});
+  const axis = {grid:{color:'rgba(0,0,0,0.06)'},ticks:{font:{family:"'Barlow',sans-serif",size:11},color:'#647a93'}};
+  function mkChart(id,label,vals,color,fill,old) {
+    const ctx = document.getElementById(id); if (!ctx) return null;
+    if (old) old.destroy();
+    return new Chart(ctx,{type:'line',data:{labels,datasets:[{label,data:vals,...cfg(color,fill)}]},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+c.parsed.y.toLocaleString()+' '+label.toLowerCase()}}},scales:{x:axis,y:{...axis,beginAtZero:true,ticks:{...axis.ticks,precision:0}}}}});
+  }
+  ordersChart = mkChart('trendOrdersChart','Orders',display.map(e=>e[1].orders),navy,'rgba(0,48,87,0.15)',ordersChart);
+  unitsChart  = mkChart('trendUnitsChart', 'Units', display.map(e=>e[1].units), red, 'rgba(200,16,46,0.15)',unitsChart);
+}
+
+// ── Orders table ─────────────────────────────────────────────
+function populateCustomerFilter() {
+  const customers = [...new Set(allOrders.map(o => o.customer).filter(Boolean))].sort();
+  const sel = document.getElementById('filterCustomer');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">All Customers</option>' +
+    customers.map(c => `<option value="${esc(c)}"${c===cur?' selected':''}>${esc(c)}</option>`).join('');
+}
+
+function filterOrders() {
+  const q  = (document.getElementById('searchInput').value||'').toLowerCase();
+  const fs = (document.getElementById('filterStatus').value||'').toLowerCase();
+  const fo = document.getElementById('filterOpen').value;
+  const fc = (document.getElementById('filterCustomer').value||'').toLowerCase();
+
+  const dateRanges = DATE_FILTERS.map(([fromId,toId,field,useTime]) => {
+    const fromVal = document.getElementById(fromId)?.value;
+    const toVal   = document.getElementById(toId)?.value;
+    const from = fromVal ? new Date(fromVal) : null;
+    let to = null;
+    if (toVal) { to = new Date(toVal); if (!useTime) to.setHours(23,59,59,999); }
+    return {field,from,to};
+  }).filter(r => r.from||r.to);
+
+  const badge = document.getElementById('dateFilterBadge');
+  badge.style.display = dateRanges.length ? 'inline-block' : 'none';
+  badge.textContent = dateRanges.length || '';
+
+  filteredOrders = allOrders.filter(o => {
+    if (q && !JSON.stringify(o).toLowerCase().includes(q)) return false;
+    if (fs && (o.routed_status||'').toLowerCase() !== fs) return false;
+    if (fo === 'open'   && o.ship_date)  return false;
+    if (fo === 'closed' && !o.ship_date) return false;
+    if (fc && (o.customer||'').toLowerCase() !== fc) return false;
+    for (const {field,from,to} of dateRanges) {
+      const raw = o[field]; if (!raw) return false;
+      const d = new Date(raw); if (isNaN(d)) return false;
+      if (from && d < from) return false;
+      if (to   && d > to)   return false;
+    }
+    return true;
+  });
+  currentPage = 1;
+  renderTable();
+}
+
+function renderTable() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const soon  = new Date(today); soon.setDate(soon.getDate()+3);
+  const total = filteredOrders.length;
+  const start = (currentPage-1)*PAGE_SIZE;
+  const end   = Math.min(start+PAGE_SIZE, total);
+  const rows  = filteredOrders.slice(start, end);
+
+  document.getElementById('tableCount').textContent = total + ' orders';
+  document.getElementById('rowCount').textContent = total === allOrders.length ? '' : `${total} of ${allOrders.length} shown`;
+
+  const tbody = document.getElementById('ordersBody');
+  if (total === 0) {
+    document.getElementById('ordersTable').style.display = 'none';
+    document.getElementById('emptyState').style.display = 'block';
+    document.getElementById('pagination').style.display = 'none';
+    return;
+  }
+  document.getElementById('ordersTable').style.display = 'table';
+  document.getElementById('emptyState').style.display = 'none';
+
+  tbody.innerHTML = rows.map((o, idx) => {
+    const rb = o.route_by_date ? parseLocalDate(o.route_by_date) : null;
+    let rowClass = '';
+    if (rb && !o.ship_date) {
+      if (rb < today) rowClass = 'overdue-row';
+      else if (rb <= soon) rowClass = 'due-soon-row';
+    }
+    return `<tr class="${rowClass}">
+      <td style="color:var(--gray-400);font-size:11px;text-align:center">${start+idx+1}</td>
+      <td style="white-space:nowrap">${fmtEntered(o.created_at)}</td>
+      <td class="dn">${esc(o.dn_so||'')}</td>
+      <td>${esc(o.customer||'')}</td>
+      <td>${fmtDate(o.waived_date)}</td>
+      <td>${fmtDate(o.date_released)}</td>
+      <td>${fmtDate(o.route_by_date)}</td>
+      <td>${fmtDate(o.cancel_date)}</td>
+      <td style="font-weight:600;text-align:right">${o.units?parseInt(o.units).toLocaleString():''}</td>
+      <td>${esc(o.ceva_id||'')}</td>
+      <td>${esc(o.po||'')}</td>
+      <td>${o.routed_status ? `<span class="status-badge ${badgeClass(o.routed_status)}">${esc(o.routed_status)}</span>` : ''}</td>
+      <td>${fmtDate(o.ship_date)}</td>
+      <td>${esc(o.s7||'')}</td>
+      <td>${esc(o.status||'')}</td>
+      <td style="text-align:center">${esc(o.days_lost_hold||'')}</td>
+      <td>${esc(o.to_ltl||'')}</td>
+      <td style="text-align:center">${parseBool(o.gridded)?'✓':''}</td>
+      <td>${esc(o.hold_reason||'')}</td>
+      <td style="text-align:center">${parseBool(o.resolved)?'✓':''}</td>
+      <td>${esc(o.comments||'')}</td>
+    </tr>`;
+  }).join('');
+
+  const pages = Math.ceil(total/PAGE_SIZE);
+  if (pages <= 1) { document.getElementById('pagination').style.display = 'none'; return; }
+  document.getElementById('pagination').style.display = 'flex';
+  let btns = '';
+  for (let p=1;p<=pages;p++) btns+=`<button class="page-btn${p===currentPage?' current':''}" onclick="goPage(${p})">${p}</button>`;
+  document.getElementById('pageButtons').innerHTML = btns;
+  document.getElementById('pageInfo').textContent = `Showing ${start+1}–${end} of ${total}`;
+}
+
+function goPage(p) { currentPage=p; renderTable(); document.querySelector('.table-scroll')?.scrollTo(0,0); }
+
+function badgeClass(s) {
+  const u=(s||'').toUpperCase();
+  if (u==='ROUTED') return 'badge-routed';
+  if (u==='HOLD')   return 'badge-hold';
+  if (u==='IN PROCESS') return 'badge-process';
+  return 'badge-open';
+}
+
+// ── Filters ───────────────────────────────────────────────────
+function toggleDateFilters() {
+  const panel = document.getElementById('dateFilterPanel');
+  const open  = panel.style.display !== 'none';
+  panel.style.display = open ? 'none' : 'block';
+  document.getElementById('dateFilterToggle').style.background = open ? '' : 'var(--navy-light)';
+}
+
+function clearDateFilters() {
+  DATE_FILTERS.forEach(([fromId,toId]) => {
+    const f=document.getElementById(fromId); if(f) f.value='';
+    const t=document.getElementById(toId);   if(t) t.value='';
+  });
+  filterOrders();
+}
+
+function clearFilters() {
+  document.getElementById('searchInput').value='';
+  document.getElementById('filterStatus').value='';
+  document.getElementById('filterOpen').value='';
+  document.getElementById('filterCustomer').value='';
+  clearDateFilters();
+}
+
+// ── Utils ─────────────────────────────────────────────────────
+function set(id,val) { const el=document.getElementById(id); if(el) el.textContent=val; }
+
+function parseLocalDate(str) {
+  if (!str) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+    const [y,m,d]=str.split('-').map(Number); return new Date(y,m-1,d);
+  }
+  return new Date(str);
+}
+
+function parseBool(val) {
+  if (typeof val==='boolean') return val;
+  if (typeof val==='string') return val.toLowerCase()==='true';
+  return false;
+}
+
+function fmtDate(str) {
+  if (!str) return '<span style="color:var(--gray-300)">—</span>';
+  const d = parseLocalDate(str);
+  if (!d||isNaN(d)) return '<span style="color:var(--gray-300)">—</span>';
+  return d.toLocaleDateString(undefined,{month:'numeric',day:'numeric',year:'numeric'});
+}
+
+function fmtEntered(iso) {
+  if (!iso) return '<span style="color:var(--gray-300)">—</span>';
+  const d=new Date(iso); if(isNaN(d)) return '<span style="color:var(--gray-300)">—</span>';
+  const date=d.toLocaleDateString(undefined,{month:'numeric',day:'numeric',year:'2-digit'});
+  const time=d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit',hour12:true});
+  return `<span style="font-size:11.5px;color:var(--gray-700);line-height:1.3;display:inline-block"><span style="display:block;font-weight:600">${date}</span><span style="display:block;color:var(--gray-400)">${time}</span></span>`;
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
