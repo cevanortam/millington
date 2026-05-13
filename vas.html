@@ -686,7 +686,8 @@ async function loadFromSheets() {
   loadViaJsonp(GAS_URL + '?action=getAll&callback=onSheetsData', 8000)
     .then(data => {
       if (data && data.rows) {
-        allOrders = data.rows;
+        // Sanitize all date fields coming from the sheet
+        allOrders = data.rows.map(sanitizeRowFromSheet);
         // Always overwrite cache with fresh data from the sheet
         localStorage.setItem('vas_orders_cache', JSON.stringify(allOrders));
         setConnectionStatus('connected');
@@ -738,11 +739,45 @@ function loadViaJsonp(url, timeout) {
   });
 }
 
+// All fields that must be stored as YYYY-MM-DD strings
+const DATE_ONLY_FIELDS = ['waived_date','route_by_date','cancel_date','ship_date','date_released'];
+
+// Sanitize a row before writing — ensures date fields are clean YYYY-MM-DD strings
+// and strips out any JS Date objects or full timestamp strings
+function sanitizeRowForSave(row) {
+  const clean = Object.assign({}, row);
+  DATE_ONLY_FIELDS.forEach(field => {
+    const val = clean[field];
+    if (!val) { clean[field] = ''; return; }
+    // Already a clean YYYY-MM-DD string
+    if (/^\d{4}-\d{2}-\d{2}$/.test(String(val))) return;
+    // Try to parse and reformat
+    const d = new Date(val);
+    if (!isNaN(d)) {
+      // Use local date parts to avoid UTC shift
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const dy = String(d.getDate()).padStart(2, '0');
+      clean[field] = `${y}-${m}-${dy}`;
+    } else {
+      clean[field] = '';
+    }
+  });
+  return clean;
+}
+
+// Also sanitize incoming data from the sheet — same logic, applied on load
+function sanitizeRowFromSheet(row) {
+  return sanitizeRowForSave(row);
+}
+
 async function saveToSheets(rows) {
   if (!GAS_URL) {
     showSaveIndicator('✓ Saved locally (no Sheets connected)');
     return true;
   }
+  // Sanitize all date fields before sending
+  rows = rows.map(sanitizeRowForSave);
   try {
     // Apps Script cross-origin requires no-cors; response will be opaque but data still writes
     await fetch(GAS_URL, {
