@@ -180,14 +180,7 @@
   #dateFilterPanel { display:none; background:white; border:1px solid var(--gray-200); border-radius:var(--radius-lg); padding:14px 18px; margin-bottom:12px; box-shadow:var(--shadow); }
   #dateFilterBadge { display:none; background:var(--red); color:white; border-radius:10px; font-size:10px; padding:1px 6px; font-weight:700; }
 
-  /* Read-only notice banner */
-  .readonly-banner {
-    background: var(--navy-light); border-bottom: 1px solid var(--navy-mid);
-    padding: 8px 28px; font-size: 12.5px; color: var(--navy-mid);
-    display: flex; align-items: center; gap: 8px; font-weight: 500;
-  }
-
-  @media (max-width: 768px) {
+    @media (max-width: 768px) {
     .charts-grid { grid-template-columns: 1fr; }
     .metrics-grid { grid-template-columns: repeat(2, 1fr); }
   }
@@ -218,9 +211,6 @@
   <div class="nav-tab" onclick="showPage('orders', this)">Orders</div>
 </nav>
 
-<div class="readonly-banner">
-  🔒 This is a read-only view. Data cannot be modified from this portal.
-</div>
 
 <!-- ====== METRICS PAGE ====== -->
 <div class="page active" id="page-metrics">
@@ -268,13 +258,6 @@
     </div>
   </div>
 
-  <div class="chart-card" style="margin-bottom:24px;">
-    <div class="chart-title">Open Order Aging</div>
-    <table class="aging-table">
-      <thead><tr><th>DN/SO</th><th>Customer</th><th>Waived Date</th><th>Route By</th><th>Units</th><th>Days Open</th><th>Status</th></tr></thead>
-      <tbody id="agingBody"></tbody>
-    </table>
-  </div>
 </div>
 
 <!-- ====== ORDERS PAGE ====== -->
@@ -558,30 +541,6 @@ function renderMetrics() {
   const maxS = sortedSt.length ? sortedSt[0][1] : 1;
   document.getElementById('statusChart').innerHTML = sortedSt.map(([n,c]) =>
     `<div class="bar-row"><div class="bar-label">${esc(n)}</div><div class="bar-track"><div class="bar-fill${n==='HOLD'?' red':''}" style="width:${Math.round(c/maxS*100)}%"></div></div><div class="bar-val">${c}</div></div>`).join('');
-
-  // Aging table
-  const sorted = [...open].sort((a,b)=>{
-    const da = a.waived_date ? new Date(a.waived_date) : new Date('2999-01-01');
-    const db = b.waived_date ? new Date(b.waived_date) : new Date('2999-01-01');
-    return da - db;
-  }).slice(0,20);
-  document.getElementById('agingBody').innerHTML = sorted.map(o => {
-    const daysOpen = o.waived_date ? Math.floor((today - new Date(o.waived_date))/86400000) : '—';
-    let tagStyle = 'background:var(--navy-light);color:var(--navy)';
-    if (typeof daysOpen === 'number') {
-      if (daysOpen > 14) tagStyle = 'background:var(--red-light);color:var(--red)';
-      else if (daysOpen > 7) tagStyle = 'background:var(--gold-light);color:#7a4f00';
-    }
-    return `<tr>
-      <td style="font-weight:600;font-size:12.5px;color:var(--navy)">${esc(o.dn_so)}</td>
-      <td>${esc(o.customer||'—')}</td>
-      <td>${fmtDate(o.waived_date)}</td>
-      <td style="${!o.route_by_date?'':(parseLocalDate(o.route_by_date)<today?'color:var(--red);font-weight:600':'')}">${fmtDate(o.route_by_date)}</td>
-      <td style="font-weight:600">${o.units?parseInt(o.units).toLocaleString():'—'}</td>
-      <td><span class="aging-tag" style="${tagStyle}">${daysOpen} days</span></td>
-      <td>${esc(o.routed_status||'—')}</td>
-    </tr>`;
-  }).join('');
 
   renderTrendCharts();
 }
