@@ -400,6 +400,7 @@
             <th>PO</th>
             <th>Routed / Status</th>
             <th>Ship Date</th>
+            <th>Date Released</th>
             <th>S7</th>
             <th>Status</th>
             <th>Days Lost - Hold</th>
@@ -427,14 +428,15 @@
 
 <!-- ====== METRICS PAGE ====== -->
 <div class="page" id="page-metrics">
-  <div class="metrics-grid" id="metricsCards">
-    <!-- Row 1: volume / current state -->
-    <div class="metric-card"><div class="metric-label">Total Orders</div><div class="metric-value" id="m-total">—</div><div class="metric-sub">All time</div></div>
-    <div class="metric-card red-accent"><div class="metric-label">Open Orders</div><div class="metric-value red" id="m-open">—</div><div class="metric-sub">No ship date</div></div>
-    <div class="metric-card gold-accent"><div class="metric-label">Open Units</div><div class="metric-value gold" id="m-units">—</div><div class="metric-sub">Units on open orders</div></div>
-    <div class="metric-card gold-accent"><div class="metric-label">On Hold</div><div class="metric-value gold" id="m-hold">—</div><div class="metric-sub">Current holds</div></div>
-    <div class="metric-card"><div class="metric-label">Routed Today</div><div class="metric-value" id="m-routed-today">—</div><div class="metric-sub">Shipped today</div></div>
-    <!-- Row 2: urgency / performance -->
+  <!-- Row 1: 4 cards, centered -->
+  <div style="display:flex;justify-content:center;gap:14px;margin-bottom:14px;" id="metricsRow1">
+    <div class="metric-card" style="flex:0 1 calc(20% - 11px);min-width:160px"><div class="metric-label">Open Orders</div><div class="metric-value red" id="m-open">—</div><div class="metric-sub">No ship date</div></div>
+    <div class="metric-card gold-accent" style="flex:0 1 calc(20% - 11px);min-width:160px"><div class="metric-label">Open Units</div><div class="metric-value gold" id="m-units">—</div><div class="metric-sub">Units on open orders</div></div>
+    <div class="metric-card gold-accent" style="flex:0 1 calc(20% - 11px);min-width:160px"><div class="metric-label">On Hold</div><div class="metric-value gold" id="m-hold">—</div><div class="metric-sub">Current holds</div></div>
+    <div class="metric-card" style="flex:0 1 calc(20% - 11px);min-width:160px"><div class="metric-label">Routed Today</div><div class="metric-value" id="m-routed-today">—</div><div class="metric-sub">Shipped today</div></div>
+  </div>
+  <!-- Row 2: 5 cards full width -->
+  <div class="metrics-grid" id="metricsCards" style="margin-bottom:28px;">
     <div class="metric-card gold-accent"><div class="metric-label">Due Within 48 hrs</div><div class="metric-value gold" id="m-due48">—</div><div class="metric-sub">Open, route-by &lt; 48 hours</div></div>
     <div class="metric-card red-accent"><div class="metric-label">Due Within 24 hrs</div><div class="metric-value red" id="m-due24">—</div><div class="metric-sub">Open, route-by &lt; 24 hours</div></div>
     <div class="metric-card red-accent"><div class="metric-label">Overdue</div><div class="metric-value red" id="m-overdue">—</div><div class="metric-sub">Past route-by date</div></div>
@@ -442,6 +444,7 @@
     <div class="metric-card green-accent"><div class="metric-label">Closed This Week</div><div class="metric-value green" id="m-week">—</div><div class="metric-sub">Orders with ship date this week</div></div>
   </div>
 
+  <!-- Snapshot charts -->
   <div class="charts-grid">
     <div class="chart-card">
       <div class="chart-title">Open Orders by Customer</div>
@@ -451,16 +454,9 @@
       <div class="chart-title">Order Status Breakdown</div>
       <div class="bar-chart" id="statusChart"></div>
     </div>
-    <div class="chart-card" style="grid-column: span 2;">
-      <div class="chart-title">Open Order Aging</div>
-      <table class="aging-table" id="agingTable">
-        <thead><tr><th>DN/SO</th><th>Customer</th><th>Waived Date</th><th>Route By</th><th>Units</th><th>Days Open</th><th>Status</th></tr></thead>
-        <tbody id="agingBody"></tbody>
-      </table>
-    </div>
   </div>
 
-  <!-- Trend Charts -->
+  <!-- Trend Charts (above aging) -->
   <div style="margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
     <div class="metrics-section-title" style="margin:0">Closure Trends</div>
     <div style="display:flex;gap:6px;">
@@ -469,7 +465,7 @@
       <button class="btn btn-outline btn-sm trend-period-btn" data-period="monthly" onclick="setTrendPeriod('monthly',this)">Monthly</button>
     </div>
   </div>
-  <div class="charts-grid">
+  <div class="charts-grid" style="margin-bottom:24px;">
     <div class="chart-card">
       <div class="chart-title">Orders Closed</div>
       <canvas id="trendOrdersChart" height="140"></canvas>
@@ -478,6 +474,15 @@
       <div class="chart-title">Units Closed</div>
       <canvas id="trendUnitsChart" height="140"></canvas>
     </div>
+  </div>
+
+  <!-- Open Order Aging (below trends) -->
+  <div class="chart-card" style="margin-bottom:24px;">
+    <div class="chart-title">Open Order Aging</div>
+    <table class="aging-table" id="agingTable">
+      <thead><tr><th>DN/SO</th><th>Customer</th><th>Waived Date</th><th>Route By</th><th>Units</th><th>Days Open</th><th>Status</th></tr></thead>
+      <tbody id="agingBody"></tbody>
+    </table>
   </div>
 </div>
 
@@ -836,6 +841,7 @@ function renderTable() {
         </select>
       </td>
       <td><input type="date" value="${o.ship_date||''}" onchange="updateField(${absIdx},'ship_date',this.value)"></td>
+      <td><input type="date" value="${o.date_released||''}" onchange="updateField(${absIdx},'date_released',this.value)"></td>
       <td><input type="text" value="${esc(o.s7||'')}" onchange="updateField(${absIdx},'s7',this.value)" style="width:60px"></td>
       <td><input type="text" value="${esc(o.status||'')}" onchange="updateField(${absIdx},'status',this.value)" style="min-width:90px"></td>
       <td><input type="text" value="${esc(o.days_lost_hold||'')}" onchange="updateField(${absIdx},'days_lost_hold',this.value)" style="width:50px;text-align:center"></td>
@@ -1034,6 +1040,7 @@ async function saveOrders() {
     po: document.getElementById('d_po_'+i)?.value || '',
     routed_status: routed,
     ship_date: '',
+    date_released: '',
     s7: document.getElementById('d_s7_'+i)?.value || '',
     status: document.getElementById('d_status_'+i)?.value || '',
     days_lost_hold: '',
@@ -1098,7 +1105,6 @@ function renderMetrics() {
     if (diffs.length > 0) avgDays = (diffs.reduce((a,b)=>a+b,0)/diffs.length).toFixed(1);
   }
 
-  document.getElementById('m-total').textContent = allOrders.length;
   document.getElementById('m-open').textContent = open.length;
   document.getElementById('m-units').textContent = openUnits.toLocaleString();
   document.getElementById('m-avgclose').textContent = avgDays === '—' ? '—' : avgDays + 'd';
@@ -1165,7 +1171,7 @@ function renderMetrics() {
 // EXPORT CSV
 // ============================================================
 function exportCSV() {
-  const cols = ['dn_so','waived_date','customer','route_by_date','cancel_date','units','ceva_id','po','routed_status','ship_date','s7','status','days_lost_hold','to_ltl','gridded','hold_reason','resolved','comments','created_at','updated_at'];
+  const cols = ['dn_so','waived_date','customer','route_by_date','cancel_date','units','ceva_id','po','routed_status','ship_date','date_released','s7','status','days_lost_hold','to_ltl','gridded','hold_reason','resolved','comments','created_at','updated_at'];
   const header = cols.join(',');
   const rows = allOrders.map(o => cols.map(c => JSON.stringify(o[c]||'')).join(','));
   const csv = [header, ...rows].join('\n');
