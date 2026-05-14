@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Customer Flash Report — CEVA Logistics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy: #003057; --navy-deep: #001f3d; --navy-mid: #004a87;
+    --red: #C8102E; --red-light: #e8192e; --white: #ffffff;
+    --gray-50: #f8f9fa; --gray-100: #eef0f2; --gray-200: #dde1e5;
+    --gray-300: #c3c9d0; --gray-500: #7a8491; --gray-700: #3d4550; --gray-900: #1a1f26;
+    --success: #0a7c42; --success-bg: #e8f5ef; --warn: #b85c00; --warn-bg: #fff3e6;
+    --font: 'Barlow', sans-serif; --font-cond: 'Barlow Condensed', sans-serif;
+  }
+  body { font-family: var(--font); background: var(--gray-50); color: var(--gray-900); min-height: 100vh; display: flex; flex-direction: column; }
+
+  /* HEADER */
+  .header { background: var(--navy); padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 60px; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+  .header-left { display: flex; align-items: center; gap: 16px; }
+  .header-logo { height: 32px; width: auto; object-fit: contain; filter: brightness(0) invert(1); }
+  .header-divider { width: 1px; height: 28px; background: rgba(255,255,255,0.2); }
+  .header-title { font-family: var(--font-cond); font-size: 18px; font-weight: 700; color: var(--white); letter-spacing: 0.5px; text-transform: uppercase; }
+  .header-subtitle { font-size: 12px; color: rgba(255,255,255,0.55); margin-top: 1px; }
+  .header-right { display: flex; align-items: center; gap: 10px; }
+  .header-customer-badge { background: var(--red); color: white; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 4px; font-family: var(--font-cond); letter-spacing: 0.5px; text-transform: uppercase; }
+  .sync-status { font-size: 11px; color: rgba(255,255,255,0.65); display: flex; align-items: center; gap: 5px; }
+  .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: #2ecc71; flex-shrink: 0; }
+  .sync-dot.syncing { background: #f39c12; animation: pulse 0.8s infinite alternate; }
+  .sync-dot.error { background: var(--red); }
+  @keyframes pulse { from { opacity:1; } to { opacity:0.3; } }
+  .spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* NAV */
+  .nav-bar { background: var(--navy-deep); display: flex; align-items: center; padding: 0 24px; gap: 4px; border-bottom: 3px solid var(--red); }
+  .nav-tab { padding: 12px 20px; font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.5); cursor: pointer; border: none; background: transparent; font-family: var(--font); letter-spacing: 0.3px; transition: color 0.15s, background 0.15s; border-bottom: 3px solid transparent; margin-bottom: -3px; text-transform: uppercase; }
+  .nav-tab:hover { color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.05); }
+  .nav-tab.active { color: var(--white); border-bottom-color: var(--red); background: rgba(255,255,255,0.07); }
+
+  /* LAYOUT */
+  .main { flex: 1; padding: 28px 24px; max-width: 1400px; width: 100%; margin: 0 auto; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+  .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  @media (max-width: 800px) { .settings-grid { grid-template-columns: 1fr; } }
+
+  /* SECTION HEADER */
+  .section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .section-header h2 { font-family: var(--font-cond); font-size: 20px; font-weight: 700; color: var(--navy); text-transform: uppercase; letter-spacing: 0.5px; }
+  .section-line { flex: 1; height: 2px; background: var(--gray-200); }
+  .section-accent { width: 4px; height: 20px; background: var(--red); border-radius: 2px; }
+
+  /* CARDS */
+  .card { background: var(--white); border: 1px solid var(--gray-200); border-radius: 8px; padding: 24px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+  .card-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--gray-500); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .card-title::before { content: ''; display: inline-block; width: 3px; height: 14px; background: var(--red); border-radius: 2px; }
+
+  /* FORMS */
+  .form-row { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+  .form-label { font-size: 12px; font-weight: 600; color: var(--gray-700); text-transform: uppercase; letter-spacing: 0.5px; }
+  .form-input, .form-select { padding: 9px 12px; border: 1.5px solid var(--gray-200); border-radius: 6px; font-family: var(--font); font-size: 14px; color: var(--gray-900); background: var(--white); transition: border-color 0.15s; outline: none; }
+  .form-input:focus, .form-select:focus { border-color: var(--navy); }
+
+  /* METRIC LIST */
+  .metric-list { display: flex; flex-direction: column; gap: 8px; min-height: 40px; }
+  .metric-item { display: grid; grid-template-columns: 1fr auto auto auto; align-items: center; gap: 10px; padding: 10px 14px; background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 6px; }
+  .metric-item-name { font-size: 14px; font-weight: 500; color: var(--gray-900); }
+  .metric-type-badge { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; }
+  .badge-percent { background: #e8f0fe; color: #1a4a8a; }
+  .badge-whole   { background: var(--success-bg); color: var(--success); }
+  .badge-decimal { background: var(--warn-bg); color: var(--warn); }
+  .badge-text    { background: #f3e8ff; color: #6b21a8; }
+  .metric-order { display: flex; gap: 3px; }
+  .btn-icon { width: 28px; height: 28px; border: 1px solid var(--gray-200); background: var(--white); border-radius: 5px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; color: var(--gray-500); transition: all 0.12s; }
+  .btn-icon:hover { background: var(--gray-100); color: var(--gray-900); border-color: var(--gray-300); }
+  .btn-icon.danger:hover { background: #ffeaea; color: var(--red); border-color: #f5c0c0; }
+  .add-metric-form { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: end; margin-top: 16px; padding-top: 16px; border-top: 1px dashed var(--gray-200); }
+
+  /* BUTTONS */
+  .btn { padding: 9px 18px; border-radius: 6px; font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px; }
+  .btn-primary { background: var(--navy); color: var(--white); }
+  .btn-primary:hover { background: var(--navy-mid); }
+  .btn-red { background: var(--red); color: var(--white); }
+  .btn-red:hover { background: var(--red-light); }
+  .btn-outline { background: var(--white); color: var(--navy); border: 1.5px solid var(--gray-200); }
+  .btn-outline:hover { background: var(--gray-50); border-color: var(--navy); }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* INPUT TAB */
+  .input-header { display: flex; align-items: center; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
+  .date-label { font-size: 13px; font-weight: 700; color: var(--gray-700); text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+  .metrics-input-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .metric-input-card { background: var(--white); border: 1.5px solid var(--gray-200); border-radius: 8px; padding: 16px; transition: border-color 0.15s; }
+  .metric-input-card:focus-within { border-color: var(--navy); }
+  .metric-input-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--gray-500); margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
+  .metric-input-field { width: 100%; font-size: 22px; font-weight: 600; color: var(--navy); border: none; outline: none; font-family: var(--font-cond); background: transparent; }
+  .metric-input-hint { font-size: 11px; color: var(--gray-500); margin-top: 4px; }
+
+  /* TABLE */
+  .table-wrapper { overflow-x: auto; border-radius: 8px; border: 1px solid var(--gray-200); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead { background: var(--navy); }
+  thead th { padding: 10px 14px; text-align: left; color: rgba(255,255,255,0.9); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; white-space: nowrap; }
+  tbody tr { border-bottom: 1px solid var(--gray-100); transition: background 0.1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--gray-50); }
+  tbody td { padding: 10px 14px; color: var(--gray-700); }
+  tbody td.date-cell { font-weight: 600; color: var(--navy); font-size: 12px; }
+  tbody td.num-cell { font-weight: 600; color: var(--gray-900); }
+  .no-data { text-align: center; padding: 40px; color: var(--gray-500); font-size: 14px; }
+
+  /* SUMMARY */
+  .summary-controls { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; margin-bottom: 24px; }
+  .kpi-card { background: var(--white); border: 1px solid var(--gray-200); border-radius: 8px; padding: 16px; border-top: 3px solid var(--navy); }
+  .kpi-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--gray-500); margin-bottom: 6px; }
+  .kpi-value { font-family: var(--font-cond); font-size: 28px; font-weight: 700; color: var(--navy); line-height: 1; }
+  .kpi-sub { font-size: 11px; color: var(--gray-500); margin-top: 4px; }
+  .chart-section { display: flex; flex-direction: column; gap: 24px; }
+  .chart-card { background: var(--white); border: 1px solid var(--gray-200); border-radius: 8px; padding: 20px; }
+  .chart-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
+  .chart-card-title { font-family: var(--font-cond); font-size: 16px; font-weight: 700; color: var(--navy); text-transform: uppercase; }
+  .legend-row { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 12px; font-size: 12px; color: var(--gray-500); }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 24px; right: 24px; background: var(--navy); color: var(--white); padding: 12px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; box-shadow: 0 4px 16px rgba(0,0,0,0.2); z-index: 9999; opacity: 0; transform: translateY(10px); transition: all 0.25s; pointer-events: none; }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.success { border-left: 4px solid #2ecc71; }
+  .toast.error { border-left: 4px solid var(--red); }
+
+  /* EMPTY */
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--gray-500); }
+  .empty-state p { font-size: 15px; margin-bottom: 4px; color: var(--gray-700); }
+  .empty-state small { font-size: 13px; }
+
+  /* MODAL */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--white); border-radius: 10px; padding: 28px; width: 520px; max-width: 95vw; max-height: 90vh; overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
+  .modal-title { font-family: var(--font-cond); font-size: 20px; font-weight: 700; color: var(--navy); text-transform: uppercase; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; }
+  .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+  .tag-info { background: #e8f0fe; color: #1a4a8a; }
+  .info-banner { margin-top: 16px; padding: 14px 18px; background: #e8f0fe; border-radius: 8px; border-left: 4px solid #1a4a8a; font-size: 13px; color: #1a4a8a; }
+  .warn-banner { margin-top: 16px; padding: 14px 18px; background: var(--warn-bg); border-radius: 8px; border-left: 4px solid var(--warn); font-size: 13px; color: var(--warn); }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-left">
+    <img src="https://www.freelogovectors.net/wp-content/uploads/2022/07/ceva-logistics-logo-freelogovectors.net_.png"
+         alt="CEVA Logistics" class="header-logo" onerror="this.style.display='none'">
+    <div class="header-divider"></div>
+    <div>
+      <div class="header-title">Customer Flash Report</div>
+      <div class="header-subtitle">Millington Warehouse Operations</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="sync-status">
+      <div class="sync-dot" id="syncDot"></div>
+      <span id="syncLabel">Ready</span>
+    </div>
+    <span class="header-customer-badge" id="customerBadge">No Customer Set</span>
+  </div>
+</header>
+
+<!-- NAV -->
+<nav class="nav-bar">
+  <button class="nav-tab active" onclick="switchTab('settings',event)">⚙ Settings</button>
+  <button class="nav-tab" onclick="switchTab('input',event)">✎ Data Input</button>
+  <button class="nav-tab" onclick="switchTab('summary',event)">▦ Executive Summary</button>
+</nav>
+
+<main class="main">
+
+  <!-- SETTINGS -->
+  <div class="tab-content active" id="tab-settings">
+    <div class="settings-grid">
+      <div class="card">
+        <div class="card-title">Customer Information</div>
+        <div class="form-row">
+          <label class="form-label">Customer Name</label>
+          <input class="form-input" id="settCustomerName" type="text" placeholder="e.g. Bloomingdales" oninput="updateCustomerBadge()">
+        </div>
+        <div class="form-row">
+          <label class="form-label">Report Title</label>
+          <input class="form-input" id="settReportTitle" type="text" placeholder="e.g. Daily Operations Flash Report">
+        </div>
+        <div class="form-row">
+          <label class="form-label">Facility / Site</label>
+          <input class="form-input" id="settFacility" type="text" placeholder="e.g. Millington, TN">
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+          <button class="btn btn-primary btn-sm" onclick="saveSettings()">💾 Save Settings</button>
+          <button class="btn btn-outline btn-sm" onclick="pullFromSheet()">↓ Pull from Sheet</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Metrics Configuration</div>
+        <div class="metric-list" id="metricList"></div>
+        <div class="add-metric-form">
+          <div class="form-row" style="margin:0">
+            <label class="form-label">Metric Name</label>
+            <input class="form-input" id="newMetricName" placeholder="e.g. Units Shipped" onkeydown="if(event.key==='Enter')addMetric()">
+          </div>
+          <div class="form-row" style="margin:0">
+            <label class="form-label">Type</label>
+            <select class="form-select" id="newMetricType">
+              <option value="whole">Whole Number</option>
+              <option value="decimal">Decimal</option>
+              <option value="percent">Percent (%)</option>
+              <option value="text">Text</option>
+            </select>
+          </div>
+          <div style="padding-top:22px;">
+            <button class="btn btn-red btn-sm" onclick="addMetric()">+ Add</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="info-banner">
+      <strong>Google Sheets sync is active.</strong> Each customer gets their own tab in the sheet named after the customer. Configure your customer name and metrics here before entering data.
+    </div>
+    <div id="urlWarning" style="display:none;" class="warn-banner">
+      ⚠ <strong>Apps Script URL not set.</strong> Open this HTML file in a text editor and paste your deployed Apps Script URL into the <code>APPS_SCRIPT_URL</code> variable near the top of the &lt;script&gt; section.
+    </div>
+  </div>
+
+  <!-- DATA INPUT -->
+  <div class="tab-content" id="tab-input">
+    <div class="input-header">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span class="date-label">Report Date:</span>
+        <input type="date" class="form-input" id="inputDate" style="font-size:14px;font-weight:600;">
+      </div>
+      <button class="btn btn-primary" id="saveEntryBtn" onclick="saveEntry()">💾 Save Entry</button>
+      <button class="btn btn-outline" onclick="clearInputFields()">✕ Clear</button>
+    </div>
+
+    <div id="inputMetricsArea">
+      <div class="empty-state"><p>No metrics configured</p><small>Go to Settings to add metrics.</small></div>
+    </div>
+
+    <div style="margin-top:32px;">
+      <div class="section-header">
+        <div class="section-accent"></div>
+        <h2>Recorded Entries</h2>
+        <div class="section-line"></div>
+        <button class="btn btn-outline btn-sm" onclick="pullFromSheet()">↓ Refresh from Sheet</button>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr id="entriesTableHead"><th>Date</th></tr></thead>
+          <tbody id="entriesTableBody"><tr><td class="no-data">No entries yet.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXECUTIVE SUMMARY -->
+  <div class="tab-content" id="tab-summary">
+    <div class="summary-controls">
+      <span class="date-label">Date Range:</span>
+      <input type="date" class="form-input" id="filterStart" style="font-size:13px;" onchange="renderSummary()">
+      <span style="color:var(--gray-500);font-size:13px;">to</span>
+      <input type="date" class="form-input" id="filterEnd" style="font-size:13px;" onchange="renderSummary()">
+      <button class="btn btn-outline btn-sm" onclick="clearSummaryFilter()">Show All</button>
+      <button class="btn btn-outline btn-sm" onclick="pullFromSheet()">↓ Refresh from Sheet</button>
+    </div>
+    <div class="kpi-grid" id="kpiGrid"></div>
+    <div class="chart-section" id="chartSection">
+      <div class="empty-state"><p>No data to display</p><small>Enter data in the Data Input tab to see charts here.</small></div>
+    </div>
+  </div>
+
+</main>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-title">
+      <span>Edit Entry</span>
+      <button class="btn-icon" onclick="closeEditModal()" style="font-size:18px;">✕</button>
+    </div>
+    <div id="editModalBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeEditModal()">Cancel</button>
+      <button class="btn btn-red" id="editSaveBtn" onclick="saveEditModal()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+// ============================================================
+// ↓ PASTE YOUR DEPLOYED APPS SCRIPT URL HERE AFTER DEPLOYING ↓
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwSIMWJ8nySsWYtQEEVgOQMDEjXkhbok1GzixijMy90-5La9sE3mHCLxwvOrgojz27XbQ/exec';
+// ============================================================
+
+let state = {
+  customerName: '', reportTitle: '', facility: '',
+  metrics: [],  // { id, name, type }
+  entries: []   // { id, date, values: { metricName: value } }
+};
+let editingDate = null;
+let chartInstances = [];
+
+// PERSISTENCE
+function saveLocal() {
+  try { localStorage.setItem('ceva_flash_v2', JSON.stringify(state)); } catch(e) {}
+}
+function loadLocal() {
+  try { const r = localStorage.getItem('ceva_flash_v2'); if (r) state = Object.assign(state, JSON.parse(r)); } catch(e) {}
+}
+
+// SYNC STATUS
+function setSyncing(active, isError) {
+  const dot = document.getElementById('syncDot');
+  const lbl = document.getElementById('syncLabel');
+  dot.className = 'sync-dot' + (active ? ' syncing' : isError ? ' error' : '');
+  lbl.textContent = active ? 'Syncing…' : isError ? 'Sync error' : 'Synced ✓';
+}
+
+// API CALL
+async function apiCall(payload) {
+  const url = APPS_SCRIPT_URL;
+  if (!url || url.includes('PASTE_YOUR')) throw new Error('Apps Script URL not configured — see Settings tab warning.');
+  setSyncing(true, false);
+  try {
+    const res = await fetch(url, { method: 'POST', body: JSON.stringify(payload) });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Script returned an error');
+    setSyncing(false, false);
+    return data;
+  } catch(err) {
+    setSyncing(false, true);
+    throw err;
+  }
+}
+
+// PULL FROM SHEET
+async function pullFromSheet() {
+  if (!state.customerName) { showToast('Set a customer name in Settings first', 'error'); return; }
+  try {
+    const data = await apiCall({ action: 'getAllData', customer: state.customerName });
+    state.entries = data.entries.map(e => ({ id: e.date, date: e.date, values: e.values }));
+    // Add any sheet headers not yet in local metrics
+    if (data.headers) {
+      data.headers.forEach(h => {
+        if (!state.metrics.find(m => m.name === h))
+          state.metrics.push({ id: uid(), name: h, type: 'whole' });
+      });
+    }
+    saveLocal();
+    renderMetricList();
+    renderInputMetrics();
+    renderEntriesTable();
+    renderSummary();
+    showToast('Data refreshed from Google Sheets', 'success');
+  } catch(err) {
+    showToast('Refresh failed: ' + err.message, 'error');
+  }
+}
+
+// INIT
+function init() {
+  loadLocal();
+  document.getElementById('inputDate').value = todayStr();
+  document.getElementById('settCustomerName').value = state.customerName || '';
+  document.getElementById('settReportTitle').value  = state.reportTitle  || '';
+  document.getElementById('settFacility').value     = state.facility     || '';
+  updateCustomerBadge();
+  // Show URL warning if not configured
+  if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes('PASTE_YOUR'))
+    document.getElementById('urlWarning').style.display = 'block';
+  renderMetricList();
+  renderInputMetrics();
+  renderEntriesTable();
+  renderSummary();
+  if (APPS_SCRIPT_URL && !APPS_SCRIPT_URL.includes('PASTE_YOUR') && state.customerName)
+    pullFromSheet();
+}
+
+// SETTINGS
+function updateCustomerBadge() {
+  const n = document.getElementById('settCustomerName').value.trim();
+  document.getElementById('customerBadge').textContent = n || 'No Customer Set';
+}
+
+async function saveSettings() {
+  state.customerName = document.getElementById('settCustomerName').value.trim();
+  state.reportTitle  = document.getElementById('settReportTitle').value.trim();
+  state.facility     = document.getElementById('settFacility').value.trim();
+  saveLocal();
+  updateCustomerBadge();
+  if (state.customerName && state.metrics.length) {
+    try {
+      await apiCall({ action: 'syncHeaders', customer: state.customerName, metricNames: state.metrics.map(m => m.name) });
+    } catch(e) {}
+  }
+  showToast('Settings saved', 'success');
+}
+
+function renderMetricList() {
+  const el = document.getElementById('metricList');
+  if (!state.metrics.length) {
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray-500);font-size:13px;">No metrics added yet.</div>';
+    return;
+  }
+  el.innerHTML = state.metrics.map((m, i) => `
+    <div class="metric-item">
+      <span class="metric-item-name">${esc(m.name)}</span>
+      <span class="metric-type-badge badge-${m.type}">${shortType(m.type)}</span>
+      <div class="metric-order">
+        <button class="btn-icon" onclick="moveMetric(${i},-1)" ${i===0?'disabled style="opacity:.3"':''}>↑</button>
+        <button class="btn-icon" onclick="moveMetric(${i},1)"  ${i===state.metrics.length-1?'disabled style="opacity:.3"':''}>↓</button>
+      </div>
+      <button class="btn-icon danger" onclick="deleteMetric('${m.id}')">✕</button>
+    </div>`).join('');
+}
+
+function shortType(t) { return t==='percent'?'%':t==='decimal'?'0.0':t==='text'?'TXT':'#'; }
+
+async function addMetric() {
+  const el = document.getElementById('newMetricName');
+  const name = el.value.trim();
+  if (!name) { showToast('Enter a metric name', 'error'); return; }
+  const type = document.getElementById('newMetricType').value;
+  state.metrics.push({ id: uid(), name, type });
+  el.value = '';
+  saveLocal();
+  renderMetricList();
+  renderInputMetrics();
+  renderEntriesTable();
+  if (state.customerName) {
+    try { await apiCall({ action:'syncHeaders', customer:state.customerName, metricNames:state.metrics.map(m=>m.name) }); }
+    catch(e) {}
+  }
+  showToast(`"${name}" added`, 'success');
+}
+
+function deleteMetric(id) {
+  if (!confirm('Delete metric? Past values in the sheet are kept.')) return;
+  state.metrics = state.metrics.filter(m => m.id !== id);
+  saveLocal(); renderMetricList(); renderInputMetrics(); renderEntriesTable(); renderSummary();
+}
+
+function moveMetric(i, dir) {
+  const j = i + dir;
+  if (j < 0 || j >= state.metrics.length) return;
+  [state.metrics[i], state.metrics[j]] = [state.metrics[j], state.metrics[i]];
+  saveLocal(); renderMetricList(); renderInputMetrics(); renderEntriesTable(); renderSummary();
+}
+
+// DATA INPUT
+function renderInputMetrics() {
+  const area = document.getElementById('inputMetricsArea');
+  if (!state.metrics.length) {
+    area.innerHTML = '<div class="empty-state"><p>No metrics configured</p><small>Go to Settings to add metrics.</small></div>';
+    return;
+  }
+  area.innerHTML = `<div class="metrics-input-grid">${state.metrics.map(m => `
+    <div class="metric-input-card">
+      <div class="metric-input-label">
+        <span>${esc(m.name)}</span>
+        <span class="tag tag-info">${m.type==='percent'?'%':m.type==='decimal'?'DEC':m.type==='text'?'TXT':'#'}</span>
+      </div>
+      ${m.type==='text'
+        ? `<textarea id="inp-${m.id}" placeholder="Enter text…"
+             style="width:100%;font-size:14px;font-weight:500;color:var(--navy);border:none;outline:none;font-family:var(--font);background:transparent;resize:vertical;min-height:56px;line-height:1.4;"></textarea>`
+        : `<input class="metric-input-field" id="inp-${m.id}" type="number"
+             step="${m.type==='whole'?'1':'0.01'}" placeholder="—" inputmode="decimal">`
+      }
+      <div class="metric-input-hint">${typeHint(m.type)}</div>
+    </div>`).join('')}</div>`;
+}
+
+function typeHint(t) {
+  if (t==='percent') return 'Enter as percentage, e.g. 94.5';
+  if (t==='decimal') return 'Enter decimal value, e.g. 1.75';
+  if (t==='text')    return 'Enter free text, e.g. No issues noted';
+  return 'Enter whole number, e.g. 1243';
+}
+
+function clearInputFields() {
+  state.metrics.forEach(m => { const e = document.getElementById(`inp-${m.id}`); if(e) e.value=''; });
+}
+
+async function saveEntry() {
+  if (!state.customerName) { showToast('Set a customer name in Settings first','error'); return; }
+  const date = document.getElementById('inputDate').value;
+  if (!date) { showToast('Please select a date','error'); return; }
+  if (!state.metrics.length) { showToast('No metrics configured yet','error'); return; }
+
+  const metricsPayload = [];
+  let hasValue = false;
+  state.metrics.forEach(m => {
+    const el = document.getElementById(`inp-${m.id}`);
+    const v = el ? el.value.trim() : '';
+    if (v) {
+      metricsPayload.push({ name: m.name, value: m.type==='text' ? v : parseFloat(v) });
+      hasValue = true;
+    }
+  });
+  if (!hasValue) { showToast('Enter at least one value','error'); return; }
+
+  const existing = state.entries.find(e => e.date === date);
+  if (existing && !confirm(`An entry for ${fmtDate(date)} already exists. Overwrite?`)) return;
+
+  const btn = document.getElementById('saveEntryBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Saving…';
+
+  try {
+    await apiCall({ action:'saveEntry', customer:state.customerName, date, metrics:metricsPayload });
+    const values = {};
+    metricsPayload.forEach(m => { values[m.name] = m.value; });
+    if (existing) { existing.values = values; }
+    else { state.entries.push({ id:date, date, values }); state.entries.sort((a,b)=>a.date.localeCompare(b.date)); }
+    saveLocal();
+    renderEntriesTable();
+    renderSummary();
+    clearInputFields();
+    showToast(`Entry saved for ${fmtDate(date)}`,'success');
+  } catch(err) {
+    showToast('Save failed: '+err.message,'error');
+  } finally {
+    btn.disabled = false; btn.innerHTML = '💾 Save Entry';
+  }
+}
+
+function renderEntriesTable() {
+  const head = document.getElementById('entriesTableHead');
+  const body = document.getElementById('entriesTableBody');
+  let hh = '<th>Date</th>';
+  state.metrics.forEach(m => { hh += `<th>${esc(m.name)}</th>`; });
+  hh += '<th style="text-align:center">Actions</th>';
+  head.innerHTML = hh;
+
+  if (!state.entries.length) {
+    body.innerHTML = `<tr><td colspan="${state.metrics.length+2}" class="no-data">No entries recorded yet.</td></tr>`;
+    return;
+  }
+  body.innerHTML = [...state.entries].sort((a,b)=>b.date.localeCompare(a.date)).map(e => {
+    let cells = `<td class="date-cell">${fmtDate(e.date)}</td>`;
+    state.metrics.forEach(m => { cells += `<td class="num-cell">${fmtVal(e.values[m.name], m.type)}</td>`; });
+    cells += `<td style="text-align:center;white-space:nowrap;">
+      <button class="btn-icon" onclick="openEditModal('${e.date}')" title="Edit">✎</button>
+      <button class="btn-icon danger" onclick="deleteEntry('${e.date}')" title="Delete">✕</button></td>`;
+    return `<tr>${cells}</tr>`;
+  }).join('');
+}
+
+async function deleteEntry(date) {
+  if (!confirm(`Delete the entry for ${fmtDate(date)}? This removes it from Google Sheets too.`)) return;
+  try {
+    await apiCall({ action:'deleteEntry', customer:state.customerName, date });
+    state.entries = state.entries.filter(e => e.date !== date);
+    saveLocal(); renderEntriesTable(); renderSummary();
+    showToast('Entry deleted','success');
+  } catch(err) { showToast('Delete failed: '+err.message,'error'); }
+}
+
+// EDIT MODAL
+function openEditModal(date) {
+  const entry = state.entries.find(e => e.date === date);
+  if (!entry) return;
+  editingDate = date;
+  document.getElementById('editModalBody').innerHTML = `
+    <div class="form-row" style="margin-bottom:20px">
+      <label class="form-label">Date</label>
+      <input class="form-input" id="editDate" type="date" value="${entry.date}">
+    </div>
+    <div class="metrics-input-grid" style="grid-template-columns:1fr 1fr;">
+      ${state.metrics.map(m => `
+        <div class="metric-input-card">
+          <div class="metric-input-label"><span>${esc(m.name)}</span>
+            <span class="tag tag-info">${m.type==='percent'?'%':m.type==='decimal'?'DEC':m.type==='text'?'TXT':'#'}</span></div>
+          ${m.type==='text'
+            ? `<textarea id="edit-${m.id}" placeholder="Enter text…"
+                 style="width:100%;font-size:14px;font-weight:500;color:var(--navy);border:none;outline:none;font-family:var(--font);background:transparent;resize:vertical;min-height:56px;line-height:1.4;">${entry.values[m.name]!==undefined?esc(String(entry.values[m.name])):''}</textarea>`
+            : `<input class="metric-input-field" id="edit-${m.id}" type="number"
+                 step="${m.type==='whole'?'1':'0.01'}"
+                 value="${entry.values[m.name]!==undefined?entry.values[m.name]:''}" placeholder="—">`
+          }
+        </div>`).join('')}
+    </div>`;
+  document.getElementById('editModal').classList.add('open');
+}
+
+function closeEditModal() { document.getElementById('editModal').classList.remove('open'); editingDate=null; }
+
+async function saveEditModal() {
+  const entry = state.entries.find(e => e.date === editingDate);
+  if (!entry) return;
+  const newDate = document.getElementById('editDate').value;
+  if (!newDate) { showToast('Select a date','error'); return; }
+
+  const metricsPayload = [];
+  state.metrics.forEach(m => {
+    const el = document.getElementById(`edit-${m.id}`);
+    const v = el ? el.value.trim() : '';
+    if (v) metricsPayload.push({ name:m.name, value: m.type==='text' ? v : parseFloat(v) });
+  });
+
+  const btn = document.getElementById('editSaveBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Saving…';
+  try {
+    if (newDate !== editingDate)
+      await apiCall({ action:'deleteEntry', customer:state.customerName, date:editingDate });
+    await apiCall({ action:'saveEntry', customer:state.customerName, date:newDate, metrics:metricsPayload });
+    entry.date = newDate; entry.id = newDate; entry.values = {};
+    metricsPayload.forEach(m => { entry.values[m.name] = m.value; });
+    state.entries.sort((a,b) => a.date.localeCompare(b.date));
+    saveLocal(); renderEntriesTable(); renderSummary(); closeEditModal();
+    showToast('Entry updated','success');
+  } catch(err) { showToast('Update failed: '+err.message,'error'); }
+  finally { btn.disabled=false; btn.innerHTML='Save Changes'; }
+}
+
+// EXECUTIVE SUMMARY
+function clearSummaryFilter() {
+  document.getElementById('filterStart').value = '';
+  document.getElementById('filterEnd').value = '';
+  renderSummary();
+}
+
+function filteredEntries() {
+  const s = document.getElementById('filterStart').value;
+  const e = document.getElementById('filterEnd').value;
+  return state.entries
+    .filter(en => (!s||en.date>=s) && (!e||en.date<=e))
+    .sort((a,b)=>a.date.localeCompare(b.date));
+}
+
+function renderSummary() {
+  const entries = filteredEntries();
+  chartInstances.forEach(c => { try{c.destroy();}catch(e){} }); chartInstances = [];
+  const kpi = document.getElementById('kpiGrid');
+  const cs  = document.getElementById('chartSection');
+
+  if (!state.metrics.length || !entries.length) {
+    kpi.innerHTML = '';
+    cs.innerHTML = '<div class="empty-state"><p>No data to display</p><small>Enter data in the Data Input tab to see charts here.</small></div>';
+    return;
+  }
+
+  const labels = entries.map(e => fmtDate(e.date));
+  const latest = entries[entries.length-1];
+  const COLORS  = ['#003057','#C8102E','#1a6ba0','#e05a1a','#0f6e56','#7c3aad','#b85c00','#1e7a3a'];
+
+  // KPI cards — text metrics show latest value, numeric show latest + avg
+  kpi.innerHTML = state.metrics.map(m => {
+    const v = latest.values[m.name];
+    if (m.type==='text') {
+      return `<div class="kpi-card" style="border-top-color:#6b21a8;">
+        <div class="kpi-label">${esc(m.name)}</div>
+        <div style="font-size:14px;font-weight:500;color:var(--navy);line-height:1.4;margin-top:4px;">${v!==undefined?esc(String(v)):'—'}</div>
+        <div class="kpi-sub">Latest entry</div>
+      </div>`;
+    }
+    const avg = avgOf(entries, m.name);
+    return `<div class="kpi-card">
+      <div class="kpi-label">${esc(m.name)}</div>
+      <div class="kpi-value">${fmtVal(v,m.type)}</div>
+      <div class="kpi-sub">Latest · Avg: ${avg!==null?fmtVal(avg,m.type):'—'}</div>
+    </div>`;
+  }).join('');
+
+  // Charts — numeric metrics get bar/line chart; text metrics get a history table
+  cs.innerHTML = state.metrics.map((m,i) => {
+    if (m.type==='text') {
+      const rows = [...entries].reverse().map(e => {
+        const v = e.values[m.name];
+        return v!==undefined
+          ? `<tr><td class="date-cell">${fmtDate(e.date)}</td><td style="padding:10px 14px;color:var(--gray-700);">${esc(String(v))}</td></tr>`
+          : '';
+      }).filter(Boolean).join('');
+      return `<div class="chart-card">
+        <div class="chart-card-header">
+          <span class="chart-card-title">${esc(m.name)}</span>
+          <span class="tag" style="background:#f3e8ff;color:#6b21a8;font-size:11px;">Text</span>
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead><tr><th style="width:140px;">Date</th><th>Entry</th></tr></thead>
+            <tbody>${rows||'<tr><td colspan="2" class="no-data">No entries yet.</td></tr>'}</tbody>
+          </table>
+        </div>
+      </div>`;
+    }
+    return `
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <span class="chart-card-title">${esc(m.name)}</span>
+        <span class="tag tag-info" style="font-size:11px;">${m.type==='percent'?'Percent (%)':m.type==='decimal'?'Decimal':'Whole Number'}</span>
+      </div>
+      <div class="legend-row">
+        <div class="legend-item">
+          <div class="legend-dot" style="background:${COLORS[i%COLORS.length]}"></div>
+          <span>${esc(m.name)}</span>
+        </div>
+        ${entries.length>1?`<div class="legend-item" style="margin-left:auto;font-size:11px;">${entries.length} data points</div>`:''}
+      </div>
+      <div style="position:relative;width:100%;height:${Math.max(220,Math.min(entries.length*36,320))}px;">
+        <canvas id="ch-${m.id}" role="img" aria-label="${esc(m.name)} over time"></canvas>
+      </div>
+    </div>`;
+  }).join('');
+
+  setTimeout(() => {
+    state.metrics.forEach((m,i) => {
+      if (m.type==='text') return;
+      const canvas = document.getElementById(`ch-${m.id}`); if(!canvas) return;
+      const data  = entries.map(e => e.values[m.name]!==undefined?e.values[m.name]:null);
+      const color = COLORS[i%COLORS.length];
+      const line  = entries.length > 5;
+      chartInstances.push(new Chart(canvas, {
+        type: line?'line':'bar',
+        data: { labels, datasets:[{
+          label: m.name, data,
+          backgroundColor: line?color+'22':color,
+          borderColor: color, borderWidth: line?2.5:1,
+          pointBackgroundColor: color, pointRadius: line?4:0, pointHoverRadius:6,
+          fill: line, tension:0.3, borderRadius: line?0:5
+        }]},
+        options: {
+          responsive:true, maintainAspectRatio:false,
+          plugins: {
+            legend:{display:false},
+            tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${fmtVal(ctx.parsed.y,m.type)}`}}
+          },
+          scales:{
+            x:{ticks:{font:{family:'Barlow',size:11},color:'#7a8491',autoSkip:entries.length>12,maxRotation:entries.length>8?45:0},grid:{color:'rgba(0,0,0,0.04)'}},
+            y:{beginAtZero:true,ticks:{font:{family:'Barlow',size:11},color:'#7a8491',callback:v=>m.type==='percent'?v+'%':v.toLocaleString()},grid:{color:'rgba(0,0,0,0.05)'}}
+          }
+        }
+      }));
+    });
+  },0);
+}
+
+function avgOf(entries, metricName) {
+  const vals = entries.map(e=>e.values[metricName]).filter(v=>v!==undefined&&!isNaN(v));
+  return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null;
+}
+
+// HELPERS
+function fmtVal(v, type) {
+  if (v===undefined||v===null||v==='') return '—';
+  if (type==='text')    return String(v);
+  if (isNaN(v))         return '—';
+  if (type==='percent') return (+v).toFixed(1)+'%';
+  if (type==='decimal') return (+v).toFixed(2);
+  return Math.round(v).toLocaleString();
+}
+
+function fmtDate(s) {
+  if (!s) return '';
+  const [y,m,d] = s.split('-');
+  return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(m)-1]+' '+parseInt(d)+', '+y;
+}
+
+function todayStr() { return new Date().toISOString().split('T')[0]; }
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function uid() { return Math.random().toString(36).slice(2,10)+Date.now().toString(36); }
+
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast'+(type==='success'?' success':type==='error'?' error':'');
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+function switchTab(tab, event) {
+  document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(el=>el.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  if (event) event.currentTarget.classList.add('active');
+  if (tab==='input') { renderInputMetrics(); renderEntriesTable(); }
+  if (tab==='summary') renderSummary();
+}
+
+document.getElementById('editModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeEditModal(); });
+
+init();
+</script>
+</body>
+</html>
