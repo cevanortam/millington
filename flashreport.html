@@ -26,7 +26,54 @@
   .header-title { font-family: var(--font-cond); font-size: 18px; font-weight: 700; color: var(--white); letter-spacing: 0.5px; text-transform: uppercase; }
   .header-subtitle { font-size: 12px; color: rgba(255,255,255,0.55); margin-top: 1px; }
   .header-right { display: flex; align-items: center; gap: 10px; }
-  .header-customer-badge { background: var(--red); color: white; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 4px; font-family: var(--font-cond); letter-spacing: 0.5px; text-transform: uppercase; }
+  .customer-switcher { position: relative; }
+  .customer-switcher-btn {
+    background: var(--red); color: white;
+    border: none; cursor: pointer;
+    font-family: var(--font-cond); font-weight: 700; font-size: 13px;
+    letter-spacing: 0.5px; text-transform: uppercase;
+    padding: 5px 12px 4px; border-radius: 4px 4px 0 0;
+    display: flex; align-items: center; gap: 6px;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+  .customer-switcher-btn:hover { background: var(--red-light); }
+  .customer-switcher-btn .caret { font-size: 9px; opacity: 0.8; }
+  .customer-settings-link {
+    display: block; text-align: center;
+    font-size: 10px; color: rgba(255,255,255,0.5);
+    background: rgba(0,0,0,0.25); border-radius: 0 0 4px 4px;
+    padding: 2px 12px; cursor: pointer; letter-spacing: 0.3px;
+    transition: color 0.15s, background 0.15s;
+    border: none; width: 100%; font-family: var(--font);
+  }
+  .customer-settings-link:hover { color: rgba(255,255,255,0.9); background: rgba(0,0,0,0.4); }
+  .customer-dropdown {
+    display: none; position: absolute; top: 100%; right: 0;
+    background: var(--white); border: 1px solid var(--gray-200);
+    border-radius: 0 0 8px 8px; min-width: 220px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15); z-index: 500;
+    overflow: hidden;
+  }
+  .customer-dropdown.open { display: block; }
+  .customer-dropdown-item {
+    padding: 10px 16px; font-size: 13px; font-weight: 500;
+    color: var(--gray-900); cursor: pointer; display: flex;
+    align-items: center; justify-content: space-between;
+    transition: background 0.1s; border: none; background: none;
+    width: 100%; text-align: left; font-family: var(--font);
+  }
+  .customer-dropdown-item:hover { background: var(--gray-50); }
+  .customer-dropdown-item.active { color: var(--navy); font-weight: 700; }
+  .customer-dropdown-item.active::after { content: '✓'; color: var(--red); font-size: 12px; }
+  .customer-dropdown-divider { height: 1px; background: var(--gray-100); margin: 4px 0; }
+  .customer-dropdown-add {
+    padding: 10px 16px; font-size: 12px; font-weight: 600;
+    color: var(--red); cursor: pointer; display: flex; align-items: center;
+    gap: 6px; transition: background 0.1s; border: none; background: none;
+    width: 100%; text-align: left; font-family: var(--font);
+  }
+  .customer-dropdown-add:hover { background: #fff5f5; }
   .sync-status { font-size: 11px; color: rgba(255,255,255,0.65); display: flex; align-items: center; gap: 5px; }
   .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: #2ecc71; flex-shrink: 0; }
   .sync-dot.syncing { background: #f39c12; animation: pulse 0.8s infinite alternate; }
@@ -171,21 +218,31 @@
       <div class="sync-dot" id="syncDot"></div>
       <span id="syncLabel">Ready</span>
     </div>
-    <span class="header-customer-badge" id="customerBadge">No Customer Set</span>
+    <div class="customer-switcher" id="customerSwitcher">
+      <button class="customer-switcher-btn" onclick="toggleDropdown(event)" id="customerBadge">
+        <span id="customerBadgeText">No Customer</span>
+        <span class="caret">▼</span>
+      </button>
+      <button class="customer-settings-link" onclick="openCustomerSettings()">⚙ settings</button>
+      <div class="customer-dropdown" id="customerDropdown">
+        <div id="customerDropdownList"></div>
+        <div class="customer-dropdown-divider"></div>
+        <button class="customer-dropdown-add" onclick="addNewCustomer()">＋ Add New Customer</button>
+      </div>
+    </div>
   </div>
 </header>
 
 <!-- NAV -->
 <nav class="nav-bar">
-  <button class="nav-tab active" onclick="switchTab('settings',event)">⚙ Settings</button>
-  <button class="nav-tab" onclick="switchTab('input',event)">✎ Data Input</button>
+  <button class="nav-tab active" onclick="switchTab('input',event)">✎ Data Input</button>
   <button class="nav-tab" onclick="switchTab('summary',event)">▦ Executive Summary</button>
 </nav>
 
 <main class="main">
 
-  <!-- SETTINGS -->
-  <div class="tab-content active" id="tab-settings">
+  <!-- SETTINGS (hidden tab, opened via modal) -->
+  <div class="tab-content" id="tab-settings">
     <div class="settings-grid">
       <div class="card">
         <div class="card-title">Customer Information</div>
@@ -239,7 +296,7 @@
   </div>
 
   <!-- DATA INPUT -->
-  <div class="tab-content" id="tab-input">
+  <div class="tab-content active" id="tab-input">
     <div class="input-header">
       <div style="display:flex;align-items:center;gap:10px;">
         <span class="date-label">Report Date:</span>
@@ -287,7 +344,66 @@
 
 </main>
 
-<!-- EDIT MODAL -->
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal" style="width:620px;">
+    <div class="modal-title">
+      <span id="settingsModalTitle">Customer Settings</span>
+      <button class="btn-icon" onclick="closeSettingsModal()" style="font-size:18px;">✕</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+      <div>
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:var(--gray-500);margin-bottom:12px;display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:3px;height:12px;background:var(--red);border-radius:2px;"></span>Customer Info</div>
+        <div class="form-row">
+          <label class="form-label">Customer Name</label>
+          <input class="form-input" id="settCustomerName" type="text" placeholder="e.g. Bloomingdales">
+        </div>
+        <div class="form-row">
+          <label class="form-label">Report Title</label>
+          <input class="form-input" id="settReportTitle" type="text" placeholder="e.g. Daily Flash Report">
+        </div>
+        <div class="form-row">
+          <label class="form-label">Facility / Site</label>
+          <input class="form-input" id="settFacility" type="text" placeholder="e.g. Millington, TN">
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">
+          <button class="btn btn-primary btn-sm" onclick="saveSettings()">💾 Save</button>
+          <button class="btn btn-outline btn-sm" onclick="pullFromSheet()">↓ Pull from Sheet</button>
+        </div>
+        <div style="margin-top:16px;padding-top:16px;border-top:1px dashed var(--gray-200);">
+          <button class="btn btn-sm" style="background:#fff0f0;color:var(--red);border:1px solid #ffc0c0;" onclick="deleteCurrentCustomer()">🗑 Delete This Customer</button>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:var(--gray-500);margin-bottom:12px;display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:3px;height:12px;background:var(--red);border-radius:2px;"></span>Metrics</div>
+        <div class="metric-list" id="metricList"></div>
+        <div class="add-metric-form" style="grid-template-columns:1fr auto auto;">
+          <div class="form-row" style="margin:0">
+            <label class="form-label">Metric Name</label>
+            <input class="form-input" id="newMetricName" placeholder="e.g. Units Shipped" onkeydown="if(event.key==='Enter')addMetric()">
+          </div>
+          <div class="form-row" style="margin:0">
+            <label class="form-label">Type</label>
+            <select class="form-select" id="newMetricType">
+              <option value="whole">Whole Number</option>
+              <option value="decimal">Decimal</option>
+              <option value="percent">Percent (%)</option>
+              <option value="text">Text</option>
+            </select>
+          </div>
+          <div style="padding-top:22px;">
+            <button class="btn btn-red btn-sm" onclick="addMetric()">+ Add</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="info-banner" style="margin-top:16px;">
+      <strong>Google Sheets sync is active.</strong> Each customer gets their own tab named after the customer.
+    </div>
+  </div>
+</div>
+
+<!-- EDIT ENTRY MODAL -->
 <div class="modal-overlay" id="editModal">
   <div class="modal">
     <div class="modal-title">
@@ -312,20 +428,35 @@
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwSIMWJ8nySsWYtQEEVgOQMDEjXkhbok1GzixijMy90-5La9sE3mHCLxwvOrgojz27XbQ/exec';
 // ============================================================
 
-let state = {
-  customerName: '', reportTitle: '', facility: '',
-  metrics: [],  // { id, name, type }
-  entries: []   // { id, date, values: { metricName: value } }
-};
+let allCustomers = [];   // [{ id, customerName, reportTitle, facility, metrics, entries }]
+let activeCustomerId = null;
 let editingDate = null;
 let chartInstances = [];
 
+// Shorthand: current customer object
+function cx() { return allCustomers.find(c => c.id === activeCustomerId) || null; }
+
 // PERSISTENCE
 function saveLocal() {
-  try { localStorage.setItem('ceva_flash_v2', JSON.stringify(state)); } catch(e) {}
+  try { localStorage.setItem('ceva_flash_v3', JSON.stringify({ allCustomers, activeCustomerId })); } catch(e) {}
 }
 function loadLocal() {
-  try { const r = localStorage.getItem('ceva_flash_v2'); if (r) state = Object.assign(state, JSON.parse(r)); } catch(e) {}
+  try {
+    const r = localStorage.getItem('ceva_flash_v3');
+    if (r) { const d = JSON.parse(r); allCustomers = d.allCustomers || []; activeCustomerId = d.activeCustomerId || null; }
+    // Migrate v2 single-customer data
+    if (!allCustomers.length) {
+      const old = localStorage.getItem('ceva_flash_v2');
+      if (old) {
+        const d = JSON.parse(old);
+        if (d.customerName) {
+          const migrated = { id: uid(), customerName: d.customerName, reportTitle: d.reportTitle||'', facility: d.facility||'', metrics: d.metrics||[], entries: d.entries||[] };
+          allCustomers = [migrated];
+          activeCustomerId = migrated.id;
+        }
+      }
+    }
+  } catch(e) {}
 }
 
 // SYNC STATUS
@@ -355,15 +486,15 @@ async function apiCall(payload) {
 
 // PULL FROM SHEET
 async function pullFromSheet() {
-  if (!state.customerName) { showToast('Set a customer name in Settings first', 'error'); return; }
+  const c = cx();
+  if (!c || !c.customerName) { showToast('Set a customer name in Settings first', 'error'); return; }
   try {
-    const data = await apiCall({ action: 'getAllData', customer: state.customerName });
-    state.entries = data.entries.map(e => ({ id: e.date, date: e.date, values: e.values }));
-    // Add any sheet headers not yet in local metrics
+    const data = await apiCall({ action: 'getAllData', customer: c.customerName });
+    c.entries = data.entries.map(e => ({ id: e.date, date: e.date, values: e.values }));
     if (data.headers) {
       data.headers.forEach(h => {
-        if (!state.metrics.find(m => m.name === h))
-          state.metrics.push({ id: uid(), name: h, type: 'whole' });
+        if (!c.metrics.find(m => m.name === h))
+          c.metrics.push({ id: uid(), name: h, type: 'whole' });
       });
     }
     saveLocal();
@@ -381,54 +512,130 @@ async function pullFromSheet() {
 function init() {
   loadLocal();
   document.getElementById('inputDate').value = todayStr();
-  document.getElementById('settCustomerName').value = state.customerName || '';
-  document.getElementById('settReportTitle').value  = state.reportTitle  || '';
-  document.getElementById('settFacility').value     = state.facility     || '';
-  updateCustomerBadge();
-  // Show URL warning if not configured
   if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes('PASTE_YOUR'))
-    document.getElementById('urlWarning').style.display = 'block';
+    document.getElementById('urlWarning') && (document.getElementById('urlWarning').style.display = 'block');
+  // If no customers yet, prompt to create one
+  if (!allCustomers.length) {
+    addNewCustomer();
+  } else {
+    if (!activeCustomerId || !allCustomers.find(c => c.id === activeCustomerId))
+      activeCustomerId = allCustomers[0].id;
+    renderAll();
+    if (APPS_SCRIPT_URL && !APPS_SCRIPT_URL.includes('PASTE_YOUR') && cx()?.customerName)
+      pullFromSheet();
+  }
+}
+
+function renderAll() {
+  renderCustomerDropdown();
+  renderCustomerBadge();
   renderMetricList();
   renderInputMetrics();
   renderEntriesTable();
   renderSummary();
-  if (APPS_SCRIPT_URL && !APPS_SCRIPT_URL.includes('PASTE_YOUR') && state.customerName)
+}
+
+// CUSTOMER SWITCHER
+function renderCustomerBadge() {
+  const c = cx();
+  document.getElementById('customerBadgeText').textContent = c?.customerName || 'No Customer';
+}
+
+function renderCustomerDropdown() {
+  const list = document.getElementById('customerDropdownList');
+  if (!allCustomers.length) { list.innerHTML = '<div style="padding:10px 16px;font-size:12px;color:var(--gray-500);">No customers yet</div>'; return; }
+  list.innerHTML = allCustomers.map(c => `
+    <button class="customer-dropdown-item ${c.id===activeCustomerId?'active':''}" onclick="switchCustomer('${c.id}')">
+      ${esc(c.customerName || '(unnamed)')}
+    </button>`).join('');
+}
+
+function toggleDropdown(e) {
+  e.stopPropagation();
+  document.getElementById('customerDropdown').classList.toggle('open');
+}
+
+function switchCustomer(id) {
+  activeCustomerId = id;
+  document.getElementById('customerDropdown').classList.remove('open');
+  saveLocal();
+  renderAll();
+  if (APPS_SCRIPT_URL && !APPS_SCRIPT_URL.includes('PASTE_YOUR') && cx()?.customerName)
     pullFromSheet();
 }
 
-// SETTINGS
-function updateCustomerBadge() {
-  const n = document.getElementById('settCustomerName').value.trim();
-  document.getElementById('customerBadge').textContent = n || 'No Customer Set';
+function addNewCustomer() {
+  document.getElementById('customerDropdown').classList.remove('open');
+  const newC = { id: uid(), customerName: '', reportTitle: '', facility: '', metrics: [], entries: [] };
+  allCustomers.push(newC);
+  activeCustomerId = newC.id;
+  saveLocal();
+  renderCustomerDropdown();
+  renderCustomerBadge();
+  openCustomerSettings();
+}
+
+function openCustomerSettings() {
+  document.getElementById('customerDropdown').classList.remove('open');
+  const c = cx();
+  if (!c) return;
+  document.getElementById('settCustomerName').value = c.customerName || '';
+  document.getElementById('settReportTitle').value  = c.reportTitle  || '';
+  document.getElementById('settFacility').value     = c.facility     || '';
+  document.getElementById('settingsModalTitle').textContent = c.customerName ? `Settings — ${c.customerName}` : 'New Customer';
+  renderMetricList();
+  document.getElementById('settingsModal').classList.add('open');
+}
+
+function closeSettingsModal() {
+  document.getElementById('settingsModal').classList.remove('open');
 }
 
 async function saveSettings() {
-  state.customerName = document.getElementById('settCustomerName').value.trim();
-  state.reportTitle  = document.getElementById('settReportTitle').value.trim();
-  state.facility     = document.getElementById('settFacility').value.trim();
+  const c = cx(); if (!c) return;
+  const oldName = c.customerName;
+  c.customerName = document.getElementById('settCustomerName').value.trim();
+  c.reportTitle  = document.getElementById('settReportTitle').value.trim();
+  c.facility     = document.getElementById('settFacility').value.trim();
+  document.getElementById('settingsModalTitle').textContent = c.customerName ? `Settings — ${c.customerName}` : 'New Customer';
   saveLocal();
-  updateCustomerBadge();
-  if (state.customerName && state.metrics.length) {
-    try {
-      await apiCall({ action: 'syncHeaders', customer: state.customerName, metricNames: state.metrics.map(m => m.name) });
-    } catch(e) {}
+  renderCustomerBadge();
+  renderCustomerDropdown();
+  renderEntriesTable();
+  renderSummary();
+  if (c.customerName && c.metrics.length) {
+    try { await apiCall({ action: 'syncHeaders', customer: c.customerName, metricNames: c.metrics.map(m => m.name) }); }
+    catch(e) {}
   }
   showToast('Settings saved', 'success');
 }
 
+function deleteCurrentCustomer() {
+  const c = cx(); if (!c) return;
+  if (!confirm(`Delete "${c.customerName || 'this customer'}" and all local data? Data in Google Sheets is not affected.`)) return;
+  allCustomers = allCustomers.filter(x => x.id !== activeCustomerId);
+  activeCustomerId = allCustomers.length ? allCustomers[0].id : null;
+  saveLocal();
+  closeSettingsModal();
+  if (!allCustomers.length) { addNewCustomer(); return; }
+  renderAll();
+}
+
+function renderMetricList() {
 function renderMetricList() {
   const el = document.getElementById('metricList');
-  if (!state.metrics.length) {
+  const c = cx();
+  if (!c || !c.metrics.length) {
     el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray-500);font-size:13px;">No metrics added yet.</div>';
     return;
   }
-  el.innerHTML = state.metrics.map((m, i) => `
+  el.innerHTML = c.metrics.map((m, i) => `
     <div class="metric-item">
       <span class="metric-item-name">${esc(m.name)}</span>
       <span class="metric-type-badge badge-${m.type}">${shortType(m.type)}</span>
       <div class="metric-order">
         <button class="btn-icon" onclick="moveMetric(${i},-1)" ${i===0?'disabled style="opacity:.3"':''}>↑</button>
-        <button class="btn-icon" onclick="moveMetric(${i},1)"  ${i===state.metrics.length-1?'disabled style="opacity:.3"':''}>↓</button>
+        <button class="btn-icon" onclick="moveMetric(${i},1)"  ${i===c.metrics.length-1?'disabled style="opacity:.3"':''}>↓</button>
       </div>
       <button class="btn-icon danger" onclick="deleteMetric('${m.id}')">✕</button>
     </div>`).join('');
@@ -437,44 +644,48 @@ function renderMetricList() {
 function shortType(t) { return t==='percent'?'%':t==='decimal'?'0.0':t==='text'?'TXT':'#'; }
 
 async function addMetric() {
+  const c = cx(); if (!c) return;
   const el = document.getElementById('newMetricName');
   const name = el.value.trim();
   if (!name) { showToast('Enter a metric name', 'error'); return; }
   const type = document.getElementById('newMetricType').value;
-  state.metrics.push({ id: uid(), name, type });
+  c.metrics.push({ id: uid(), name, type });
   el.value = '';
   saveLocal();
   renderMetricList();
   renderInputMetrics();
   renderEntriesTable();
-  if (state.customerName) {
-    try { await apiCall({ action:'syncHeaders', customer:state.customerName, metricNames:state.metrics.map(m=>m.name) }); }
+  if (c.customerName) {
+    try { await apiCall({ action:'syncHeaders', customer:c.customerName, metricNames:c.metrics.map(m=>m.name) }); }
     catch(e) {}
   }
   showToast(`"${name}" added`, 'success');
 }
 
 function deleteMetric(id) {
+  const c = cx(); if (!c) return;
   if (!confirm('Delete metric? Past values in the sheet are kept.')) return;
-  state.metrics = state.metrics.filter(m => m.id !== id);
+  c.metrics = c.metrics.filter(m => m.id !== id);
   saveLocal(); renderMetricList(); renderInputMetrics(); renderEntriesTable(); renderSummary();
 }
 
 function moveMetric(i, dir) {
+  const c = cx(); if (!c) return;
   const j = i + dir;
-  if (j < 0 || j >= state.metrics.length) return;
-  [state.metrics[i], state.metrics[j]] = [state.metrics[j], state.metrics[i]];
+  if (j < 0 || j >= c.metrics.length) return;
+  [c.metrics[i], c.metrics[j]] = [c.metrics[j], c.metrics[i]];
   saveLocal(); renderMetricList(); renderInputMetrics(); renderEntriesTable(); renderSummary();
 }
 
 // DATA INPUT
 function renderInputMetrics() {
   const area = document.getElementById('inputMetricsArea');
-  if (!state.metrics.length) {
-    area.innerHTML = '<div class="empty-state"><p>No metrics configured</p><small>Go to Settings to add metrics.</small></div>';
+  const c = cx();
+  if (!c || !c.metrics.length) {
+    area.innerHTML = '<div class="empty-state"><p>No metrics configured</p><small>Click ⚙ settings under the customer name to add metrics.</small></div>';
     return;
   }
-  area.innerHTML = `<div class="metrics-input-grid">${state.metrics.map(m => `
+  area.innerHTML = `<div class="metrics-input-grid">${c.metrics.map(m => `
     <div class="metric-input-card">
       <div class="metric-input-label">
         <span>${esc(m.name)}</span>
@@ -498,18 +709,20 @@ function typeHint(t) {
 }
 
 function clearInputFields() {
-  state.metrics.forEach(m => { const e = document.getElementById(`inp-${m.id}`); if(e) e.value=''; });
+  const c = cx(); if (!c) return;
+  c.metrics.forEach(m => { const e = document.getElementById(`inp-${m.id}`); if(e) e.value=''; });
 }
 
 async function saveEntry() {
-  if (!state.customerName) { showToast('Set a customer name in Settings first','error'); return; }
+  const c = cx();
+  if (!c || !c.customerName) { showToast('Set a customer name in Settings first','error'); return; }
   const date = document.getElementById('inputDate').value;
   if (!date) { showToast('Please select a date','error'); return; }
-  if (!state.metrics.length) { showToast('No metrics configured yet','error'); return; }
+  if (!c.metrics.length) { showToast('No metrics configured yet','error'); return; }
 
   const metricsPayload = [];
   let hasValue = false;
-  state.metrics.forEach(m => {
+  c.metrics.forEach(m => {
     const el = document.getElementById(`inp-${m.id}`);
     const v = el ? el.value.trim() : '';
     if (v) {
@@ -519,7 +732,7 @@ async function saveEntry() {
   });
   if (!hasValue) { showToast('Enter at least one value','error'); return; }
 
-  const existing = state.entries.find(e => e.date === date);
+  const existing = c.entries.find(e => e.date === date);
   if (existing && !confirm(`An entry for ${fmtDate(date)} already exists. Overwrite?`)) return;
 
   const btn = document.getElementById('saveEntryBtn');
@@ -527,11 +740,11 @@ async function saveEntry() {
   btn.innerHTML = '<span class="spinner"></span> Saving…';
 
   try {
-    await apiCall({ action:'saveEntry', customer:state.customerName, date, metrics:metricsPayload });
+    await apiCall({ action:'saveEntry', customer:c.customerName, date, metrics:metricsPayload });
     const values = {};
     metricsPayload.forEach(m => { values[m.name] = m.value; });
     if (existing) { existing.values = values; }
-    else { state.entries.push({ id:date, date, values }); state.entries.sort((a,b)=>a.date.localeCompare(b.date)); }
+    else { c.entries.push({ id:date, date, values }); c.entries.sort((a,b)=>a.date.localeCompare(b.date)); }
     saveLocal();
     renderEntriesTable();
     renderSummary();
@@ -547,18 +760,19 @@ async function saveEntry() {
 function renderEntriesTable() {
   const head = document.getElementById('entriesTableHead');
   const body = document.getElementById('entriesTableBody');
+  const c = cx();
   let hh = '<th>Date</th>';
-  state.metrics.forEach(m => { hh += `<th>${esc(m.name)}</th>`; });
+  if (c) c.metrics.forEach(m => { hh += `<th>${esc(m.name)}</th>`; });
   hh += '<th style="text-align:center">Actions</th>';
   head.innerHTML = hh;
 
-  if (!state.entries.length) {
-    body.innerHTML = `<tr><td colspan="${state.metrics.length+2}" class="no-data">No entries recorded yet.</td></tr>`;
+  if (!c || !c.entries.length) {
+    body.innerHTML = `<tr><td colspan="${(c?.metrics.length||0)+2}" class="no-data">No entries recorded yet.</td></tr>`;
     return;
   }
-  body.innerHTML = [...state.entries].sort((a,b)=>b.date.localeCompare(a.date)).map(e => {
+  body.innerHTML = [...c.entries].sort((a,b)=>b.date.localeCompare(a.date)).map(e => {
     let cells = `<td class="date-cell">${fmtDate(e.date)}</td>`;
-    state.metrics.forEach(m => { cells += `<td class="num-cell">${fmtVal(e.values[m.name], m.type)}</td>`; });
+    c.metrics.forEach(m => { cells += `<td class="num-cell">${fmtVal(e.values[m.name], m.type)}</td>`; });
     cells += `<td style="text-align:center;white-space:nowrap;">
       <button class="btn-icon" onclick="openEditModal('${e.date}')" title="Edit">✎</button>
       <button class="btn-icon danger" onclick="deleteEntry('${e.date}')" title="Delete">✕</button></td>`;
@@ -567,10 +781,11 @@ function renderEntriesTable() {
 }
 
 async function deleteEntry(date) {
+  const c = cx(); if (!c) return;
   if (!confirm(`Delete the entry for ${fmtDate(date)}? This removes it from Google Sheets too.`)) return;
   try {
-    await apiCall({ action:'deleteEntry', customer:state.customerName, date });
-    state.entries = state.entries.filter(e => e.date !== date);
+    await apiCall({ action:'deleteEntry', customer:c.customerName, date });
+    c.entries = c.entries.filter(e => e.date !== date);
     saveLocal(); renderEntriesTable(); renderSummary();
     showToast('Entry deleted','success');
   } catch(err) { showToast('Delete failed: '+err.message,'error'); }
@@ -578,7 +793,8 @@ async function deleteEntry(date) {
 
 // EDIT MODAL
 function openEditModal(date) {
-  const entry = state.entries.find(e => e.date === date);
+  const c = cx(); if (!c) return;
+  const entry = c.entries.find(e => e.date === date);
   if (!entry) return;
   editingDate = date;
   document.getElementById('editModalBody').innerHTML = `
@@ -587,7 +803,7 @@ function openEditModal(date) {
       <input class="form-input" id="editDate" type="date" value="${entry.date}">
     </div>
     <div class="metrics-input-grid" style="grid-template-columns:1fr 1fr;">
-      ${state.metrics.map(m => `
+      ${c.metrics.map(m => `
         <div class="metric-input-card">
           <div class="metric-input-label"><span>${esc(m.name)}</span>
             <span class="tag tag-info">${m.type==='percent'?'%':m.type==='decimal'?'DEC':m.type==='text'?'TXT':'#'}</span></div>
@@ -606,13 +822,14 @@ function openEditModal(date) {
 function closeEditModal() { document.getElementById('editModal').classList.remove('open'); editingDate=null; }
 
 async function saveEditModal() {
-  const entry = state.entries.find(e => e.date === editingDate);
+  const c = cx(); if (!c) return;
+  const entry = c.entries.find(e => e.date === editingDate);
   if (!entry) return;
   const newDate = document.getElementById('editDate').value;
   if (!newDate) { showToast('Select a date','error'); return; }
 
   const metricsPayload = [];
-  state.metrics.forEach(m => {
+  c.metrics.forEach(m => {
     const el = document.getElementById(`edit-${m.id}`);
     const v = el ? el.value.trim() : '';
     if (v) metricsPayload.push({ name:m.name, value: m.type==='text' ? v : parseFloat(v) });
@@ -622,11 +839,11 @@ async function saveEditModal() {
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Saving…';
   try {
     if (newDate !== editingDate)
-      await apiCall({ action:'deleteEntry', customer:state.customerName, date:editingDate });
-    await apiCall({ action:'saveEntry', customer:state.customerName, date:newDate, metrics:metricsPayload });
+      await apiCall({ action:'deleteEntry', customer:c.customerName, date:editingDate });
+    await apiCall({ action:'saveEntry', customer:c.customerName, date:newDate, metrics:metricsPayload });
     entry.date = newDate; entry.id = newDate; entry.values = {};
     metricsPayload.forEach(m => { entry.values[m.name] = m.value; });
-    state.entries.sort((a,b) => a.date.localeCompare(b.date));
+    c.entries.sort((a,b) => a.date.localeCompare(b.date));
     saveLocal(); renderEntriesTable(); renderSummary(); closeEditModal();
     showToast('Entry updated','success');
   } catch(err) { showToast('Update failed: '+err.message,'error'); }
@@ -641,20 +858,23 @@ function clearSummaryFilter() {
 }
 
 function filteredEntries() {
+  const c = cx();
+  if (!c) return [];
   const s = document.getElementById('filterStart').value;
   const e = document.getElementById('filterEnd').value;
-  return state.entries
+  return c.entries
     .filter(en => (!s||en.date>=s) && (!e||en.date<=e))
     .sort((a,b)=>a.date.localeCompare(b.date));
 }
 
 function renderSummary() {
+  const c = cx();
   const entries = filteredEntries();
-  chartInstances.forEach(c => { try{c.destroy();}catch(e){} }); chartInstances = [];
+  chartInstances.forEach(ch => { try{ch.destroy();}catch(e){} }); chartInstances = [];
   const kpi = document.getElementById('kpiGrid');
   const cs  = document.getElementById('chartSection');
 
-  if (!state.metrics.length || !entries.length) {
+  if (!c || !c.metrics.length || !entries.length) {
     kpi.innerHTML = '';
     cs.innerHTML = '<div class="empty-state"><p>No data to display</p><small>Enter data in the Data Input tab to see charts here.</small></div>';
     return;
@@ -665,7 +885,7 @@ function renderSummary() {
   const COLORS  = ['#003057','#C8102E','#1a6ba0','#e05a1a','#0f6e56','#7c3aad','#b85c00','#1e7a3a'];
 
   // KPI cards — text metrics show latest value, numeric show latest + avg
-  kpi.innerHTML = state.metrics.map(m => {
+  kpi.innerHTML = c.metrics.map(m => {
     const v = latest.values[m.name];
     if (m.type==='text') {
       return `<div class="kpi-card" style="border-top-color:#6b21a8;">
@@ -683,7 +903,7 @@ function renderSummary() {
   }).join('');
 
   // Charts — numeric metrics get bar/line chart; text metrics get a history table
-  cs.innerHTML = state.metrics.map((m,i) => {
+  cs.innerHTML = c.metrics.map((m,i) => {
     if (m.type==='text') {
       const rows = [...entries].reverse().map(e => {
         const v = e.values[m.name];
@@ -723,7 +943,7 @@ function renderSummary() {
 
   setTimeout(() => {
     Chart.register(ChartDataLabels);
-    state.metrics.forEach((m,i) => {
+    c.metrics.forEach((m,i) => {
       if (m.type==='text') return;
       const canvas = document.getElementById(`ch-${m.id}`); if(!canvas) return;
       const data  = entries.map(e => e.values[m.name]!==undefined?e.values[m.name]:null);
@@ -807,6 +1027,11 @@ function switchTab(tab, event) {
 }
 
 document.getElementById('editModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeEditModal(); });
+document.getElementById('settingsModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeSettingsModal(); });
+document.addEventListener('click', e => {
+  if (!document.getElementById('customerSwitcher').contains(e.target))
+    document.getElementById('customerDropdown').classList.remove('open');
+});
 
 init();
 </script>
