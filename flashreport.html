@@ -280,6 +280,10 @@
       <input type="date" class="form-input" id="filterEnd" style="font-size:13px;" onchange="renderSummary()">
       <button class="btn btn-outline btn-sm" onclick="clearSummaryFilter()">Show All</button>
       <button class="btn btn-outline btn-sm" onclick="pullFromSheet()">↓ Refresh from Sheet</button>
+      <div style="margin-left:auto;display:flex;gap:8px;">
+        <button class="btn btn-outline btn-sm" onclick="exportSummaryPNG()" title="Export as image">⬇ Export PNG</button>
+        <button class="btn btn-primary btn-sm" onclick="emailSummary()" title="Open in Outlook">✉ Email Summary</button>
+      </div>
     </div>
     <div class="kpi-grid" id="kpiGrid"></div>
     <div class="chart-section" id="chartSection">
@@ -316,7 +320,8 @@
           <button class="btn btn-primary btn-sm" onclick="saveSettings()">💾 Save</button>
           <button class="btn btn-outline btn-sm" onclick="pullFromSheet()">↓ Pull from Sheet</button>
         </div>
-        <div style="margin-top:20px;padding-top:16px;border-top:1px dashed var(--gray-200);">
+        <div style="margin-top:20px;padding-top:16px;border-top:1px dashed var(--gray-200);display:flex;flex-direction:column;gap:8px;">
+          <button class="btn btn-outline btn-sm" onclick="addNewCustomerFromSettings()" style="border-color:var(--navy);color:var(--navy);">＋ Add New Customer</button>
           <button class="btn btn-sm" style="background:#fff0f0;color:var(--red);border:1px solid #ffc0c0;" onclick="deleteCurrentCustomer()">🗑 Delete This Customer</button>
         </div>
       </div>
@@ -370,6 +375,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script>
 // ══════════════════════════════════════════════
 // CONFIG
@@ -435,7 +441,20 @@ async function pullFromSheet() {
   if (!c?.customerName) { showToast('Set a customer name first', 'error'); return; }
   try {
     const data = await apiCall({ action:'getAllData', customer:c.customerName });
-    c.entries = data.entries.map(e => ({ id:e.date, date:e.date, values:e.values }));
+    c.entries = data.entries.map(e => {
+      // Normalize date: Apps Script may return various formats — force to YYYY-MM-DD string
+      let dateStr = String(e.date).trim();
+      // If not already YYYY-MM-DD, try to parse and reformat
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+        const parsed = new Date(dateStr);
+        if (!isNaN(parsed)) {
+          dateStr = parsed.getUTCFullYear() + '-' +
+            String(parsed.getUTCMonth()+1).padStart(2,'0') + '-' +
+            String(parsed.getUTCDate()).padStart(2,'0');
+        }
+      }
+      return { id:dateStr, date:dateStr, values:e.values };
+    });
     if (data.headers) data.headers.forEach(h => { if (!c.metrics.find(m=>m.name===h)) c.metrics.push({id:uid(),name:h,type:'whole'}); });
     saveLocal();
     renderMetricList();
@@ -888,8 +907,21 @@ function fmtVal(v,type) {
 }
 function fmtDate(s) {
   if (!s) return '';
-  const [y,m,d]=s.split('-');
-  return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+m-1]+' '+(+d)+', '+y;
+  // Handle both 'YYYY-MM-DD' strings and any Date objects serialized by Apps Script
+  const str = String(s).trim();
+  // If it looks like YYYY-MM-DD, parse directly to avoid timezone offset turning day into NaN
+  const m = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (m) {
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return months[+m[2]-1] + ' ' + (+m[3]) + ', ' + m[1];
+  }
+  // Fallback: try parsing as a date
+  const d = new Date(str);
+  if (!isNaN(d)) {
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return months[d.getUTCMonth()] + ' ' + d.getUTCDate() + ', ' + d.getUTCFullYear();
+  }
+  return str;
 }
 function todayStr() { return new Date().toISOString().split('T')[0]; }
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -922,6 +954,95 @@ document.addEventListener('click', e => {
 });
 document.getElementById('settingsModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeSettingsModal(); });
 document.getElementById('editModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeEditModal(); });
+
+function addNewCustomerFromSettings() {
+  // Save current settings first if there's a name
+  const nameEl = document.getElementById('settCustomerName');
+  if (nameEl.value.trim()) saveSettings();
+  closeSettingsModal();
+  const c = { id:uid(), customerName:'', reportTitle:'', facility:'', metrics:[], entries:[] };
+  allCustomers.push(c); activeId = c.id; saveLocal();
+  renderCustomerDropdown(); renderCustomerBadge();
+  openSettingsModal();
+}
+
+// ══════════════════════════════════════════════
+// EXPORT & EMAIL
+// ══════════════════════════════════════════════
+async function exportSummaryPNG() {
+  const c = cx();
+  if (!c?.metrics.length) { showToast('No data to export','error'); return; }
+  showToast('Generating export…');
+  try {
+    const target = document.getElementById('tab-summary');
+    const canvas = await html2canvas(target, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#f8f9fa',
+      logging: false
+    });
+    const link = document.createElement('a');
+    const customer = c.customerName || 'Flash_Report';
+    link.download = customer.replace(/\s+/g,'_') + '_' + todayStr() + '.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    showToast('PNG exported', 'success');
+  } catch(err) { showToast('Export failed: ' + err.message, 'error'); }
+}
+
+function emailSummary() {
+  const c = cx();
+  if (!c) return;
+  const customer   = c.customerName || 'Customer';
+  const dateStr    = todayStr();
+  const entries    = filteredEntries();
+
+  let subject = encodeURIComponent(`${customer} — Daily Flash Report — ${fmtDate(dateStr)}`);
+
+  // Build plain-text body
+  let body = `${customer} — Daily Flash Report\n`;
+  body += `${fmtDate(dateStr)}\n`;
+  body += `${'─'.repeat(40)}\n\n`;
+
+  if (!entries.length) {
+    body += 'No data recorded for this period.\n';
+  } else {
+    const latest = entries[entries.length - 1];
+    // KPI summary
+    body += `PREVIOUS WORKING DAY SUMMARY (${fmtDate(latest.date)})\n\n`;
+    c.metrics.forEach(m => {
+      const v = latest.values[m.name];
+      const avg = avgOf(entries, m.name);
+      if (m.type === 'text') {
+        body += `${m.name}:\n  ${v !== undefined ? String(v) : '—'}\n\n`;
+      } else {
+        body += `${m.name}: ${fmtVal(v, m.type)}`;
+        if (avg !== null) body += `  (Avg: ${fmtVal(avg, m.type)})`;
+        body += '\n';
+      }
+    });
+    body += '\n' + '─'.repeat(40) + '\n\n';
+
+    // Full data table
+    body += 'FULL DATE HISTORY\n\n';
+    // Header row
+    body += 'Date'.padEnd(18);
+    c.metrics.forEach(m => { body += m.name.substring(0,14).padEnd(16); });
+    body += '\n' + '─'.repeat(18 + c.metrics.length * 16) + '\n';
+    // Data rows
+    [...entries].reverse().forEach(e => {
+      body += fmtDate(e.date).padEnd(18);
+      c.metrics.forEach(m => { body += fmtVal(e.values[m.name], m.type).padEnd(16); });
+      body += '\n';
+    });
+  }
+
+  body += `\n\nGenerated by CEVA Logistics Customer Flash Report — Millington`;
+
+  // mailto: opens Outlook (or default mail client) with pre-filled subject + body
+  const mailto = `mailto:?subject=${subject}&body=${encodeURIComponent(body)}`;
+  window.location.href = mailto;
+}
 
 // ══════════════════════════════════════════════
 // START
