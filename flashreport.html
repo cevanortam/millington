@@ -121,7 +121,7 @@
   .kpi-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--gray-500); margin-bottom: 6px; }
   .kpi-value { font-family: var(--font-cond); font-size: 28px; font-weight: 700; color: var(--navy); line-height: 1; }
   .kpi-sub { font-size: 11px; color: var(--gray-500); margin-top: 4px; }
-  .chart-section { display: flex; flex-direction: column; gap: 24px; }
+  .chart-section { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 20px; align-items: start; }
   .chart-card { background: var(--white); border: 1px solid var(--gray-200); border-radius: 8px; padding: 20px; }
   .chart-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
   .chart-card-title { font-family: var(--font-cond); font-size: 16px; font-weight: 700; color: var(--navy); text-transform: uppercase; }
@@ -305,6 +305,7 @@
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <script>
 // ============================================================
 // ↓ PASTE YOUR DEPLOYED APPS SCRIPT URL HERE AFTER DEPLOYING ↓
@@ -670,14 +671,14 @@ function renderSummary() {
       return `<div class="kpi-card" style="border-top-color:#6b21a8;">
         <div class="kpi-label">${esc(m.name)}</div>
         <div style="font-size:14px;font-weight:500;color:var(--navy);line-height:1.4;margin-top:4px;">${v!==undefined?esc(String(v)):'—'}</div>
-        <div class="kpi-sub">Latest entry</div>
+        <div class="kpi-sub">Previous Working Day</div>
       </div>`;
     }
     const avg = avgOf(entries, m.name);
     return `<div class="kpi-card">
       <div class="kpi-label">${esc(m.name)}</div>
       <div class="kpi-value">${fmtVal(v,m.type)}</div>
-      <div class="kpi-sub">Latest · Avg: ${avg!==null?fmtVal(avg,m.type):'—'}</div>
+      <div class="kpi-sub">Prev. Working Day · Avg: ${avg!==null?fmtVal(avg,m.type):'—'}</div>
     </div>`;
   }).join('');
 
@@ -693,7 +694,6 @@ function renderSummary() {
       return `<div class="chart-card">
         <div class="chart-card-header">
           <span class="chart-card-title">${esc(m.name)}</span>
-          <span class="tag" style="background:#f3e8ff;color:#6b21a8;font-size:11px;">Text</span>
         </div>
         <div class="table-wrapper">
           <table>
@@ -707,7 +707,6 @@ function renderSummary() {
     <div class="chart-card">
       <div class="chart-card-header">
         <span class="chart-card-title">${esc(m.name)}</span>
-        <span class="tag tag-info" style="font-size:11px;">${m.type==='percent'?'Percent (%)':m.type==='decimal'?'Decimal':'Whole Number'}</span>
       </div>
       <div class="legend-row">
         <div class="legend-item">
@@ -716,13 +715,14 @@ function renderSummary() {
         </div>
         ${entries.length>1?`<div class="legend-item" style="margin-left:auto;font-size:11px;">${entries.length} data points</div>`:''}
       </div>
-      <div style="position:relative;width:100%;height:${Math.max(220,Math.min(entries.length*36,320))}px;">
+      <div style="position:relative;width:100%;height:240px;">
         <canvas id="ch-${m.id}" role="img" aria-label="${esc(m.name)} over time"></canvas>
       </div>
     </div>`;
   }).join('');
 
   setTimeout(() => {
+    Chart.register(ChartDataLabels);
     state.metrics.forEach((m,i) => {
       if (m.type==='text') return;
       const canvas = document.getElementById(`ch-${m.id}`); if(!canvas) return;
@@ -740,9 +740,19 @@ function renderSummary() {
         }]},
         options: {
           responsive:true, maintainAspectRatio:false,
+          layout: { padding: { top: 24 } },
           plugins: {
             legend:{display:false},
-            tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${fmtVal(ctx.parsed.y,m.type)}`}}
+            tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${fmtVal(ctx.parsed.y,m.type)}`}},
+            datalabels: {
+              display: true,
+              anchor: line ? 'end' : 'end',
+              align: line ? 'top' : 'end',
+              offset: 2,
+              color: color,
+              font: { family:'Barlow', size:11, weight:'600' },
+              formatter: v => v===null ? '' : fmtVal(v, m.type)
+            }
           },
           scales:{
             x:{ticks:{font:{family:'Barlow',size:11},color:'#7a8491',autoSkip:entries.length>12,maxRotation:entries.length>8?45:0},grid:{color:'rgba(0,0,0,0.04)'}},
