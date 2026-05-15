@@ -273,7 +273,7 @@
         <div class="section-accent"></div>
         <h2>Recorded Entries</h2>
         <div class="section-line"></div>
-        <button class="btn btn-outline btn-sm" onclick="pullFromSheet()">↓ Refresh from Sheet</button>
+        <button class="btn btn-outline btn-sm" onclick="pullFromSheet()">↓ Refresh Data</button>
       </div>
       <div class="table-wrapper">
         <table>
@@ -292,7 +292,7 @@
       <span style="color:var(--gray-500);font-size:13px;">to</span>
       <input type="date" class="form-input" id="filterEnd" style="font-size:13px;" onchange="renderSummary()">
       <button class="btn btn-outline btn-sm" onclick="clearSummaryFilter()">Show All</button>
-      <button class="btn btn-outline btn-sm" onclick="pullFromSheet()">↓ Refresh from Sheet</button>
+      <button class="btn btn-outline btn-sm" onclick="pullFromSheet()">↓ Refresh Data</button>
       <div class="view-toggle" id="viewToggle">
         <button class="view-toggle-btn active" onclick="setViewMode('day',this)">Day</button>
         <button class="view-toggle-btn" onclick="setViewMode('week',this)">Week</button>
@@ -336,8 +336,8 @@
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button class="btn btn-primary btn-sm" onclick="saveSettings()">💾 Save</button>
-          <button class="btn btn-outline btn-sm" onclick="pullFromSheet()">↓ Pull Entries</button>
-          <button class="btn btn-outline btn-sm" onclick="reloadAllFromSheet()" title="Re-import all customers and data from Google Sheets">↺ Reload All from Sheet</button>
+          <button class="btn btn-outline btn-sm" onclick="pullFromSheet()">↓ Refresh Data</button>
+          <button class="btn btn-outline btn-sm" onclick="reloadAllFromSheet()" title="Re-import all customers and data from the cloud">↺ Reload All</button>
         </div>
         <div style="margin-top:20px;padding-top:16px;border-top:1px dashed var(--gray-200);display:flex;flex-direction:column;gap:8px;">
           <button class="btn btn-outline btn-sm" onclick="addNewCustomerFromSettings()" style="border-color:var(--navy);color:var(--navy);">＋ Add New Customer</button>
@@ -367,9 +367,6 @@
           </div>
         </div>
       </div>
-    </div>
-    <div class="info-banner">
-      <strong>Google Sheets sync active.</strong> Each customer gets its own tab named after the customer.
     </div>
   </div>
 </div>
@@ -479,19 +476,19 @@ async function pullFromSheet() {
     renderInputMetrics();
     renderEntriesTable();
     renderSummary();
-    showToast('Refreshed from Google Sheets', 'success');
+    showToast('Data refreshed', 'success');
   } catch(err) { showToast('Refresh failed: ' + err.message, 'error'); }
 }
 
 // Re-imports every customer and all entries from the sheet.
 // Use this on a new machine or after clearing browser data.
 async function reloadAllFromSheet() {
-  if (!confirm('Re-import all customers and data from Google Sheets?\n\nAny local-only changes not yet saved to the sheet will be overwritten.')) return;
-  showToast('Reloading from Google Sheets…');
+  if (!confirm('Re-import all customers and data?\n\nAny local-only changes not yet saved will be overwritten.')) return;
+  showToast('Reloading data…');
   try {
     const data = await apiCall({ action: 'getCustomerList' });
     const sheetCustomers = (data.customers || []).filter(c => c.name !== 'Sheet1' && c.headers.length > 0);
-    if (!sheetCustomers.length) { showToast('No customer data found in sheet', 'error'); return; }
+    if (!sheetCustomers.length) { showToast('No customer data found', 'error'); return; }
 
     // Preserve any locally-set metric types where names match
     const savedTypes = {};
@@ -510,7 +507,7 @@ async function reloadAllFromSheet() {
     closeSettingsModal();
     renderAll();
     await pullFromSheet();
-    showToast('Reloaded ' + allCustomers.length + ' customer(s) from Google Sheets', 'success');
+    showToast('Loaded ' + allCustomers.length + ' customer(s)', 'success');
   } catch(err) { showToast('Reload failed: ' + err.message, 'error'); }
 }
 
@@ -523,7 +520,7 @@ async function init() {
 
   if (!allCustomers.length) {
     // No local data — try to bootstrap customer list from the Google Sheet
-    showToast('Loading from Google Sheets…');
+    showToast('Loading data…');
     try {
       const data = await apiCall({ action: 'getCustomerList' });
       const sheetCustomers = (data.customers || []).filter(c => c.name !== 'Sheet1' && c.headers.length > 0);
@@ -542,7 +539,7 @@ async function init() {
         renderAll();
         // Pull full entry data for the active customer
         await pullFromSheet();
-        showToast('Loaded ' + allCustomers.length + ' customer(s) from Google Sheets', 'success');
+        showToast('Loaded ' + allCustomers.length + ' customer(s)', 'success');
         return;
       }
     } catch(err) {
@@ -638,7 +635,7 @@ async function saveSettings() {
 
 function deleteCurrentCustomer() {
   const c = cx(); if (!c) return;
-  if (!confirm(`Delete "${c.customerName||'this customer'}" and all local data? Google Sheets data is NOT removed.`)) return;
+  if (!confirm(`Delete "${c.customerName||'this customer'}" and all local data?\n\nCloud data is NOT removed.`)) return;
   allCustomers = allCustomers.filter(x => x.id !== activeId);
   activeId = allCustomers.length ? allCustomers[0].id : null;
   saveLocal(); closeSettingsModal();
@@ -704,7 +701,7 @@ async function addMetric() {
 
 function deleteMetric(id) {
   const c = cx(); if (!c) return;
-  if (!confirm('Delete metric? Past values in the sheet are kept.')) return;
+  if (!confirm('Delete metric? Previously recorded values are kept.')) return;
   c.metrics = c.metrics.filter(m=>m.id!==id);
   saveLocal(); renderMetricList(); renderInputMetrics(); renderEntriesTable(); renderSummary();
 }
@@ -726,25 +723,24 @@ function renderInputMetrics() {
     area.innerHTML = '<div class="empty-state"><p>No metrics configured</p><small>Click ⚙ settings under the customer name to add metrics.</small></div>';
     return;
   }
-  area.innerHTML = `<div class="metrics-input-grid">${c.metrics.map(m=>`
-    <div class="metric-input-card">
-      <div class="metric-input-label">
-        <span>${esc(m.name)}</span>
-        <span class="tag tag-info">${m.type==='percent'?'%':m.type==='decimal'?'DEC':m.type==='text'?'TXT':'#'}</span>
+  area.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--gray-200);border-radius:8px;overflow:hidden;background:var(--white);">${c.metrics.map((m,idx)=>`
+    <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--gray-100);${idx%2===0&&idx===c.metrics.length-1?'border-right:none;':''}${idx%2===0?'border-right:1px solid var(--gray-100);':''}">
+      <div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:var(--gray-500);margin-bottom:6px;">${esc(m.name)}</div>
+        ${m.type==='text'
+          ?`<textarea id="inp-${m.id}" placeholder="—" style="width:100%;font-size:18px;font-weight:600;color:var(--navy);border:none;outline:none;font-family:var(--font);background:transparent;resize:none;height:36px;line-height:1.4;overflow:hidden;"></textarea>`
+          :`<input id="inp-${m.id}" type="number" step="${m.type==='whole'?'1':'0.01'}" placeholder="—" inputmode="decimal" style="width:100%;font-size:22px;font-weight:700;color:var(--navy);border:none;outline:none;font-family:var(--font-cond);background:transparent;letter-spacing:0.5px;">`
+        }
       </div>
-      ${m.type==='text'
-        ?`<textarea id="inp-${m.id}" placeholder="Enter text…" style="width:100%;font-size:14px;font-weight:500;color:var(--navy);border:none;outline:none;font-family:var(--font);background:transparent;resize:vertical;min-height:56px;line-height:1.4;"></textarea>`
-        :`<input class="metric-input-field" id="inp-${m.id}" type="number" step="${m.type==='whole'?'1':'0.01'}" placeholder="—" inputmode="decimal">`
-      }
-      <div class="metric-input-hint">${typeHint(m.type)}</div>
+      <span style="font-size:11px;font-weight:700;padding:3px 7px;border-radius:4px;text-transform:uppercase;align-self:flex-start;margin-top:2px;${m.type==='percent'?'background:#e8f0fe;color:#1a4a8a':m.type==='decimal'?'background:var(--warn-bg);color:var(--warn)':m.type==='text'?'background:#f3e8ff;color:#6b21a8':'background:var(--success-bg);color:var(--success)'}">${m.type==='percent'?'%':m.type==='decimal'?'0.0':m.type==='text'?'TXT':'#'}</span>
     </div>`).join('')}</div>`;
 }
 
 function typeHint(t) {
-  if (t==='percent') return '';
-  if (t==='decimal') return '';
-  if (t==='text')    return '';
-  return '';
+  if (t==='percent') return 'Enter as percentage, e.g. 94.5';
+  if (t==='decimal') return 'Enter decimal value, e.g. 1.75';
+  if (t==='text')    return 'Enter free text, e.g. No issues noted';
+  return 'Enter whole number, e.g. 1243';
 }
 
 function clearInputFields() {
@@ -808,7 +804,7 @@ function renderEntriesTable() {
 
 async function deleteEntry(date) {
   const c=cx(); if(!c) return;
-  if (!confirm(`Delete entry for ${fmtDate(date)}? Also removes from Google Sheets.`)) return;
+  if (!confirm(`Delete the entry for ${fmtDate(date)}?`)) return;
   try {
     await apiCall({action:'deleteEntry',customer:c.customerName,date});
     c.entries=c.entries.filter(e=>e.date!==date);
@@ -1188,7 +1184,7 @@ async function emailSummary() {
   const latest   = entries[entries.length - 1];
 
   // 1. Export PNG first so user can attach it
-  showToast('Generating PNG for attachment…');
+  showToast('Generating PNG…');
   try {
     const target = document.getElementById('tab-summary');
     const canvas = await html2canvas(target, { scale:2, useCORS:true, backgroundColor:'#f8f9fa', logging:false });
