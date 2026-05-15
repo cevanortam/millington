@@ -508,7 +508,16 @@
       <span class="count" id="tableCount">—</span>
     </div>
     <div class="table-scroll" id="tableScroll">
-      <div class="loading" id="tableLoading"><span class="spinner"></span> Loading orders...</div>
+      <div class="loading" id="tableLoading">
+        <div style="display:inline-flex;flex-direction:column;align-items:center;gap:10px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="spinner" id="loadSpinner"></span>
+            <span id="loadMsg" style="font-size:14px;color:var(--gray-500);font-weight:500;">Connecting to Google Sheets…</span>
+          </div>
+          <span id="loadSub" style="font-size:12px;color:var(--gray-400);"></span>
+          <button id="loadRetryBtn" onclick="loadFromSheets(true)" class="btn btn-outline btn-sm" style="display:none;margin-top:4px;">↻ Retry Now</button>
+        </div>
+      </div>
       <table class="orders-table" id="ordersTable" style="display:none">
         <thead>
           <tr>
@@ -777,34 +786,96 @@ function saveGASUrl() {
 // ============================================================
 // GOOGLE SHEETS I/O
 // ============================================================
-async function loadFromSheets() {
+const LOAD_TIMEOUT_MS = 15000; // 15 s — GAS cold-start can take 10–12 s
+const LOAD_MAX_RETRIES = 3;
+let loadAttempt = 0;
+let loadTimerInterval = null;
+
+function setLoadMsg(msg, sub = '', showRetry = false) {
+  const msgEl  = document.getElementById('loadMsg');
+  const subEl  = document.getElementById('loadSub');
+  const retBtn = document.getElementById('loadRetryBtn');
+  const spinner = document.getElementById('loadSpinner');
+  if (msgEl)  msgEl.textContent  = msg;
+  if (subEl)  subEl.textContent  = sub;
+  if (retBtn) retBtn.style.display = showRetry ? 'inline-flex' : 'none';
+  if (spinner) spinner.style.display = showRetry ? 'none' : 'inline-block';
+}
+
+function startLoadTimer() {
+  let secs = 0;
+  clearInterval(loadTimerInterval);
+  loadTimerInterval = setInterval(() => {
+    secs++;
+    const attempt = loadAttempt > 1 ? ` (attempt ${loadAttempt} of ${LOAD_MAX_RETRIES})` : '';
+    const subEl = document.getElementById('loadSub');
+    if (subEl) subEl.textContent = `${secs}s elapsed${attempt}`;
+  }, 1000);
+}
+
+function stopLoadTimer() {
+  clearInterval(loadTimerInterval);
+  loadTimerInterval = null;
+}
+
+async function loadFromSheets(manual = false) {
   if (!GAS_URL) { renderOrders(); return; }
+
+  if (manual) loadAttempt = 0; // manual retry resets the counter
+
+  loadAttempt++;
   document.getElementById('tableLoading').style.display = 'block';
-  document.getElementById('ordersTable').style.display = 'none';
+  document.getElementById('ordersTable').style.display  = 'none';
+  document.getElementById('emptyState').style.display   = 'none';
+
+  const attemptLabel = LOAD_MAX_RETRIES > 1
+    ? ` (attempt ${loadAttempt} of ${LOAD_MAX_RETRIES})`
+    : '';
+  setLoadMsg(`Connecting to Google Sheets…${attemptLabel}`, '', false);
   setConnectionStatus('checking');
-  // Use JSONP via dynamic <script> tag — bypasses CORS entirely for GETs
-  loadViaJsonp(GAS_URL + '?action=getAll&callback=onSheetsData', 8000)
-    .then(data => {
-      if (data && data.rows) {
-        // Sanitize all date fields coming from the sheet
-        allOrders = data.rows.map(sanitizeRowFromSheet);
-        // Always overwrite cache with fresh data from the sheet
-        localStorage.setItem('vas_orders_cache', JSON.stringify(allOrders));
-        setConnectionStatus('connected');
-      }
-      renderOrders();
-      renderMetrics();
-    })
-    .catch(e => {
-      console.error('Load error', e);
-      setConnectionStatus('error');
-      // Don't render stale cache — clear it and show empty state so the
-      // user knows the live load failed rather than seeing wrong data
-      allOrders = [];
-      renderOrders();
-      renderMetrics();
-      showSaveIndicator('⚠ Could not load data — check connection', true);
-    });
+  startLoadTimer();
+
+  try {
+    const data = await loadViaJsonp(GAS_URL + '?action=getAll&callback=onSheetsData', LOAD_TIMEOUT_MS);
+    stopLoadTimer();
+
+    if (data && data.rows) {
+      allOrders = data.rows.map(sanitizeRowFromSheet);
+      localStorage.setItem('vas_orders_cache', JSON.stringify(allOrders));
+      setConnectionStatus('connected');
+      loadAttempt = 0;
+    }
+    renderOrders();
+    renderMetrics();
+
+  } catch (e) {
+    stopLoadTimer();
+    console.error('Load error (attempt ' + loadAttempt + ')', e);
+
+    if (loadAttempt < LOAD_MAX_RETRIES) {
+      // Auto-retry after a short pause
+      const wait = 2;
+      setLoadMsg(
+        `Connection timed out — retrying in ${wait}s…`,
+        `Attempt ${loadAttempt} of ${LOAD_MAX_RETRIES} failed`,
+        false
+      );
+      await new Promise(r => setTimeout(r, wait * 1000));
+      return loadFromSheets(false); // recurse, keeping attempt counter
+    }
+
+    // All retries exhausted
+    setConnectionStatus('error');
+    setLoadMsg(
+      'Could not reach Google Sheets',
+      `Tried ${LOAD_MAX_RETRIES} times — check your network or the GAS deployment.`,
+      true
+    );
+    allOrders = [];
+    renderOrders();
+    renderMetrics();
+    showSaveIndicator('⚠ Could not load data after ' + LOAD_MAX_RETRIES + ' attempts', true);
+  }
 }
 
 function loadViaJsonp(url, timeout) {
