@@ -130,13 +130,35 @@
   .table-header .title { font-family: var(--font-condensed); font-size: 15px; font-weight: 700; letter-spacing: 0.5px; }
   .table-header .count { font-size: 12px; color: rgba(255,255,255,0.6); }
 
-  .orders-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .orders-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
   .orders-table th {
     background: var(--gray-100); color: var(--gray-500); font-weight: 600;
     text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.6px;
     padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--gray-200);
-    white-space: nowrap; position: sticky; top: 0;
+    white-space: nowrap; position: sticky; top: 0; z-index: 2;
   }
+  /* Sticky columns: #, Entered, DN/SO, Customer */
+  .orders-table th.sticky-col, .orders-table td.sticky-col {
+    position: sticky; z-index: 3; background: var(--gray-100);
+  }
+  .orders-table td.sticky-col { background: white; z-index: 1; }
+  .orders-table tr:hover td.sticky-col { background: var(--gray-100); }
+  .orders-table th.sticky-col { z-index: 4; }
+  /* Column offsets — set per-column via inline left: */
+  .orders-table th.sticky-col::after, .orders-table td.sticky-col::after {
+    content: ''; position: absolute; top: 0; right: -1px; bottom: 0;
+    width: 1px; background: var(--gray-300);
+  }
+  /* Last sticky col gets a stronger shadow line */
+  .orders-table th.sticky-last::after, .orders-table td.sticky-last::after {
+    width: 3px; background: linear-gradient(to right, var(--gray-300), transparent);
+    right: -3px;
+  }
+  .overdue-row td.sticky-col { background: #fff5f5; }
+  .overdue-row:hover td.sticky-col { background: #ffeaea; }
+  .due-soon-row td.sticky-col { background: #fffbf0; }
+  .due-soon-row:hover td.sticky-col { background: #fff5dc; }
+
   .orders-table td {
     padding: 8px 10px; border-bottom: 1px solid var(--gray-200);
     vertical-align: middle; max-width: 160px;
@@ -155,6 +177,18 @@
     outline: none; border-color: var(--navy-mid); background: white;
     box-shadow: 0 0 0 2px var(--navy-light);
   }
+  /* Paste-date inputs: text type that mimics a date field */
+  .orders-table input.date-paste {
+    border: 1px solid transparent; border-radius: 4px; padding: 3px 6px;
+    font-family: var(--font); font-size: 12.5px; width: 100%; background: transparent;
+    color: var(--gray-900); cursor: text;
+  }
+  .orders-table input.date-paste:focus {
+    outline: none; border-color: var(--navy-mid); background: white;
+    box-shadow: 0 0 0 2px var(--navy-light);
+  }
+  .orders-table input.date-paste.has-value { color: var(--gray-900); }
+  .orders-table input.date-paste.invalid { color: var(--red); border-color: var(--red-light) !important; }
   .orders-table input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--navy); cursor: pointer; }
   .orders-table textarea {
     border: 1px solid transparent; border-radius: 4px; padding: 3px 6px;
@@ -460,10 +494,10 @@
       <table class="orders-table" id="ordersTable" style="display:none">
         <thead>
           <tr>
-            <th style="width:32px"></th>
-            <th style="width:120px">Entered</th>
-            <th>DN/SO</th>
-            <th>Customer</th>
+            <th class="sticky-col" style="width:32px;left:0px"></th>
+            <th class="sticky-col" style="width:120px;left:32px">Entered</th>
+            <th class="sticky-col" style="left:152px">DN/SO</th>
+            <th class="sticky-col sticky-last" style="left:262px">Customer</th>
             <th>Waived Date</th>
             <th>Date Released</th>
             <th>Route By</th>
@@ -1225,14 +1259,14 @@ function renderTable() {
     }
     const statusBadge = o.routed_status ? `<span class="status-badge ${badgeClass(o.routed_status)}">${esc(o.routed_status)}</span>` : '';
     return `<tr class="${rowClass}" data-idx="${absIdx}">
-      <td style="color:var(--gray-400);font-size:11px;text-align:center">${start+idx+1}</td>
-      <td style="white-space:nowrap">${fmtEntered(o.created_at)}</td>
-      <td class="dn">${esc(o.dn_so||'')}</td>
-      <td><input type="text" value="${esc(o.customer||'')}" placeholder="Customer" onchange="updateField(${absIdx},'customer',this.value)" style="min-width:100px"></td>
-      <td><input type="date" value="${o.waived_date||''}" onchange="updateField(${absIdx},'waived_date',this.value)"></td>
-      <td><input type="date" value="${o.date_released||''}" onchange="updateField(${absIdx},'date_released',this.value)"></td>
-      <td><input type="date" value="${o.route_by_date||''}" onchange="updateField(${absIdx},'route_by_date',this.value)"></td>
-      <td><input type="date" value="${o.cancel_date||''}" onchange="updateField(${absIdx},'cancel_date',this.value)"></td>
+      <td class="sticky-col" style="left:0px;color:var(--gray-400);font-size:11px;text-align:center">${start+idx+1}</td>
+      <td class="sticky-col" style="left:32px;white-space:nowrap">${fmtEntered(o.created_at)}</td>
+      <td class="sticky-col dn" style="left:152px">${esc(o.dn_so||'')}</td>
+      <td class="sticky-col sticky-last" style="left:262px"><input type="text" value="${esc(o.customer||'')}" placeholder="Customer" onchange="updateField(${absIdx},'customer',this.value)" style="min-width:100px"></td>
+      <td><input type="text" class="date-paste" placeholder="MM/DD/YYYY" value="${fmtDateDisplay(o.waived_date)}" onchange="updateDateField(${absIdx},'waived_date',this)" onpaste="handleDatePaste(event,${absIdx},'waived_date',this)"></td>
+      <td><input type="text" class="date-paste" placeholder="MM/DD/YYYY" value="${fmtDateDisplay(o.date_released)}" onchange="updateDateField(${absIdx},'date_released',this)" onpaste="handleDatePaste(event,${absIdx},'date_released',this)"></td>
+      <td><input type="text" class="date-paste" placeholder="MM/DD/YYYY" value="${fmtDateDisplay(o.route_by_date)}" onchange="updateDateField(${absIdx},'route_by_date',this)" onpaste="handleDatePaste(event,${absIdx},'route_by_date',this)"></td>
+      <td><input type="text" class="date-paste" placeholder="MM/DD/YYYY" value="${fmtDateDisplay(o.cancel_date)}" onchange="updateDateField(${absIdx},'cancel_date',this)" onpaste="handleDatePaste(event,${absIdx},'cancel_date',this)"></td>
       <td class="units-cell"><input type="text" value="${esc(o.units||'')}" onchange="updateField(${absIdx},'units',this.value)" style="width:60px;text-align:right"></td>
       <td><input type="text" value="${esc(o.ceva_id||'')}" onchange="updateField(${absIdx},'ceva_id',this.value)" style="width:80px"></td>
       <td><input type="text" value="${esc(o.po||'')}" onchange="updateField(${absIdx},'po',this.value)" style="width:90px"></td>
@@ -1245,8 +1279,8 @@ function renderTable() {
           <option value="OPEN"${o.routed_status==='OPEN'?' selected':''}>OPEN</option>
         </select>
       </td>
-      <td><input type="date" value="${o.ship_date||''}" onchange="updateField(${absIdx},'ship_date',this.value)"></td>
-      <td><input type="text" value="${esc(o.s7||'')}" onchange="updateField(${absIdx},'s7',this.value)" style="width:60px"></td>
+      <td><input type="text" class="date-paste" placeholder="MM/DD/YYYY" value="${fmtDateDisplay(o.ship_date)}" onchange="updateDateField(${absIdx},'ship_date',this)" onpaste="handleDatePaste(event,${absIdx},'ship_date',this)"></td>
+      <td style="text-align:center"><input type="checkbox" ${parseBool(o.s7)?'checked':''} onchange="updateField(${absIdx},'s7',this.checked)"></td>
       <td><input type="text" value="${esc(o.status||'')}" onchange="updateField(${absIdx},'status',this.value)" style="min-width:90px"></td>
       <td><input type="text" value="${esc(o.days_lost_hold||'')}" onchange="updateField(${absIdx},'days_lost_hold',this.value)" style="width:50px;text-align:center"></td>
       <td><input type="text" value="${esc(o.to_ltl||'')}" onchange="updateField(${absIdx},'to_ltl',this.value)" style="width:70px"></td>
@@ -1405,7 +1439,7 @@ function wizardNext() {
       </div>
       <div class="form-row">
         <div class="form-group"><label>PO</label><input type="text" id="d_po_${i}" value="${esc(sap.po||po)}"></div>
-        <div class="form-group"><label>S7</label><input type="text" id="d_s7_${i}"></div>
+        <div class="form-group"><label style="display:flex;align-items:center;gap:8px;">S7 <input type="checkbox" id="d_s7_${i}" style="width:16px;height:16px;accent-color:var(--navy);cursor:pointer;margin:0"></label></div>
       </div>
       <div class="form-row">
         <div class="form-group"><label>Status Notes</label><input type="text" id="d_status_${i}"></div>
@@ -1465,7 +1499,7 @@ async function saveOrders() {
     routed_status: routed,
     ship_date: '',
     date_released: '',
-    s7: document.getElementById('d_s7_'+i)?.value || '',
+    s7: document.getElementById('d_s7_'+i)?.checked || false,
     status: document.getElementById('d_status_'+i)?.value || '',
     days_lost_hold: '',
     to_ltl: document.getElementById('d_ltl_'+i)?.value || '',
@@ -1623,6 +1657,71 @@ function parseLocalDate(str) {
     return new Date(y, m - 1, d);
   }
   return new Date(str); // fall back for full ISO timestamps
+}
+
+// Format a YYYY-MM-DD string for display as M/D/YYYY in paste-date inputs
+function fmtDateDisplay(str) {
+  if (!str) return '';
+  const d = parseLocalDate(str);
+  if (!d || isNaN(d)) return str;
+  return (d.getMonth()+1) + '/' + d.getDate() + '/' + d.getFullYear();
+}
+
+// Parse many common date formats into YYYY-MM-DD, returns '' on failure
+function parsePastedDate(raw) {
+  if (!raw) return '';
+  raw = raw.trim();
+  // Already YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  // M/D/YYYY or MM/DD/YYYY or M/D/YY
+  const slash = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  if (slash) {
+    let [,m,d,y] = slash;
+    if (y.length === 2) y = (parseInt(y) >= 50 ? '19' : '20') + y;
+    return `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
+  }
+  // M-D-YYYY
+  const dash = raw.match(/^(\d{1,2})-(\d{1,2})-(\d{2,4})$/);
+  if (dash) {
+    let [,m,d,y] = dash;
+    if (y.length === 2) y = (parseInt(y) >= 50 ? '19' : '20') + y;
+    return `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
+  }
+  // Try native Date parse as last resort
+  const dt = new Date(raw);
+  if (!isNaN(dt)) {
+    const y = dt.getFullYear();
+    const m = String(dt.getMonth()+1).padStart(2,'0');
+    const d = String(dt.getDate()).padStart(2,'0');
+    return `${y}-${m}-${d}`;
+  }
+  return '';
+}
+
+// Called by onchange on paste-date inputs (typed entry)
+function updateDateField(idx, field, el) {
+  const parsed = parsePastedDate(el.value);
+  if (el.value && !parsed) {
+    el.classList.add('invalid');
+    return; // don't save invalid
+  }
+  el.classList.remove('invalid');
+  el.value = parsed ? fmtDateDisplay(parsed) : '';
+  updateField(idx, field, parsed);
+}
+
+// Called by onpaste — intercepts the clipboard value before the browser renders it
+function handleDatePaste(e, idx, field, el) {
+  e.preventDefault();
+  const raw = (e.clipboardData || window.clipboardData).getData('text');
+  const parsed = parsePastedDate(raw);
+  el.value = parsed ? fmtDateDisplay(parsed) : raw;
+  if (parsed) {
+    el.classList.remove('invalid');
+    updateField(idx, field, parsed);
+  } else {
+    el.classList.add('invalid');
+  }
 }
 
 function parseBool(val) {
