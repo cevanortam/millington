@@ -1430,9 +1430,13 @@ function wizardNext() {
   const html = pendingDNs.map((dn, i) => {
     const sap = sapImportData[dn] || {};
     const sapBadge = sap.units ? `<span style="font-size:10px;font-weight:700;background:var(--navy);color:white;border-radius:3px;padding:1px 6px;margin-left:8px;vertical-align:middle;">SAP</span>` : '';
+    const rowCustomer = sap.customer || customer;
     return `
     <div style="background:var(--gray-100);border-radius:var(--radius);padding:12px 14px;margin-bottom:12px;">
       <div style="font-weight:700;font-family:var(--font-condensed);font-size:14px;color:var(--navy);margin-bottom:10px;letter-spacing:0.3px;">DN/SO: ${esc(dn)}${sapBadge}</div>
+      <div class="form-row single">
+        <div class="form-group"><label>Customer</label><input type="text" id="d_customer_${i}" value="${esc(rowCustomer)}" placeholder="e.g. Bloomingdales" list="customerList" autocomplete="off"></div>
+      </div>
       <div class="form-row">
         <div class="form-group"><label>Units</label><input type="text" id="d_units_${i}" placeholder="0" value="${esc(sap.units||'')}"></div>
         <div class="form-group"><label>CEVA ID</label><input type="text" id="d_ceva_${i}" placeholder="5611480" value="${esc(sap.ceva_id||'')}"></div>
@@ -1484,9 +1488,9 @@ async function saveOrders() {
 
   const newOrders = pendingDNs.map((dn, i) => {
     const sap = sapImportData[dn] || {};
-    // Per-row values: SAP data takes precedence over shared bulk fields
+    // Per-row values: detail grid inputs are authoritative (pre-filled from SAP or bulk fields)
     const rowWaived   = sap.waived_date || waived;
-    const rowCustomer = sap.customer    || customer;
+    const rowCustomer = document.getElementById('d_customer_'+i)?.value || sap.customer || customer;
     return {
     dn_so: dn,
     waived_date: rowWaived,
