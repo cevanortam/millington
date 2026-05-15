@@ -170,9 +170,22 @@
   .chart-card { background:var(--white); border:1px solid var(--gray-200); border-radius:8px; padding:20px; }
   .chart-card-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:8px; }
   .chart-card-title { font-family:var(--font-cond); font-size:16px; font-weight:700; color:var(--navy); text-transform:uppercase; }
+  .chart-avg-badge {
+    font-size:11px; font-weight:700; color:var(--gray-500);
+    background:var(--gray-100); border:1px solid var(--gray-200);
+    border-radius:4px; padding:3px 8px; white-space:nowrap;
+  }
   .legend-row { display:flex; flex-wrap:wrap; gap:16px; margin-bottom:12px; font-size:12px; color:var(--gray-500); }
   .legend-item { display:flex; align-items:center; gap:5px; }
   .legend-dot { width:10px; height:10px; border-radius:2px; }
+  /* View toggle */
+  .view-toggle { display:flex; background:var(--gray-100); border-radius:6px; padding:3px; gap:2px; }
+  .view-toggle-btn {
+    padding:5px 12px; font-size:12px; font-weight:600; font-family:var(--font);
+    border:none; background:transparent; color:var(--gray-500);
+    border-radius:4px; cursor:pointer; transition:all 0.15s;
+  }
+  .view-toggle-btn.active { background:var(--white); color:var(--navy); box-shadow:0 1px 3px rgba(0,0,0,0.12); }
 
   /* ── TOAST ── */
   .toast { position:fixed; bottom:24px; right:24px; background:var(--navy); color:var(--white); padding:12px 20px; border-radius:8px; font-size:14px; font-weight:500; box-shadow:0 4px 16px rgba(0,0,0,0.2); z-index:9999; opacity:0; transform:translateY(10px); transition:all 0.25s; pointer-events:none; }
@@ -280,6 +293,11 @@
       <input type="date" class="form-input" id="filterEnd" style="font-size:13px;" onchange="renderSummary()">
       <button class="btn btn-outline btn-sm" onclick="clearSummaryFilter()">Show All</button>
       <button class="btn btn-outline btn-sm" onclick="pullFromSheet()">↓ Refresh from Sheet</button>
+      <div class="view-toggle" id="viewToggle">
+        <button class="view-toggle-btn active" onclick="setViewMode('day',this)">Day</button>
+        <button class="view-toggle-btn" onclick="setViewMode('week',this)">Week</button>
+        <button class="view-toggle-btn" onclick="setViewMode('month',this)">Month</button>
+      </div>
       <div style="margin-left:auto;display:flex;gap:8px;">
         <button class="btn btn-outline btn-sm" onclick="exportSummaryPNG()" title="Export as image">⬇ Export PNG</button>
         <button class="btn btn-primary btn-sm" onclick="emailSummary()" title="Open in Outlook">✉ Email Summary</button>
@@ -390,6 +408,7 @@ let allCustomers    = [];   // [{ id, customerName, reportTitle, facility, metri
 let activeId        = null; // id of current customer
 let editingDate     = null;
 let chartInstances  = [];
+let viewMode        = 'day'; // 'day' | 'week' | 'month'
 
 function cx() { return allCustomers.find(c => c.id === activeId) || null; }
 
@@ -635,9 +654,22 @@ function renderMetricList() {
   const c = cx();
   if (!c?.metrics.length) { el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray-500);font-size:13px;">No metrics added yet.</div>'; return; }
   el.innerHTML = c.metrics.map((m,i) => `
-    <div class="metric-item">
+    <div class="metric-item" style="grid-template-columns:1fr auto auto auto auto;">
       <span class="metric-item-name">${esc(m.name)}</span>
       <span class="metric-type-badge badge-${m.type}">${shortType(m.type)}</span>
+      <div style="display:flex;align-items:center;gap:4px;">
+        <span style="font-size:11px;color:var(--gray-500);white-space:nowrap;">Target:</span>
+        ${m.type==='text'
+          ? `<span style="font-size:11px;color:var(--gray-300);font-style:italic;">N/A</span>`
+          : `<input type="number" step="${m.type==='whole'?'1':'0.01'}"
+               value="${m.target!==undefined&&m.target!==''?m.target:''}"
+               placeholder="—"
+               style="width:72px;padding:3px 6px;border:1.5px solid var(--gray-200);border-radius:4px;font-family:var(--font);font-size:12px;outline:none;color:var(--gray-900);"
+               onchange="setMetricTarget('${m.id}',this.value)"
+               onfocus="this.style.borderColor='var(--red)'"
+               onblur="this.style.borderColor='var(--gray-200)'">`
+        }
+      </div>
       <div class="metric-order">
         <button class="btn-icon" onclick="moveMetric(${i},-1)" ${i===0?'disabled style="opacity:.3"':''}>↑</button>
         <button class="btn-icon" onclick="moveMetric(${i},1)"  ${i===c.metrics.length-1?'disabled style="opacity:.3"':''}>↓</button>
@@ -647,6 +679,15 @@ function renderMetricList() {
 }
 
 function shortType(t) { return t==='percent'?'%':t==='decimal'?'0.0':t==='text'?'TXT':'#'; }
+
+function setMetricTarget(id, value) {
+  const c = cx(); if (!c) return;
+  const m = c.metrics.find(m=>m.id===id); if (!m) return;
+  const parsed = parseFloat(value);
+  m.target = (value===''||isNaN(parsed)) ? undefined : parsed;
+  saveLocal();
+  renderSummary();
+}
 
 async function addMetric() {
   const c = cx(); if (!c) return;
@@ -838,6 +879,13 @@ function clearSummaryFilter() {
   renderSummary();
 }
 
+function setViewMode(mode, btn) {
+  viewMode = mode;
+  document.querySelectorAll('.view-toggle-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderSummary();
+}
+
 function filteredEntries() {
   const c=cx(); if (!c) return [];
   const s=document.getElementById('filterStart').value;
@@ -845,9 +893,55 @@ function filteredEntries() {
   return c.entries.filter(en=>(!s||en.date>=s)&&(!e||en.date<=e)).sort((a,b)=>a.date.localeCompare(b.date));
 }
 
+// Returns a week key string "YYYY-Www" for a YYYY-MM-DD date
+function weekKey(dateStr) {
+  const [y,m,d] = dateStr.split('-').map(Number);
+  const dt = new Date(y, m-1, d);
+  const jan1 = new Date(dt.getFullYear(), 0, 1);
+  const week = Math.ceil(((dt - jan1) / 86400000 + jan1.getDay() + 1) / 7);
+  return `${dt.getFullYear()}-W${String(week).padStart(2,'0')}`;
+}
+
+// Returns a month key string "YYYY-MM" for a YYYY-MM-DD date
+function monthKey(dateStr) { return dateStr.slice(0,7); }
+
+// Groups entries by week or month, averaging numeric metrics and taking latest text value
+function groupEntries(entries, mode) {
+  if (mode === 'day') return entries;
+  const buckets = {};
+  entries.forEach(e => {
+    const key = mode === 'week' ? weekKey(e.date) : monthKey(e.date);
+    if (!buckets[key]) buckets[key] = { key, dates:[], entries:[] };
+    buckets[key].dates.push(e.date);
+    buckets[key].entries.push(e);
+  });
+  return Object.values(buckets).map(b => {
+    const c = cx();
+    const values = {};
+    c.metrics.forEach(m => {
+      if (m.type === 'text') {
+        // Use the latest text entry in the bucket
+        const last = b.entries.filter(e=>e.values[m.name]!==undefined).pop();
+        if (last) values[m.name] = last.values[m.name];
+      } else {
+        const nums = b.entries.map(e=>e.values[m.name]).filter(v=>v!==undefined&&!isNaN(v));
+        if (nums.length) values[m.name] = nums.reduce((a,v)=>a+v,0)/nums.length;
+      }
+    });
+    // Label: "Week of Apr 7" or "Apr 2026"
+    const firstDate = b.dates[0];
+    const label = mode === 'week'
+      ? 'Wk of ' + fmtDate(firstDate).replace(/,.*$/,'')
+      : (() => { const [y,m2] = firstDate.split('-'); return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+m2-1]+' '+y; })();
+    return { date: firstDate, label, values };
+  });
+}
+
 function renderSummary() {
   const c=cx();
-  const entries=filteredEntries();
+  const rawEntries=filteredEntries();
+  const entries = groupEntries(rawEntries, viewMode);
+
   chartInstances.forEach(ch=>{try{ch.destroy();}catch(e){}});
   chartInstances=[];
   const kpi=document.getElementById('kpiGrid');
@@ -859,28 +953,29 @@ function renderSummary() {
     return;
   }
 
-  const labels=entries.map(e=>fmtDate(e.date));
-  const latest=entries[entries.length-1];
+  // For KPI cards always use the latest raw (day) entry regardless of view mode
+  const rawLatest = rawEntries[rawEntries.length-1];
+  const labels = entries.map(e=>e.label||fmtDate(e.date));
   const COLORS=['#003057','#C8102E','#1a6ba0','#e05a1a','#0f6e56','#7c3aad','#b85c00','#1e7a3a'];
 
-  // KPI cards
+  // KPI cards — always show previous working day value from raw entries
   kpi.innerHTML=c.metrics.map(m=>{
-    const v=latest.values[m.name];
+    const v=rawLatest.values[m.name];
     if (m.type==='text') return `<div class="kpi-card" style="border-top-color:#6b21a8;">
       <div class="kpi-label">${esc(m.name)}</div>
       <div style="font-size:14px;font-weight:500;color:var(--navy);line-height:1.4;margin-top:4px;">${v!==undefined?esc(String(v)):'—'}</div>
       <div class="kpi-sub">Previous Working Day</div></div>`;
-    const avg=avgOf(entries,m.name);
+    const avg=avgOf(rawEntries,m.name);
     return `<div class="kpi-card">
       <div class="kpi-label">${esc(m.name)}</div>
       <div class="kpi-value">${fmtVal(v,m.type)}</div>
       <div class="kpi-sub">Prev. Working Day · Avg: ${avg!==null?fmtVal(avg,m.type):'—'}</div></div>`;
   }).join('');
 
-  // Charts
+  // Chart cards
   cs.innerHTML=c.metrics.map((m,i)=>{
     if (m.type==='text') {
-      const rows=[...entries].reverse().map(e=>{
+      const rows=[...rawEntries].reverse().map(e=>{
         const v=e.values[m.name];
         return v!==undefined?`<tr><td class="date-cell">${fmtDate(e.date)}</td><td style="padding:10px 14px;color:var(--gray-700);">${esc(String(v))}</td></tr>`:'';
       }).filter(Boolean).join('');
@@ -891,11 +986,18 @@ function renderSummary() {
           <tbody>${rows||'<tr><td colspan="2" class="no-data">No entries yet.</td></tr>'}</tbody>
         </table></div></div>`;
     }
+    const avg = avgOf(rawEntries, m.name);
+    const avgLabel = avg !== null ? `Avg: ${fmtVal(avg, m.type)}` : '';
+    const hasTarget = m.target !== undefined && m.target !== null && !isNaN(m.target);
     return `<div class="chart-card">
-      <div class="chart-card-header"><span class="chart-card-title">${esc(m.name)}</span></div>
+      <div class="chart-card-header">
+        <span class="chart-card-title">${esc(m.name)}</span>
+        ${avgLabel ? `<span class="chart-avg-badge">${avgLabel}</span>` : ''}
+      </div>
       <div class="legend-row">
         <div class="legend-item"><div class="legend-dot" style="background:#003057"></div><span>${esc(m.name)}</span></div>
-        ${entries.length>1?`<div class="legend-item" style="margin-left:auto;font-size:11px;">${entries.length} data points</div>`:''}
+        ${hasTarget ? `<div class="legend-item"><div style="width:16px;height:2px;background:rgba(200,16,46,0.55);border-top:2px dashed rgba(200,16,46,0.75);"></div><span>Target: ${fmtVal(m.target, m.type)}</span></div>` : ''}
+        ${entries.length>1?`<div class="legend-item" style="margin-left:auto;font-size:11px;">${entries.length} ${viewMode==='day'?'days':viewMode==='week'?'weeks':'months'}</div>`:''}
       </div>
       <div style="position:relative;width:100%;height:240px;">
         <canvas id="ch-${m.id}" role="img" aria-label="${esc(m.name)} over time"></canvas>
@@ -907,32 +1009,59 @@ function renderSummary() {
     c.metrics.forEach((m,i)=>{
       if (m.type==='text') return;
       const canvas=document.getElementById(`ch-${m.id}`); if(!canvas) return;
-      const data=entries.map(e=>e.values[m.name]!==undefined?e.values[m.name]:null);
+      const data=entries.map(e=>e.values[m.name]!==undefined?+e.values[m.name]:null);
+      const avg=avgOf(rawEntries,m.name);
       const lineColor=COLORS[i%COLORS.length];
       const isLine=entries.length>5;
+
+      const datasets=[{
+        label:m.name, data,
+        backgroundColor:isLine?lineColor+'22':'#003057',
+        borderColor:isLine?lineColor:'#003057',
+        borderWidth:isLine?2.5:1,
+        pointBackgroundColor:lineColor, pointRadius:isLine?4:0, pointHoverRadius:6,
+        fill:isLine, tension:0.3, borderRadius:isLine?0:5,
+        datalabels:{
+          display:true, anchor:'end', align:'end', offset:2,
+          color:'#003057', font:{family:'Barlow',size:11,weight:'600'},
+          formatter:v=>v===null?'':fmtVal(v,m.type)
+        }
+      }];
+
+      // Target reference line — red, semi-transparent, dashed
+      const hasTarget = m.target !== undefined && m.target !== null && !isNaN(m.target);
+      if (hasTarget) {
+        datasets.push({
+          label:'Target',
+          data: entries.map(()=>m.target),
+          type:'line',
+          borderColor:'rgba(200,16,46,0.6)',
+          backgroundColor:'rgba(200,16,46,0)',
+          borderWidth:2,
+          borderDash:[6,4],
+          pointRadius:0,
+          fill:false,
+          tension:0,
+          order:0,
+          datalabels:{ display:false }
+        });
+      }
+
       chartInstances.push(new Chart(canvas,{
         type:isLine?'line':'bar',
-        data:{labels,datasets:[{
-          label:m.name, data,
-          backgroundColor:isLine?lineColor+'22':'#003057',
-          borderColor:isLine?lineColor:'#003057',
-          borderWidth:isLine?2.5:1,
-          pointBackgroundColor:lineColor, pointRadius:isLine?4:0, pointHoverRadius:6,
-          fill:isLine, tension:0.3, borderRadius:isLine?0:5
-        }]},
+        data:{labels,datasets},
         options:{
           responsive:true, maintainAspectRatio:false,
           layout:{padding:{top:24}},
           plugins:{
             legend:{display:false},
-            tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${fmtVal(ctx.parsed.y,m.type)}`}},
-            datalabels:{
-              display:true,
-              anchor:'end', align:'end',
-              offset:2,
-              color:'#003057',
-              font:{family:'Barlow',size:11,weight:'600'},
-              formatter:v=>v===null?'':fmtVal(v,m.type)
+            tooltip:{
+              callbacks:{
+                label:ctx=>{
+                  if(ctx.dataset.label==='Target') return `Target: ${fmtVal(ctx.parsed.y,m.type)}`;
+                  return `${ctx.dataset.label}: ${fmtVal(ctx.parsed.y,m.type)}`;
+                }
+              }
             }
           },
           scales:{
@@ -946,8 +1075,8 @@ function renderSummary() {
 }
 
 function avgOf(entries,name) {
-  const vals=entries.map(e=>e.values[name]).filter(v=>v!==undefined&&!isNaN(v));
-  return vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
+  const vals=entries.map(e=>e.values[name]).filter(v=>v!==undefined&&!isNaN(+v));
+  return vals.length?vals.reduce((a,b)=>a+(+b),0)/vals.length:null;
 }
 
 // ══════════════════════════════════════════════
@@ -1046,58 +1175,53 @@ async function exportSummaryPNG() {
   } catch(err) { showToast('Export failed: ' + err.message, 'error'); }
 }
 
-function emailSummary() {
+async function emailSummary() {
   const c = cx();
   if (!c) return;
-  const customer   = c.customerName || 'Customer';
-  const dateStr    = todayStr();
-  const entries    = filteredEntries();
+  const entries = filteredEntries();
+  if (!entries.length) { showToast('No data to include in email','error'); return; }
 
-  let subject = encodeURIComponent(`${customer} — Daily Flash Report — ${fmtDate(dateStr)}`);
+  const customer = c.customerName || 'Customer';
+  const latest   = entries[entries.length - 1];
 
-  // Build plain-text body
-  let body = `${customer} — Daily Flash Report\n`;
-  body += `${fmtDate(dateStr)}\n`;
-  body += `${'─'.repeat(40)}\n\n`;
-
-  if (!entries.length) {
-    body += 'No data recorded for this period.\n';
-  } else {
-    const latest = entries[entries.length - 1];
-    // KPI summary
-    body += `PREVIOUS WORKING DAY SUMMARY (${fmtDate(latest.date)})\n\n`;
-    c.metrics.forEach(m => {
-      const v = latest.values[m.name];
-      const avg = avgOf(entries, m.name);
-      if (m.type === 'text') {
-        body += `${m.name}:\n  ${v !== undefined ? String(v) : '—'}\n\n`;
-      } else {
-        body += `${m.name}: ${fmtVal(v, m.type)}`;
-        if (avg !== null) body += `  (Avg: ${fmtVal(avg, m.type)})`;
-        body += '\n';
-      }
-    });
-    body += '\n' + '─'.repeat(40) + '\n\n';
-
-    // Full data table
-    body += 'FULL DATE HISTORY\n\n';
-    // Header row
-    body += 'Date'.padEnd(18);
-    c.metrics.forEach(m => { body += m.name.substring(0,14).padEnd(16); });
-    body += '\n' + '─'.repeat(18 + c.metrics.length * 16) + '\n';
-    // Data rows
-    [...entries].reverse().forEach(e => {
-      body += fmtDate(e.date).padEnd(18);
-      c.metrics.forEach(m => { body += fmtVal(e.values[m.name], m.type).padEnd(16); });
-      body += '\n';
-    });
+  // 1. Export PNG first so user can attach it
+  showToast('Generating PNG for attachment…');
+  try {
+    const target = document.getElementById('tab-summary');
+    const canvas = await html2canvas(target, { scale:2, useCORS:true, backgroundColor:'#f8f9fa', logging:false });
+    const link = document.createElement('a');
+    link.download = customer.replace(/\s+/g,'_') + '_' + todayStr() + '.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  } catch(err) {
+    showToast('PNG generation failed — opening email anyway', 'error');
   }
 
-  body += `\n\nGenerated by CEVA Logistics Customer Flash Report — Millington`;
+  // Small delay so the download starts before mailto navigation
+  await new Promise(r => setTimeout(r, 600));
 
-  // mailto: opens Outlook (or default mail client) with pre-filled subject + body
-  const mailto = `mailto:?subject=${subject}&body=${encodeURIComponent(body)}`;
-  window.location.href = mailto;
+  // 2. Build email body — previous day metrics only, no averages
+  const subject = encodeURIComponent(`${customer} — Daily Flash Report — ${fmtDate(latest.date)}`);
+
+  let body = `${customer}\n`;
+  body += `Daily Flash Report — ${fmtDate(latest.date)}\n`;
+  body += `${'─'.repeat(42)}\n\n`;
+  body += `PREVIOUS WORKING DAY METRICS\n\n`;
+
+  c.metrics.forEach(m => {
+    const v = latest.values[m.name];
+    if (m.type === 'text') {
+      body += `${m.name}:\n  ${v !== undefined ? String(v) : '—'}\n\n`;
+    } else {
+      body += `${m.name}: ${fmtVal(v, m.type)}\n`;
+    }
+  });
+
+  body += `\n${'─'.repeat(42)}\n`;
+  body += `Please see the attached PNG for full charts and historical data.\n`;
+  body += `\nGenerated by CEVA Logistics Customer Flash Report — Millington`;
+
+  window.location.href = `mailto:?subject=${subject}&body=${encodeURIComponent(body)}`;
 }
 
 // ══════════════════════════════════════════════
