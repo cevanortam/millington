@@ -1021,6 +1021,7 @@ function renderSummary() {
         borderWidth:isLine?2.5:1,
         pointBackgroundColor:lineColor, pointRadius:isLine?4:0, pointHoverRadius:6,
         fill:isLine, tension:0.3, borderRadius:isLine?0:5,
+        order:1,
         datalabels:{
           display:true, anchor:'end', align:'end', offset:2,
           color:'#003057', font:{family:'Barlow',size:11,weight:'600'},
@@ -1028,22 +1029,24 @@ function renderSummary() {
         }
       }];
 
-      // Target reference line — red, semi-transparent, dashed
+      // Target reference line — always rendered on top of bars (order:0 = drawn last = on top)
       const hasTarget = m.target !== undefined && m.target !== null && !isNaN(m.target);
       if (hasTarget) {
-        datasets.push({
+        datasets.unshift({
           label:'Target',
-          data: entries.map(()=>m.target),
+          data: entries.map(()=>+m.target),
           type:'line',
-          borderColor:'rgba(200,16,46,0.6)',
+          borderColor:'rgba(200,16,46,0.85)',
           backgroundColor:'rgba(200,16,46,0)',
-          borderWidth:2,
-          borderDash:[6,4],
+          borderWidth:2.5,
+          segment:{ borderDash:()=>[6,4] },
           pointRadius:0,
+          pointHoverRadius:0,
           fill:false,
           tension:0,
           order:0,
-          datalabels:{ display:false }
+          datalabels:{ display:false },
+          z:10
         });
       }
 
