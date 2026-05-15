@@ -137,27 +137,45 @@
     padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--gray-200);
     white-space: nowrap; position: sticky; top: 0; z-index: 2;
   }
-  /* Sticky columns: #, Entered, DN/SO, Customer */
-  .orders-table th.sticky-col, .orders-table td.sticky-col {
-    position: sticky; z-index: 3; background: var(--gray-100);
+
+  /* ── Sticky columns: fixed widths defined here, referenced as left offsets below ──
+     Col 0 (#):       width 36px,  left 0
+     Col 1 (Entered): width 110px, left 36px
+     Col 2 (DN/SO):   width 120px, left 146px
+     Col 3 (Customer):width 140px, left 266px  ← last sticky
+  */
+  .orders-table .sc-num      { width: 36px;  min-width: 36px;  left: 0px;   }
+  .orders-table .sc-entered  { width: 110px; min-width: 110px; left: 36px;  }
+  .orders-table .sc-dn       { width: 120px; min-width: 120px; left: 146px; }
+  .orders-table .sc-customer { width: 140px; min-width: 140px; left: 266px; }
+
+  /* All sticky th/td share these */
+  .orders-table th.sticky-col,
+  .orders-table td.sticky-col {
+    position: sticky;
+    background: var(--gray-100); /* opaque — never transparent */
   }
-  .orders-table td.sticky-col { background: white; z-index: 1; }
-  .orders-table tr:hover td.sticky-col { background: var(--gray-100); }
-  .orders-table th.sticky-col { z-index: 4; }
-  /* Column offsets — set per-column via inline left: */
-  .orders-table th.sticky-col::after, .orders-table td.sticky-col::after {
-    content: ''; position: absolute; top: 0; right: -1px; bottom: 0;
-    width: 1px; background: var(--gray-300);
+  /* th already has top:0 from the base rule; add left-stickiness */
+  .orders-table th.sticky-col { z-index: 5; } /* above all td and non-sticky th */
+  .orders-table td.sticky-col { z-index: 3; background: white; }
+
+  /* Row-state backgrounds must be explicit on sticky cells too */
+  .orders-table tr:hover td.sticky-col          { background: var(--gray-100); }
+  .overdue-row  td.sticky-col                   { background: #fff5f5; }
+  .overdue-row:hover td.sticky-col              { background: #ffeaea; }
+  .due-soon-row td.sticky-col                   { background: #fffbf0; }
+  .due-soon-row:hover td.sticky-col             { background: #fff5dc; }
+
+  /* Divider line on the right of every sticky cell */
+  .orders-table th.sticky-col,
+  .orders-table td.sticky-col { border-right: 1px solid var(--gray-300); }
+
+  /* Last sticky column: replace the thin line with a drop-shadow effect */
+  .orders-table th.sticky-last,
+  .orders-table td.sticky-last {
+    border-right: none;
+    box-shadow: 3px 0 6px -2px rgba(0,48,87,0.15);
   }
-  /* Last sticky col gets a stronger shadow line */
-  .orders-table th.sticky-last::after, .orders-table td.sticky-last::after {
-    width: 3px; background: linear-gradient(to right, var(--gray-300), transparent);
-    right: -3px;
-  }
-  .overdue-row td.sticky-col { background: #fff5f5; }
-  .overdue-row:hover td.sticky-col { background: #ffeaea; }
-  .due-soon-row td.sticky-col { background: #fffbf0; }
-  .due-soon-row:hover td.sticky-col { background: #fff5dc; }
 
   .orders-table td {
     padding: 8px 10px; border-bottom: 1px solid var(--gray-200);
@@ -494,10 +512,10 @@
       <table class="orders-table" id="ordersTable" style="display:none">
         <thead>
           <tr>
-            <th class="sticky-col" style="width:32px;left:0px"></th>
-            <th class="sticky-col" style="width:120px;left:32px">Entered</th>
-            <th class="sticky-col" style="left:152px">DN/SO</th>
-            <th class="sticky-col sticky-last" style="left:262px">Customer</th>
+            <th class="sticky-col sc-num"></th>
+            <th class="sticky-col sc-entered">Entered</th>
+            <th class="sticky-col sc-dn">DN/SO</th>
+            <th class="sticky-col sticky-last sc-customer">Customer</th>
             <th>Waived Date</th>
             <th>Date Released</th>
             <th>Route By</th>
@@ -1259,10 +1277,10 @@ function renderTable() {
     }
     const statusBadge = o.routed_status ? `<span class="status-badge ${badgeClass(o.routed_status)}">${esc(o.routed_status)}</span>` : '';
     return `<tr class="${rowClass}" data-idx="${absIdx}">
-      <td class="sticky-col" style="left:0px;color:var(--gray-400);font-size:11px;text-align:center">${start+idx+1}</td>
-      <td class="sticky-col" style="left:32px;white-space:nowrap">${fmtEntered(o.created_at)}</td>
-      <td class="sticky-col dn" style="left:152px">${esc(o.dn_so||'')}</td>
-      <td class="sticky-col sticky-last" style="left:262px"><input type="text" value="${esc(o.customer||'')}" placeholder="Customer" onchange="updateField(${absIdx},'customer',this.value)" style="min-width:100px"></td>
+      <td class="sticky-col sc-num" style="color:var(--gray-400);font-size:11px;text-align:center">${start+idx+1}</td>
+      <td class="sticky-col sc-entered" style="white-space:nowrap">${fmtEntered(o.created_at)}</td>
+      <td class="sticky-col sc-dn dn">${esc(o.dn_so||'')}</td>
+      <td class="sticky-col sticky-last sc-customer"><input type="text" value="${esc(o.customer||'')}" placeholder="Customer" onchange="updateField(${absIdx},'customer',this.value)" style="min-width:100px"></td>
       <td><input type="text" class="date-paste" placeholder="MM/DD/YYYY" value="${fmtDateDisplay(o.waived_date)}" onchange="updateDateField(${absIdx},'waived_date',this)" onpaste="handleDatePaste(event,${absIdx},'waived_date',this)"></td>
       <td><input type="text" class="date-paste" placeholder="MM/DD/YYYY" value="${fmtDateDisplay(o.date_released)}" onchange="updateDateField(${absIdx},'date_released',this)" onpaste="handleDatePaste(event,${absIdx},'date_released',this)"></td>
       <td><input type="text" class="date-paste" placeholder="MM/DD/YYYY" value="${fmtDateDisplay(o.route_by_date)}" onchange="updateDateField(${absIdx},'route_by_date',this)" onpaste="handleDatePaste(event,${absIdx},'route_by_date',this)"></td>
