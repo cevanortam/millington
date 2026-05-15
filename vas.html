@@ -961,7 +961,7 @@ function handleSapImport(input) {
       const headers = rows[0].map(h => String(h).trim().toLowerCase());
       const col = name => headers.indexOf(name.toLowerCase());
 
-      const COL_DN       = col('Sales Document');
+      const COL_DN       = col('Delivery');
       const COL_DATE     = col('Sales Order Create Date (Local)');
       const COL_CUSTOMER = col('Name of sold-to party');
       const COL_CEVAID   = col('Purchase Order Number');
@@ -969,7 +969,7 @@ function handleSapImport(input) {
       const COL_UNITS    = col('Order Quantity');
 
       const missing = [];
-      if (COL_DN < 0)       missing.push('Sales Document');
+      if (COL_DN < 0)       missing.push('Delivery');
       if (COL_DATE < 0)     missing.push('Sales Order Create Date (Local)');
       if (COL_CUSTOMER < 0) missing.push('Name of sold-to party');
       if (COL_CEVAID < 0)   missing.push('Purchase Order Number');
