@@ -317,6 +317,7 @@
   }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -572,6 +573,45 @@
 
       <!-- Step 1 -->
       <div id="step1">
+
+        <!-- SAP Import -->
+        <div id="sapImportSection" style="background:var(--navy-light);border:1.5px dashed var(--navy-mid);border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:16px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+            <div>
+              <div style="font-family:var(--font-condensed);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--navy);">📂 Import from SAP Export</div>
+              <div style="font-size:11.5px;color:var(--gray-500);margin-top:2px;">Upload the SAP .xlsx export to auto-populate DN/SO numbers and order details.</div>
+            </div>
+            <label id="sapImportLabel" style="cursor:pointer;">
+              <input type="file" id="sapFileInput" accept=".xlsx,.xls" style="display:none" onchange="handleSapImport(this)">
+              <span class="btn btn-primary btn-sm" style="display:inline-flex;align-items:center;gap:6px;">⬆ Choose File</span>
+            </label>
+          </div>
+          <!-- Import results summary (hidden until file loaded) -->
+          <div id="sapImportResult" style="display:none;">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+              <span id="sapFileName" style="font-size:12px;font-weight:600;color:var(--navy);background:white;border:1px solid var(--gray-300);border-radius:4px;padding:3px 10px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+              <span id="sapRowCount" style="font-size:12px;color:var(--green);font-weight:600;"></span>
+              <button class="btn btn-outline btn-sm" onclick="clearSapImport()" style="color:var(--red);border-color:var(--red-light);">✕ Clear</button>
+            </div>
+            <div id="sapWarnings" style="margin-top:8px;display:none;font-size:11.5px;color:#7a4f00;background:var(--gold-light);border:1px solid var(--gold);border-radius:4px;padding:6px 10px;"></div>
+            <div style="margin-top:8px;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--gray-500);">
+              <span>Fields populated from SAP:</span>
+              <span style="background:var(--navy-light);color:var(--navy);border-radius:3px;padding:1px 6px;font-size:11px;font-weight:700;">DN/SO</span>
+              <span style="background:var(--navy-light);color:var(--navy);border-radius:3px;padding:1px 6px;font-size:11px;font-weight:700;">Waived Date</span>
+              <span style="background:var(--navy-light);color:var(--navy);border-radius:3px;padding:1px 6px;font-size:11px;font-weight:700;">Customer</span>
+              <span style="background:var(--navy-light);color:var(--navy);border-radius:3px;padding:1px 6px;font-size:11px;font-weight:700;">CEVA ID</span>
+              <span style="background:var(--navy-light);color:var(--navy);border-radius:3px;padding:1px 6px;font-size:11px;font-weight:700;">PO</span>
+              <span style="background:var(--navy-light);color:var(--navy);border-radius:3px;padding:1px 6px;font-size:11px;font-weight:700;">Units</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          <div style="flex:1;height:1px;background:var(--gray-200);"></div>
+          <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray-400);">or enter manually</span>
+          <div style="flex:1;height:1px;background:var(--gray-200);"></div>
+        </div>
+
         <div style="margin-bottom:12px;">
           <label style="font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray-500);display:block;margin-bottom:4px;">Paste or type DN/SO numbers (one per line, or comma-separated)</label>
           <textarea class="dn-textarea" id="dnInput" placeholder="3102261800&#10;3102264383&#10;3102266088&#10;..." oninput="previewDNs()"></textarea>
@@ -878,6 +918,174 @@ const DATE_FILTERS = [
   ['df_released_from', 'df_released_to', 'date_released',  false],
 ];
 
+// ============================================================
+// SAP EXCEL IMPORT
+// ============================================================
+// Stores parsed rows from the SAP export; keyed by Sales Document (DN/SO)
+let sapImportData = {}; // { dn_so: { waived_date, customer, ceva_id, po, units } }
+
+// Excel serial date → YYYY-MM-DD (SAP uses 1900 epoch)
+function excelSerialToYMD(serial) {
+  if (!serial && serial !== 0) return '';
+  const num = Number(serial);
+  if (isNaN(num) || num <= 0) return '';
+  // Excel serial: days since 1900-01-00, with a leap-year bug that adds 1 day after Feb 28 1900
+  const utcDays = num > 59 ? num - 1 : num; // correct the 1900 leap-year bug
+  const msPerDay = 86400000;
+  const epoch = new Date(Date.UTC(1900, 0, 1)); // Jan 1 1900
+  const d = new Date(epoch.getTime() + (utcDays - 1) * msPerDay);
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(d.getUTCDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function handleSapImport(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+      if (rows.length < 2) {
+        alert('The file appears to be empty or has no data rows.');
+        return;
+      }
+
+      // Find column indices by header name (case-insensitive, trimmed)
+      const headers = rows[0].map(h => String(h).trim().toLowerCase());
+      const col = name => headers.indexOf(name.toLowerCase());
+
+      const COL_DN       = col('Sales Document');
+      const COL_DATE     = col('Sales Order Create Date (Local)');
+      const COL_CUSTOMER = col('Name of sold-to party');
+      const COL_CEVAID   = col('Purchase Order Number');
+      const COL_PO       = col('End User PO');
+      const COL_UNITS    = col('Order Quantity');
+
+      const missing = [];
+      if (COL_DN < 0)       missing.push('Sales Document');
+      if (COL_DATE < 0)     missing.push('Sales Order Create Date (Local)');
+      if (COL_CUSTOMER < 0) missing.push('Name of sold-to party');
+      if (COL_CEVAID < 0)   missing.push('Purchase Order Number');
+      if (COL_PO < 0)       missing.push('End User PO');
+      if (COL_UNITS < 0)    missing.push('Order Quantity');
+
+      if (missing.length > 0) {
+        alert('Could not find the following expected columns:\n\n' + missing.join('\n') + '\n\nPlease verify this is the correct SAP export file.');
+        clearSapImport();
+        return;
+      }
+
+      sapImportData = {};
+      const warnings = [];
+      let imported = 0;
+
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        const dn = String(row[COL_DN] || '').trim();
+        if (!dn) continue;
+
+        // Date: may be an Excel serial number or a formatted string
+        let waived_date = '';
+        const rawDate = row[COL_DATE];
+        if (rawDate !== '' && rawDate !== null && rawDate !== undefined) {
+          if (typeof rawDate === 'number') {
+            waived_date = excelSerialToYMD(rawDate);
+          } else {
+            // Try to parse as a date string
+            const parsed = new Date(rawDate);
+            if (!isNaN(parsed)) {
+              const y = parsed.getFullYear();
+              const m = String(parsed.getMonth() + 1).padStart(2, '0');
+              const d = String(parsed.getDate()).padStart(2, '0');
+              waived_date = `${y}-${m}-${d}`;
+            } else {
+              waived_date = String(rawDate).trim();
+            }
+          }
+        }
+
+        const customer = String(row[COL_CUSTOMER] || '').trim();
+        const ceva_id  = String(row[COL_CEVAID]   || '').trim();
+        const po       = String(row[COL_PO]        || '').trim();
+        const units    = String(row[COL_UNITS]     || '').trim();
+
+        if (sapImportData[dn]) {
+          // Duplicate DN — aggregate units if numeric, warn otherwise
+          const existing = sapImportData[dn];
+          const existUnits = parseFloat(existing.units) || 0;
+          const newUnits   = parseFloat(units) || 0;
+          existing.units = String(existUnits + newUnits);
+          warnings.push(`DN/SO ${dn} appears on multiple rows — units were summed (${existing.units}).`);
+        } else {
+          sapImportData[dn] = { waived_date, customer, ceva_id, po, units };
+          imported++;
+        }
+      }
+
+      if (imported === 0) {
+        alert('No data rows were found in this file.');
+        clearSapImport();
+        return;
+      }
+
+      // Populate the DN textarea
+      const dnList = Object.keys(sapImportData).join('\n');
+      document.getElementById('dnInput').value = dnList;
+      previewDNs();
+
+      // Populate shared fields with the first row's values (if all rows share them)
+      const allValues = Object.values(sapImportData);
+      const setIfUniform = (fieldId, getter) => {
+        const vals = [...new Set(allValues.map(getter).filter(Boolean))];
+        if (vals.length === 1) document.getElementById(fieldId).value = vals[0];
+        else document.getElementById(fieldId).value = '';
+      };
+      setIfUniform('bulk_waived_date', r => r.waived_date);
+      setIfUniform('bulk_customer',    r => r.customer);
+
+      // Show result summary
+      document.getElementById('sapFileName').textContent = file.name;
+      document.getElementById('sapRowCount').textContent = `✓ ${imported} order${imported !== 1 ? 's' : ''} imported`;
+      document.getElementById('sapImportResult').style.display = 'block';
+
+      const warnEl = document.getElementById('sapWarnings');
+      if (warnings.length > 0) {
+        warnEl.innerHTML = '⚠ ' + warnings.slice(0, 5).map(w => esc(w)).join('<br>') +
+          (warnings.length > 5 ? `<br>…and ${warnings.length - 5} more` : '');
+        warnEl.style.display = 'block';
+      } else {
+        warnEl.style.display = 'none';
+      }
+
+    } catch(err) {
+      console.error('SAP import error:', err);
+      alert('Failed to parse the file. Please make sure it is a valid .xlsx file.\n\nError: ' + err.message);
+      clearSapImport();
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function clearSapImport() {
+  sapImportData = {};
+  document.getElementById('sapFileInput').value = '';
+  document.getElementById('sapImportResult').style.display = 'none';
+  document.getElementById('dnInput').value = '';
+  document.getElementById('dnPreview').style.display = 'none';
+  document.getElementById('bulk_waived_date').value = '';
+  document.getElementById('bulk_customer').value = '';
+}
+
+// ============================================================
+// ROUTE WINDOW FILTER
+// ============================================================
 function setRouteWindow(hours, btn) {
   // Toggle off if already active
   if (routeWindowHours === hours) {
@@ -1143,6 +1351,8 @@ function openAddModal() {
   document.getElementById('bulk_cancel_date').value = '';
   document.getElementById('bulk_route_by_date').value = '';
   document.getElementById('bulk_routed_status').value = '';
+  // Reset SAP import state
+  clearSapImport();
   // Refresh customer autocomplete list from current data
   const customers = [...new Set(allOrders.map(o => o.customer).filter(Boolean))].sort();
   const dl = document.getElementById('customerList');
@@ -1183,15 +1393,18 @@ function wizardNext() {
   const routeBy = document.getElementById('bulk_route_by_date').value;
   const routed = document.getElementById('bulk_routed_status').value;
 
-  const html = pendingDNs.map((dn, i) => `
+  const html = pendingDNs.map((dn, i) => {
+    const sap = sapImportData[dn] || {};
+    const sapBadge = sap.units ? `<span style="font-size:10px;font-weight:700;background:var(--navy);color:white;border-radius:3px;padding:1px 6px;margin-left:8px;vertical-align:middle;">SAP</span>` : '';
+    return `
     <div style="background:var(--gray-100);border-radius:var(--radius);padding:12px 14px;margin-bottom:12px;">
-      <div style="font-weight:700;font-family:var(--font-condensed);font-size:14px;color:var(--navy);margin-bottom:10px;letter-spacing:0.3px;">DN/SO: ${esc(dn)}</div>
+      <div style="font-weight:700;font-family:var(--font-condensed);font-size:14px;color:var(--navy);margin-bottom:10px;letter-spacing:0.3px;">DN/SO: ${esc(dn)}${sapBadge}</div>
       <div class="form-row">
-        <div class="form-group"><label>Units</label><input type="text" id="d_units_${i}" placeholder="0"></div>
-        <div class="form-group"><label>CEVA ID</label><input type="text" id="d_ceva_${i}" placeholder="5611480"></div>
+        <div class="form-group"><label>Units</label><input type="text" id="d_units_${i}" placeholder="0" value="${esc(sap.units||'')}"></div>
+        <div class="form-group"><label>CEVA ID</label><input type="text" id="d_ceva_${i}" placeholder="5611480" value="${esc(sap.ceva_id||'')}"></div>
       </div>
       <div class="form-row">
-        <div class="form-group"><label>PO</label><input type="text" id="d_po_${i}" value="${esc(po)}"></div>
+        <div class="form-group"><label>PO</label><input type="text" id="d_po_${i}" value="${esc(sap.po||po)}"></div>
         <div class="form-group"><label>S7</label><input type="text" id="d_s7_${i}"></div>
       </div>
       <div class="form-row">
@@ -1203,7 +1416,7 @@ function wizardNext() {
         <div class="form-group"><label>To LTL</label><input type="text" id="d_ltl_${i}"></div>
       </div>
     </div>
-  `).join('');
+  `}).join('');
 
   document.getElementById('detailGrid').innerHTML = html;
   document.getElementById('step1').style.display = 'none';
@@ -1235,10 +1448,15 @@ async function saveOrders() {
   const routed = document.getElementById('bulk_routed_status').value;
   const now = new Date().toISOString();
 
-  const newOrders = pendingDNs.map((dn, i) => ({
+  const newOrders = pendingDNs.map((dn, i) => {
+    const sap = sapImportData[dn] || {};
+    // Per-row values: SAP data takes precedence over shared bulk fields
+    const rowWaived   = sap.waived_date || waived;
+    const rowCustomer = sap.customer    || customer;
+    return {
     dn_so: dn,
-    waived_date: waived,
-    customer,
+    waived_date: rowWaived,
+    customer: rowCustomer,
     route_by_date: routeBy,
     cancel_date: cancel,
     units: document.getElementById('d_units_'+i)?.value || '',
@@ -1257,7 +1475,8 @@ async function saveOrders() {
     comments: document.getElementById('d_comments_'+i)?.value || '',
     created_at: now,
     updated_at: now
-  }));
+  };
+  });
 
   // Merge — skip duplicates
   const existingDNs = new Set(allOrders.map(o => o.dn_so));
