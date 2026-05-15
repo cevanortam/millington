@@ -318,7 +318,8 @@
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button class="btn btn-primary btn-sm" onclick="saveSettings()">💾 Save</button>
-          <button class="btn btn-outline btn-sm" onclick="pullFromSheet()">↓ Pull from Sheet</button>
+          <button class="btn btn-outline btn-sm" onclick="pullFromSheet()">↓ Pull Entries</button>
+          <button class="btn btn-outline btn-sm" onclick="reloadAllFromSheet()" title="Re-import all customers and data from Google Sheets">↺ Reload All from Sheet</button>
         </div>
         <div style="margin-top:20px;padding-top:16px;border-top:1px dashed var(--gray-200);display:flex;flex-direction:column;gap:8px;">
           <button class="btn btn-outline btn-sm" onclick="addNewCustomerFromSettings()" style="border-color:var(--navy);color:var(--navy);">＋ Add New Customer</button>
@@ -442,9 +443,7 @@ async function pullFromSheet() {
   try {
     const data = await apiCall({ action:'getAllData', customer:c.customerName });
     c.entries = data.entries.map(e => {
-      // Normalize date: Apps Script may return various formats — force to YYYY-MM-DD string
       let dateStr = String(e.date).trim();
-      // If not already YYYY-MM-DD, try to parse and reformat
       if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
         const parsed = new Date(dateStr);
         if (!isNaN(parsed)) {
@@ -465,21 +464,78 @@ async function pullFromSheet() {
   } catch(err) { showToast('Refresh failed: ' + err.message, 'error'); }
 }
 
+// Re-imports every customer and all entries from the sheet.
+// Use this on a new machine or after clearing browser data.
+async function reloadAllFromSheet() {
+  if (!confirm('Re-import all customers and data from Google Sheets?\n\nAny local-only changes not yet saved to the sheet will be overwritten.')) return;
+  showToast('Reloading from Google Sheets…');
+  try {
+    const data = await apiCall({ action: 'getCustomerList' });
+    const sheetCustomers = (data.customers || []).filter(c => c.name !== 'Sheet1' && c.headers.length > 0);
+    if (!sheetCustomers.length) { showToast('No customer data found in sheet', 'error'); return; }
+
+    // Preserve any locally-set metric types where names match
+    const savedTypes = {};
+    allCustomers.forEach(c => { c.metrics.forEach(m => { savedTypes[c.customerName + '||' + m.name] = m.type; }); });
+
+    allCustomers = sheetCustomers.map(c => ({
+      id: uid(),
+      customerName: c.name,
+      reportTitle: '',
+      facility: '',
+      metrics: c.headers.map(h => ({ id: uid(), name: h, type: savedTypes[c.name + '||' + h] || 'whole' })),
+      entries: []
+    }));
+    activeId = allCustomers[0].id;
+    saveLocal();
+    closeSettingsModal();
+    renderAll();
+    await pullFromSheet();
+    showToast('Reloaded ' + allCustomers.length + ' customer(s) from Google Sheets', 'success');
+  } catch(err) { showToast('Reload failed: ' + err.message, 'error'); }
+}
+
 // ══════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════
-function init() {
+async function init() {
   loadLocal();
   document.getElementById('inputDate').value = todayStr();
 
   if (!allCustomers.length) {
-    // No customers: create first one and open settings
+    // No local data — try to bootstrap customer list from the Google Sheet
+    showToast('Loading from Google Sheets…');
+    try {
+      const data = await apiCall({ action: 'getCustomerList' });
+      const sheetCustomers = (data.customers || []).filter(c => c.name !== 'Sheet1' && c.headers.length > 0);
+      if (sheetCustomers.length) {
+        allCustomers = sheetCustomers.map(c => ({
+          id: uid(),
+          customerName: c.name,
+          reportTitle: '',
+          facility: '',
+          // Default metric types to 'whole'; user can adjust in Settings
+          metrics: c.headers.map(h => ({ id: uid(), name: h, type: 'whole' })),
+          entries: []
+        }));
+        activeId = allCustomers[0].id;
+        saveLocal();
+        renderAll();
+        // Pull full entry data for the active customer
+        await pullFromSheet();
+        showToast('Loaded ' + allCustomers.length + ' customer(s) from Google Sheets', 'success');
+        return;
+      }
+    } catch(err) {
+      // Sheet unreachable or empty — fall through
+    }
+    // Nothing in sheet either — start fresh
     const c = { id:uid(), customerName:'', reportTitle:'', facility:'', metrics:[], entries:[] };
     allCustomers.push(c); activeId = c.id; saveLocal();
     renderCustomerDropdown(); renderCustomerBadge();
     openSettingsModal();
   } else {
-    if (!activeId || !allCustomers.find(c=>c.id===activeId)) activeId = allCustomers[0].id;
+    if (!activeId || !allCustomers.find(c => c.id === activeId)) activeId = allCustomers[0].id;
     renderAll();
     if (cx()?.customerName) pullFromSheet();
   }
