@@ -303,6 +303,15 @@
         <button class="btn btn-primary btn-sm" onclick="emailSummary()" title="Open in Outlook">✉ Email Summary</button>
       </div>
     </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;" id="kpiHeaderRow">
+      <span style="font-family:var(--font-cond);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray-500);">Previous Working Day</span>
+      <button onclick="toggleKpiPanel()" id="kpiToggleBtn"
+        style="margin-left:auto;font-size:11px;font-weight:600;font-family:var(--font);padding:4px 10px;border:1.5px solid var(--gray-200);border-radius:5px;background:var(--white);color:var(--gray-500);cursor:pointer;transition:all 0.15s;"
+        onmouseover="this.style.borderColor='var(--navy)';this.style.color='var(--navy)'"
+        onmouseout="this.style.borderColor='var(--gray-200)';this.style.color='var(--gray-500)'">
+        ▲ Hide
+      </button>
+    </div>
     <div class="kpi-grid" id="kpiGrid"></div>
     <div class="chart-section" id="chartSection">
       <div class="empty-state"><p>No data to display</p><small>Enter data in the Data Input tab to see charts here.</small></div>
@@ -407,6 +416,7 @@ let activeId        = null; // id of current customer
 let editingDate     = null;
 let chartInstances  = [];
 let viewMode        = 'day'; // 'day' | 'week' | 'month'
+let kpiVisible      = true;
 
 function cx() { return allCustomers.find(c => c.id === activeId) || null; }
 
@@ -883,6 +893,19 @@ function setViewMode(mode, btn) {
   renderSummary();
 }
 
+function toggleKpiPanel() {
+  kpiVisible = !kpiVisible;
+  const grid = document.getElementById('kpiGrid');
+  const header = document.getElementById('kpiHeaderRow');
+  const btn = document.getElementById('kpiToggleBtn');
+  if (grid) {
+    grid.style.display = kpiVisible ? '' : 'none';
+    grid.style.marginBottom = kpiVisible ? '' : '0';
+  }
+  if (btn) btn.textContent = kpiVisible ? '▲ Hide' : '▼ Show';
+  if (header) header.style.marginBottom = kpiVisible ? '12px' : '16px';
+}
+
 function filteredEntries() {
   const c=cx(); if (!c) return [];
   const s=document.getElementById('filterStart').value;
@@ -961,13 +984,23 @@ function renderSummary() {
     if (m.type==='text') return `<div class="kpi-card" style="border-top-color:#6b21a8;">
       <div class="kpi-label">${esc(m.name)}</div>
       <div style="font-size:14px;font-weight:500;color:var(--navy);line-height:1.4;margin-top:4px;">${v!==undefined?esc(String(v)):'—'}</div>
-      <div class="kpi-sub">Previous Working Day</div></div>`;
-    const avg=avgOf(rawEntries,m.name);
+      </div>`;
     return `<div class="kpi-card">
       <div class="kpi-label">${esc(m.name)}</div>
       <div class="kpi-value">${fmtVal(v,m.type)}</div>
-      <div class="kpi-sub">Prev. Working Day · Avg: ${avg!==null?fmtVal(avg,m.type):'—'}</div></div>`;
+      </div>`;
   }).join('');
+
+  // Restore collapse state after re-render
+  const kpiGrid = document.getElementById('kpiGrid');
+  const kpiBtn  = document.getElementById('kpiToggleBtn');
+  const kpiHdr  = document.getElementById('kpiHeaderRow');
+  if (kpiGrid && !kpiVisible) {
+    kpiGrid.style.display = 'none';
+    kpiGrid.style.marginBottom = '0';
+    if (kpiBtn) kpiBtn.textContent = '▼ Show';
+    if (kpiHdr) kpiHdr.style.marginBottom = '16px';
+  }
 
   // Chart cards
   cs.innerHTML=c.metrics.map((m,i)=>{
