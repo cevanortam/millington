@@ -118,6 +118,7 @@
   .btn-outline { background: white; color: var(--gray-700); border: 1px solid var(--gray-300); }
   .btn-outline:hover { background: var(--gray-100); }
   .trend-period-btn.active { background: var(--navy); color: white; border-color: var(--navy); }
+  .route-window-btn.active { background: var(--red); color: white; border-color: var(--red); }
   .btn-sm { padding: 4px 10px; font-size: 12px; }
 
   /* Table */
@@ -374,6 +375,12 @@
     <select onchange="filterOrders()" id="filterCustomer">
       <option value="">All Customers</option>
     </select>
+    <div style="display:flex;gap:4px;align-items:center;">
+      <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray-500);white-space:nowrap;">Route By:</span>
+      <button class="btn btn-outline btn-sm route-window-btn" id="rw72" onclick="setRouteWindow(72, this)" title="Show orders with Route By date within 72 hours from now">72 hr</button>
+      <button class="btn btn-outline btn-sm route-window-btn" id="rw48" onclick="setRouteWindow(48, this)" title="Show orders with Route By date within 48 hours from now">48 hr</button>
+      <button class="btn btn-outline btn-sm route-window-btn" id="rw24" onclick="setRouteWindow(24, this)" title="Show orders with Route By date within 24 hours from now">24 hr</button>
+    </div>
     <button class="btn btn-outline btn-sm" id="dateFilterToggle" onclick="toggleDateFilters()" style="display:inline-flex;align-items:center;gap:5px;">
       📅 Date Filters <span id="dateFilterBadge" style="display:none;background:var(--red);color:white;border-radius:10px;font-size:10px;padding:1px 6px;font-weight:700;"></span>
     </button>
@@ -644,6 +651,7 @@ let currentPage = 1;
 const PAGE_SIZE = 50;
 let pendingDNs = [];
 let editBuffer = {};
+let routeWindowHours = 0; // 0 = no route-window filter active
 
 // ============================================================
 // INIT
@@ -870,6 +878,19 @@ const DATE_FILTERS = [
   ['df_released_from', 'df_released_to', 'date_released',  false],
 ];
 
+function setRouteWindow(hours, btn) {
+  // Toggle off if already active
+  if (routeWindowHours === hours) {
+    routeWindowHours = 0;
+    document.querySelectorAll('.route-window-btn').forEach(b => b.classList.remove('active'));
+  } else {
+    routeWindowHours = hours;
+    document.querySelectorAll('.route-window-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+  filterOrders();
+}
+
 function filterOrders() {
   const q = (document.getElementById('searchInput').value || '').toLowerCase();
   const fs = (document.getElementById('filterStatus').value || '').toLowerCase();
@@ -901,6 +922,16 @@ function filterOrders() {
     if (fo === 'open' && o.ship_date) return false;
     if (fo === 'closed' && !o.ship_date) return false;
     if (fc && (o.customer || '').toLowerCase() !== fc) return false;
+    // Route-by window filter
+    if (routeWindowHours > 0) {
+      if (!o.route_by_date) return false;
+      const rb = parseLocalDate(o.route_by_date);
+      if (!rb) return false;
+      const now = new Date();
+      const windowEnd = new Date(now.getTime() + routeWindowHours * 3600000);
+      // Show orders whose route-by date falls between now and the window end
+      if (rb < now || rb > windowEnd) return false;
+    }
     // Date range checks
     for (const { field, from, to } of dateRanges) {
       const raw = o[field];
@@ -936,6 +967,8 @@ function clearFilters() {
   document.getElementById('filterStatus').value = '';
   document.getElementById('filterOpen').value = '';
   document.getElementById('filterCustomer').value = '';
+  routeWindowHours = 0;
+  document.querySelectorAll('.route-window-btn').forEach(b => b.classList.remove('active'));
   clearDateFilters();
 }
 
@@ -1348,12 +1381,14 @@ function renderMetrics() {
 function exportCSV() {
   const cols = ['dn_so','waived_date','customer','route_by_date','cancel_date','units','ceva_id','po','routed_status','ship_date','date_released','s7','status','days_lost_hold','to_ltl','gridded','hold_reason','resolved','comments','created_at','updated_at'];
   const header = cols.join(',');
-  const rows = allOrders.map(o => cols.map(c => JSON.stringify(o[c]||'')).join(','));
+  const source = filteredOrders.length > 0 ? filteredOrders : allOrders;
+  const rows = source.map(o => cols.map(c => JSON.stringify(o[c]||'')).join(','));
   const csv = [header, ...rows].join('\n');
   const blob = new Blob([csv], {type:'text/csv'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'VAS_Orders_' + new Date().toISOString().slice(0,10) + '.csv';
+  const isFiltered = filteredOrders.length !== allOrders.length;
+  a.download = 'VAS_Orders_' + new Date().toISOString().slice(0,10) + (isFiltered ? '_filtered' : '') + '.csv';
   a.click();
 }
 
