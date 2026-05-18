@@ -365,31 +365,19 @@ async function loadData() {
   const saveEl = document.getElementById('saveStatus');
   if (saveEl) saveEl.textContent = '';
 
-  // Short timeout to show any error quickly
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 12000);
-
   try {
-    // Step 1: fetch metadata
-    let metaRes, metaText;
-    try {
-      metaRes = await fetch(FB_URL + '/meta.json', { signal: controller.signal });
-      metaText = await metaRes.text();
-    } catch(e) {
-      clearTimeout(timer);
-      if (e.name === 'AbortError') throw new Error('Request timed out — check Firebase rules allow public read');
-      throw new Error('Network error: ' + e.message);
-    }
-    clearTimeout(timer);
+    // Step 1: fetch metadata — read raw text first so we can show exactly what came back
+    setStatus('busy', '⏳ Step 1: reading metadata…');
+    const metaRes = await fetch(FB_URL + '/meta.json');
+    const metaText = await metaRes.text();
 
-    // Show the raw response if it's an error
     if (!metaRes.ok) {
-      throw new Error('Database HTTP ' + metaRes.status + ' — ' + metaText.slice(0, 100));
+      throw new Error('Metadata HTTP ' + metaRes.status + ' — ' + metaText.slice(0, 200));
     }
 
     let meta;
     try { meta = JSON.parse(metaText); }
-    catch(e) { throw new Error('Bad response: ' + metaText.slice(0, 100)); }
+    catch(e) { throw new Error('Metadata JSON parse failed. Raw: ' + metaText.slice(0, 200)); }
 
     if (!meta || !meta.chunkCount) {
       setStatus('idle', 'No saved data — import an Excel file to populate');
@@ -397,30 +385,21 @@ async function loadData() {
       return;
     }
 
-    // Step 2: fetch all chunks in parallel
+    // Step 2: fetch chunks one at a time so we know exactly which one fails
     const chunkCount = parseInt(meta.chunkCount);
-    setStatus('busy', '⏳ Loading ' + Number(meta.totalRows).toLocaleString() + ' records…');
+    setStatus('busy', '⏳ Step 2: loading ' + chunkCount + ' chunks (' + Number(meta.totalRows).toLocaleString() + ' records)…');
 
-    const chunkPromises = [];
-    for (let i = 0; i < chunkCount; i++) {
-      chunkPromises.push(
-        fetch(FB_URL + '/chunks/c' + i + '.json')
-          .then(async r => {
-            const txt = await r.text();
-            if (!r.ok) throw new Error('Chunk ' + i + ' HTTP ' + r.status + ': ' + txt.slice(0,80));
-            try { return JSON.parse(txt); }
-            catch(e) { throw new Error('Chunk ' + i + ' bad JSON: ' + txt.slice(0,80)); }
-          })
-      );
-    }
-    const chunks = await Promise.all(chunkPromises);
-
-    // Step 3: flatten and deserialize
     const allRows = [];
-    chunks.forEach((chunk, i) => {
-      if (!chunk) return;
-      if (Array.isArray(chunk)) chunk.forEach(r => { if (r && r.dateKey) allRows.push(r); });
-    });
+    for (let i = 0; i < chunkCount; i++) {
+      setStatus('busy', '⏳ Loading chunk ' + (i+1) + ' of ' + chunkCount + '…');
+      const r = await fetch(FB_URL + '/chunks/c' + i + '.json');
+      const txt = await r.text();
+      if (!r.ok) throw new Error('Chunk ' + i + ' HTTP ' + r.status + ': ' + txt.slice(0, 200));
+      let chunk;
+      try { chunk = JSON.parse(txt); }
+      catch(e) { throw new Error('Chunk ' + i + ' bad JSON: ' + txt.slice(0, 200)); }
+      if (Array.isArray(chunk)) chunk.forEach(row => { if (row && row.dateKey) allRows.push(row); });
+    }
 
     if (allRows.length === 0) {
       setStatus('idle', 'No records found — import an Excel file');
