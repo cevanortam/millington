@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IMSTAGING V1 — VAS Lane Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:    #003057;
+  --navy-deep: #001f3d;
+  --navy-mid:  #004a87;
+  --ceva-red:  #C8102E;
+  --bg:      #f4f6fa;
+  --surface: #ffffff;
+  --surface2: #eef1f6;
+  --surface3: #e2e7ef;
+  --border:  #cdd4df;
+  --border2: #b3bece;
+  --text:    #1a2340;
+  --text2:   #3d4f6b;
+  --text3:   #7a8aaa;
+  --accent:  #003057;
+  --accent2: #004a87;
+  --green:   #16a34a;
+  --yellow:  #d97706;
+  --red:     #C8102E;
+  --orange:  #ea580c;
+  --purple:  #7c3aed;
+  --cyan:    #0891b2;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Barlow', sans-serif;
+  font-size: 14px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── HEADER ── */
+.header {
+  background: var(--navy);
+  border-bottom: 3px solid var(--ceva-red);
+  padding: 0 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 60px;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+}
+.header-brand { display: flex; align-items: center; gap: 14px; }
+.header-logo {
+  height: 34px; width: auto; object-fit: contain;
+  filter: brightness(0) invert(1);
+}
+.header-divider { width: 1px; height: 28px; background: rgba(255,255,255,0.2); }
+.header-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 19px; font-weight: 700;
+  color: #fff; letter-spacing: 0.5px; text-transform: uppercase;
+}
+.header-sub { font-size: 11px; color: rgba(255,255,255,0.5); letter-spacing: 0.08em; text-transform: uppercase; }
+.header-right { display: flex; align-items: center; gap: 16px; }
+.live-badge {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: 600; color: #4ade80;
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+.live-dot { width: 7px; height: 7px; border-radius: 50%; background: #4ade80; animation: pulse 1.8s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.clock { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.7); }
+
+/* ── TABS ── */
+.tabs {
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  display: flex; padding: 0 24px; gap: 4px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.tab-btn {
+  padding: 12px 20px; font-size: 13px; font-weight: 600;
+  font-family: 'Barlow', sans-serif;
+  color: var(--text3); border: none; background: none; cursor: pointer;
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+  letter-spacing: 0.03em; transition: color 0.15s, border-color 0.15s;
+}
+.tab-btn:hover { color: var(--navy); }
+.tab-btn.active { color: var(--navy); border-bottom-color: var(--ceva-red); }
+.tab-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px;
+  font-size: 10px; font-weight: 700; background: var(--surface3); color: var(--text2); margin-left: 6px;
+}
+
+/* ── MAIN ── */
+.main { padding: 16px 24px; }
+.tab-page { display: none; }
+.tab-page.active { display: block; }
+
+/* ── SCAN BAR ── */
+.scan-bar {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px 18px;
+  display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap;
+}
+.scan-bar label { font-size: 11px; font-weight: 700; color: var(--text3); letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap; }
+.scan-input {
+  flex: 1; min-width: 160px; border: 1.5px solid var(--border2); border-radius: 6px;
+  padding: 7px 11px; font-family: 'IBM Plex Mono', monospace; font-size: 13px;
+  color: var(--text); background: var(--surface2); outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.scan-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); background: var(--surface); }
+.scan-input::placeholder { color: var(--text3); }
+.po-input {
+  border: 1.5px solid var(--border2); border-radius: 6px;
+  padding: 7px 11px; font-family: 'IBM Plex Mono', monospace; font-size: 13px;
+  color: var(--text); background: var(--surface2); outline: none; width: 150px; transition: border-color 0.15s;
+}
+.po-input:focus { border-color: var(--accent); }
+.lane-select {
+  border: 1.5px solid var(--border2); border-radius: 6px; padding: 7px 10px;
+  font-family: 'IBM Plex Sans', sans-serif; font-size: 13px; color: var(--text);
+  background: var(--surface2); cursor: pointer; outline: none; min-width: 95px;
+}
+.lane-select:focus { border-color: var(--accent); }
+
+/* ── BUTTONS ── */
+.btn {
+  padding: 7px 16px; border-radius: 6px; font-size: 13px; font-weight: 600;
+  cursor: pointer; border: none; transition: background 0.15s, transform 0.1s;
+  letter-spacing: 0.02em; white-space: nowrap;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary { background: var(--navy); color: #fff; }
+.btn-primary:hover { background: var(--navy-mid); }
+.btn-ghost { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
+.btn-ghost:hover { background: var(--surface3); }
+.btn-danger { background: var(--red); color: #fff; }
+.btn-warning { background: var(--yellow); color: #fff; }
+.btn-success { background: var(--green); color: #fff; }
+.btn-sm { padding: 4px 10px; font-size: 11px; }
+
+/* ── STATS ROW ── */
+.stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 16px; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+.stat-label { font-size: 10px; font-weight: 700; color: var(--text3); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 5px; }
+.stat-val { font-size: 24px; font-weight: 700; color: var(--text); font-family: 'IBM Plex Mono', monospace; line-height: 1; }
+.stat-val.green  { color: var(--green); }
+.stat-val.yellow { color: var(--yellow); }
+.stat-val.red    { color: var(--red); }
+
+/* ── SECTION HEADER ── */
+.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.section-title { font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 700; color: var(--navy); letter-spacing: 0.12em; text-transform: uppercase; }
+.legend { display: flex; align-items: center; gap: 12px; font-size: 11px; color: var(--text2); }
+.legend-item { display: flex; align-items: center; gap: 4px; }
+.legend-dot { width: 9px; height: 9px; border-radius: 2px; }
+.legend-dot.green  { background: var(--green); }
+.legend-dot.yellow { background: var(--yellow); }
+.legend-dot.red    { background: var(--red); }
+
+/* ── LANES — RESPONSIVE GRID (fills screen, no scroll) ── */
+.lanes-scroll-wrap { width: 100%; }
+
+.lanes-wrapper {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(172px, 1fr));
+  gap: 8px;
+  align-items: start;
+}
+
+.lanes-empty {
+  width: 100%; padding: 40px 20px; text-align: center; color: var(--text3);
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+}
+.lanes-empty-icon { font-size: 28px; margin-bottom: 8px; }
+.lanes-empty-text { font-size: 12px; }
+
+/* ── LANE COLUMN ── */
+.lane-group {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; overflow: hidden;
+  min-width: 0;
+}
+.lane-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 10px; background: var(--navy); border-bottom: 1px solid var(--border);
+}
+.lane-num  { font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 700; color: #fff; letter-spacing: 0.12em; text-transform: uppercase; }
+.lane-pcs  { font-size: 10px; color: rgba(255,255,255,0.55); font-family: 'IBM Plex Mono', monospace; }
+.lane-empty { padding: 18px 10px; text-align: center; color: var(--text3); font-size: 11px; }
+
+/* ── PO CARD ── */
+.po-card {
+  margin: 8px; border-radius: 8px; padding: 10px;
+  border: 2px solid transparent; cursor: pointer;
+  transition: transform 0.12s, box-shadow 0.12s; position: relative;
+}
+.po-card:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.1); }
+.po-card.green-card  { background: #f0fdf4; border-color: #86efac; }
+.po-card.yellow-card { background: #fffbeb; border-color: #fde68a; }
+.po-card.red-card    { background: #fef2f2; border-color: #fca5a5; animation: redPulse 3s ease-in-out infinite; }
+@keyframes redPulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(220,38,38,0); }
+  50%      { box-shadow: 0 0 0 5px rgba(220,38,38,0.13); }
+}
+.po-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 7px; }
+.po-number { font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 700; color: var(--text); letter-spacing: 0.04em; }
+.age-badge { font-size: 9px; font-weight: 700; padding: 2px 5px; border-radius: 3px; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; }
+.age-badge.green  { background: #dcfce7; color: #166534; }
+.age-badge.yellow { background: #fef3c7; color: #92400e; }
+.age-badge.red    { background: #fee2e2; color: #991b1b; }
+
+.po-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 6px; }
+.po-meta-label { font-size: 9px; font-weight: 600; color: var(--text3); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 1px; }
+.po-meta-val   { font-size: 13px; font-weight: 700; color: var(--text); font-family: 'IBM Plex Mono', monospace; }
+.po-inducted   { font-size: 10px; color: var(--text2); font-family: 'IBM Plex Mono', monospace; margin-bottom: 6px; }
+
+.sscc-list { border-top: 1px solid rgba(0,0,0,0.07); padding-top: 5px; max-height: 68px; overflow-y: auto; margin-bottom: 5px; }
+.sscc-item { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--text2); padding: 1px 0; line-height: 1.4; }
+
+.po-scan-hint {
+  font-size: 9px; color: var(--text3); text-align: center;
+  padding: 4px 0 3px; border-top: 1px dashed var(--border2); letter-spacing: 0.04em;
+}
+.po-card-footer { display: flex; gap: 4px; margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(0,0,0,0.07); }
+
+/* ── OUTBOUND TABLE ── */
+.outbound-table { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.outbound-table table { width: 100%; border-collapse: collapse; }
+.outbound-table th {
+  text-align: left; padding: 9px 12px; font-size: 10px; font-weight: 700;
+  font-family: 'Barlow Condensed', sans-serif; color: #fff; letter-spacing: 0.1em; text-transform: uppercase;
+  background: var(--navy); border-bottom: 1px solid var(--border);
+}
+.outbound-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); font-size: 12px; color: var(--text); }
+.outbound-table tr:last-child td { border-bottom: none; }
+.outbound-table tr:hover td { background: var(--surface2); }
+.mono { font-family: 'IBM Plex Mono', monospace; }
+
+/* ── STATUS BADGES ── */
+.status-badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; letter-spacing: 0.04em; text-transform: uppercase; }
+.status-inbound      { background: #dbeafe; color: #1e40af; }
+.status-relabeling   { background: #ede9fe; color: #5b21b6; }
+.status-repalletized { background: #fef3c7; color: #92400e; }
+.status-shipped      { background: #dcfce7; color: #166534; }
+
+/* ── MODAL ── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.45); z-index: 200; align-items: center; justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--surface); border-radius: 12px; padding: 22px;
+  width: 400px; max-width: 95vw; border: 1px solid var(--border);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+}
+.modal-title  { font-size: 15px; font-weight: 700; margin-bottom: 14px; color: var(--text); }
+.modal-body   { margin-bottom: 18px; color: var(--text2); line-height: 1.6; font-size: 13px; }
+.modal-footer { display: flex; gap: 8px; justify-content: flex-end; }
+.form-row { margin-bottom: 12px; }
+.form-label { font-size: 10px; font-weight: 700; color: var(--text3); letter-spacing: 0.08em; text-transform: uppercase; display: block; margin-bottom: 5px; }
+.form-input {
+  width: 100%; border: 1.5px solid var(--border2); border-radius: 6px;
+  padding: 8px 11px; font-size: 13px; font-family: 'IBM Plex Mono', monospace;
+  color: var(--text); background: var(--surface2); outline: none;
+}
+.form-input:focus { border-color: var(--accent); background: var(--surface); }
+
+/* Quick-scan info strip */
+.qs-info { display: flex; gap: 20px; padding: 10px 12px; margin-bottom: 14px; background: var(--surface2); border-radius: 8px; border: 1px solid var(--border); }
+.qs-info-label { font-size: 9px; font-weight: 700; color: var(--text3); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 2px; }
+.qs-info-val   { font-family: 'IBM Plex Mono', monospace; font-size: 15px; font-weight: 700; color: var(--text); }
+
+/* SSCCs inside quick-scan modal */
+.qs-recent-label { font-size: 10px; font-weight: 600; color: var(--text3); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 4px; }
+.qs-sscc-list { max-height: 80px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; background: var(--surface2); }
+.qs-sscc-item { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--text2); padding: 3px 8px; border-bottom: 1px solid var(--border); }
+.qs-sscc-item:last-child { border-bottom: none; }
+
+/* ── TOAST ── */
+.toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 300; display: flex; flex-direction: column; gap: 8px; }
+.toast {
+  background: var(--text); color: #fff; padding: 9px 14px; border-radius: 8px;
+  font-size: 13px; font-weight: 500; animation: slideIn 0.2s ease; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+.toast.success { background: var(--green); }
+.toast.error   { background: var(--red); }
+.toast.warning { background: var(--yellow); }
+@keyframes slideIn { from{transform:translateX(110%);opacity:0} to{transform:translateX(0);opacity:1} }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-brand">
+    <img class="header-logo"
+         src="https://www.freelogovectors.net/wp-content/uploads/2022/07/ceva-logistics-logo-freelogovectors.net_.png"
+         alt="CEVA Logistics"
+         onerror="this.style.display='none';document.getElementById('ceva-fallback').style.display='flex'">
+    <div id="ceva-fallback" style="display:none;align-items:baseline;gap:6px">
+      <span style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;color:#fff;letter-spacing:0.06em">CEVA</span>
+      <span style="font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;color:rgba(255,255,255,0.5);letter-spacing:0.2em;text-transform:uppercase">LOGISTICS</span>
+    </div>
+    <div class="header-divider"></div>
+    <div>
+      <div class="header-title">IMSTAGING</div>
+      <div class="header-sub">VAS Lane Dashboard — V1</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="live-badge"><div class="live-dot"></div><span id="connectionStatus">Connecting…</span></div>
+    <div class="clock" id="clock">--:--:--</div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('inbound',this)">Inbound Staging <span class="tab-badge" id="inboundCount">0</span></button>
+  <button class="tab-btn" onclick="switchTab('outbound',this)">Outbound / Shipped <span class="tab-badge" id="outboundCount">0</span></button>
+</div>
+
+<div class="main">
+
+  <!-- ═══ INBOUND ═══ -->
+  <div class="tab-page active" id="tab-inbound">
+
+    <div class="scan-bar">
+      <label>SCAN SSCC</label>
+      <input type="text" class="scan-input" id="ssccInput" placeholder="Scan or type SSCC barcode…" autocomplete="off">
+      <input type="text" class="po-input"   id="poInput"   placeholder="PO Number" autocomplete="off">
+      <select class="lane-select" id="laneSelect"><option value="">-- Lane --</option></select>
+      <button class="btn btn-primary" onclick="inductSSCC()">Induct</button>
+      <button class="btn btn-ghost"   onclick="openAddLaneModal()">+ Lane</button>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-label">Active POs</div><div class="stat-val" id="statActivePOs">0</div></div>
+      <div class="stat-card"><div class="stat-label">Total SSCCs</div><div class="stat-val" id="statSSCCs">0</div></div>
+      <div class="stat-card"><div class="stat-label">On Time</div><div class="stat-val green" id="statGreen">0</div></div>
+      <div class="stat-card"><div class="stat-label">Watch (2–4hr)</div><div class="stat-val yellow" id="statYellow">0</div></div>
+      <div class="stat-card"><div class="stat-label">Aged (&gt;4hr)</div><div class="stat-val red" id="statRed">0</div></div>
+    </div>
+
+    <div class="section-header">
+      <span class="section-title">Active Lanes</span>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot green"></div><span>&lt;2hr</span></div>
+        <div class="legend-item"><div class="legend-dot yellow"></div><span>2–4hr</span></div>
+        <div class="legend-item"><div class="legend-dot red"></div><span>&gt;4hr</span></div>
+        <span style="color:var(--text3);font-size:10px;margin-left:6px">· tap card to add SSCC</span>
+      </div>
+    </div>
+
+    <div class="lanes-scroll-wrap">
+      <div class="lanes-wrapper" id="lanesWrapper">
+        <div class="lanes-empty">
+          <div class="lanes-empty-icon">📦</div>
+          <div class="lanes-empty-text">No active lanes.<br>Click "+ Lane" to add one.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══ OUTBOUND ═══ -->
+  <div class="tab-page" id="tab-outbound">
+
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-label">Relabeling</div><div class="stat-val" id="statRelabeling">0</div></div>
+      <div class="stat-card"><div class="stat-label">Repalletized</div><div class="stat-val" id="statRepalletized">0</div></div>
+      <div class="stat-card"><div class="stat-label">Shipped</div><div class="stat-val green" id="statShipped">0</div></div>
+    </div>
+
+    <div class="section-header">
+      <span class="section-title">Outbound Activity Log</span>
+    </div>
+
+    <div class="outbound-table">
+      <table>
+        <thead>
+          <tr>
+            <th>PO Number</th><th>Lane</th><th>SSCCs</th>
+            <th>Status</th><th>Inducted</th><th>Last Updated</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="outboundTableBody">
+          <tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text3)">No outbound activity yet.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+</div><!-- /main -->
+
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ── ADD LANE ── -->
+<div class="modal-overlay" id="addLaneModal">
+  <div class="modal">
+    <div class="modal-title">Add Lane</div>
+    <div class="form-row">
+      <label class="form-label">Lane Number (1–99)</label>
+      <input type="number" class="form-input" id="newLaneNum" min="1" max="99" placeholder="e.g. 5">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('addLaneModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addLane()">Add Lane</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── QUICK SCAN (tap card) ── -->
+<div class="modal-overlay" id="quickScanModal">
+  <div class="modal">
+    <div class="modal-title">Add SSCC to PO</div>
+    <div class="qs-info">
+      <div><div class="qs-info-label">PO</div><div class="qs-info-val" id="qsPO">—</div></div>
+      <div><div class="qs-info-label">Lane</div><div class="qs-info-val" id="qsLane">—</div></div>
+      <div><div class="qs-info-label">SSCCs</div><div class="qs-info-val" id="qsCount">—</div></div>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Scan SSCC Barcode</label>
+      <input type="text" class="form-input" id="quickScanInput" placeholder="Scan or type SSCC…" autocomplete="off">
+    </div>
+    <div style="margin-top:2px">
+      <div class="qs-recent-label">SSCCs on this PO</div>
+      <div class="qs-sscc-list" id="qsSsccList"></div>
+    </div>
+    <div class="modal-footer" style="margin-top:14px">
+      <button class="btn btn-ghost" onclick="closeModal('quickScanModal')">Close</button>
+      <button class="btn btn-primary" onclick="quickAddSSCC()">Add SSCC</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── ADVANCE STATUS ── -->
+<div class="modal-overlay" id="moveOutModal">
+  <div class="modal">
+    <div class="modal-title">Advance PO Status</div>
+    <div class="modal-body" id="moveOutBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('moveOutModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmMoveOut()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── REVERSE ── -->
+<div class="modal-overlay" id="reverseModal">
+  <div class="modal">
+    <div class="modal-title">⚠️ Reverse Status</div>
+    <div class="modal-body" id="reverseBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('reverseModal')">Cancel</button>
+      <button class="btn btn-warning" onclick="confirmReverse()">Reverse</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── SHIP ── -->
+<div class="modal-overlay" id="shipModal">
+  <div class="modal">
+    <div class="modal-title">Ship PO</div>
+    <div class="modal-body" id="shipBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('shipModal')">Cancel</button>
+      <button class="btn btn-success" onclick="confirmShip()">Ship</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── REMOVE PO ── -->
+<div class="modal-overlay" id="removeModal">
+  <div class="modal">
+    <div class="modal-title">Remove PO from Lane</div>
+    <div class="modal-body" id="removeBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('removeModal')">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmRemove()">Remove</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════
+  FIREBASE + APP LOGIC
+══════════════════════════════ -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, set, push, onValue, remove, update }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDGACj8dK5K1Bz3fNOGxL-v1u4FuY6PDsw",
+  authDomain: "imstaging.firebaseapp.com",
+  databaseURL: "https://imstaging-default-rtdb.firebaseio.com",
+  projectId: "imstaging",
+  storageBucket: "imstaging.firebasestorage.app",
+  messagingSenderId: "994066787340",
+  appId: "1:994066787340:web:c08187fa72ef1d5fdf9229",
+  measurementId: "G-CPX56441ND"
+};
+
+// ── STATE ──
+let db;
+let lanesData = {}, posData = {}, outboundData = {};
+let activeLanes = [];
+let pendingMoveKey = null, pendingReverseKey = null, pendingShipKey = null, pendingRemoveKey = null;
+let quickScanKey = null;
+const STATUS_FLOW = ['INBOUND','RELABELING','REPALLETIZED','SHIPPED'];
+
+// ── FIREBASE INIT ──
+try {
+  const app = initializeApp(firebaseConfig);
+  db = getDatabase(app);
+
+  onValue(ref(db, '.info/connected'), snap => {
+    const live = snap.val() === true;
+    const el = document.getElementById('connectionStatus');
+    el.textContent = live ? 'Live' : 'Reconnecting…';
+    el.parentElement.style.color = live ? 'var(--green)' : 'var(--yellow)';
+  });
+
+  onValue(ref(db, 'imstaging/lanes'), snap => {
+    lanesData = snap.val() || {};
+    rebuildLaneSelect();
+    renderInbound();
+  });
+
+  onValue(ref(db, 'imstaging/pos'), snap => {
+    posData = snap.val() || {};
+    renderInbound();
+    updateStats();
+    syncQuickScanModal();
+  });
+
+  onValue(ref(db, 'imstaging/outbound'), snap => {
+    outboundData = snap.val() || {};
+    renderOutbound();
+    updateStats();
+  });
+
+} catch(e) {
+  document.getElementById('connectionStatus').textContent = 'Config error';
+}
+
+// ── CLOCK ──
+function tick() { document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-US',{hour12:false}); }
+setInterval(tick, 1000); tick();
+
+// ── TABS ──
+window.switchTab = function(tab, btn) {
+  document.querySelectorAll('.tab-page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  btn.classList.add('active');
+};
+
+// ── LANE SELECT ──
+function rebuildLaneSelect() {
+  activeLanes = Object.keys(lanesData).map(Number).sort((a,b) => a - b);
+  const sel = document.getElementById('laneSelect');
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">-- Lane --</option>';
+  activeLanes.forEach(n => {
+    const o = document.createElement('option');
+    o.value = n; o.textContent = 'Lane ' + n;
+    sel.appendChild(o);
+  });
+  if (prev) sel.value = prev;
+}
+
+// ── INDUCT SSCC (scan bar) ──
+window.inductSSCC = async function() {
+  if (!db) { toast('Firebase not connected.', 'error'); return; }
+  const sscc = document.getElementById('ssccInput').value.trim();
+  const po   = document.getElementById('poInput').value.trim().toUpperCase();
+  const lane = document.getElementById('laneSelect').value;
+  if (!sscc) { toast('Scan or enter an SSCC.', 'error'); return; }
+  if (!po)   { toast('Enter a PO number.', 'error'); return; }
+  if (!lane) { toast('Select a lane.', 'error'); return; }
+
+  let poKey = null;
+  for (const [k, v] of Object.entries(posData)) {
+    if (v.po === po && v.lane == lane && v.status === 'INBOUND') { poKey = k; break; }
+  }
+
+  // ── 1-PO-PER-LANE RULE ──
+  // If the lane already has an INBOUND PO and it's a DIFFERENT PO number, block it
+  if (!poKey) {
+    const laneOccupant = Object.values(posData).find(v => v.lane == lane && v.status === 'INBOUND');
+    if (laneOccupant) {
+      toast('Lane ' + lane + ' already has PO ' + laneOccupant.po + '. Advance or remove it first.', 'error');
+      return;
+    }
+  }
+
+  if (poKey) {
+    if ((posData[poKey].sscc || []).includes(sscc)) { toast('SSCC already scanned for this PO.', 'error'); return; }
+    const newList = [...(posData[poKey].sscc || []), sscc];
+    await update(ref(db, 'imstaging/pos/' + poKey), { sscc: newList, updated: Date.now() });
+    toast('SSCC added to PO ' + po, 'success');
+  } else {
+    await push(ref(db, 'imstaging/pos'), { po, lane: Number(lane), sscc: [sscc], inducted: Date.now(), updated: Date.now(), status: 'INBOUND' });
+    if (!lanesData[lane]) await set(ref(db, 'imstaging/lanes/' + lane), { created: Date.now() });
+    toast('PO ' + po + ' inducted into Lane ' + lane, 'success');
+  }
+  document.getElementById('ssccInput').value = '';
+  document.getElementById('poInput').value = '';
+  document.getElementById('laneSelect').value = '';
+  document.getElementById('ssccInput').focus();
+};
+document.getElementById('ssccInput').addEventListener('keydown', e => { if (e.key === 'Enter') window.inductSSCC(); });
+
+// ── ADD LANE ──
+window.openAddLaneModal = function() { document.getElementById('newLaneNum').value = ''; openModal('addLaneModal'); };
+window.addLane = async function() {
+  const n = parseInt(document.getElementById('newLaneNum').value);
+  if (!n || n < 1 || n > 99) { toast('Enter a lane number 1–99.', 'error'); return; }
+  if (lanesData[n]) { toast('Lane ' + n + ' already exists.', 'warning'); closeModal('addLaneModal'); return; }
+  await set(ref(db, 'imstaging/lanes/' + n), { created: Date.now() });
+  toast('Lane ' + n + ' added.', 'success');
+  closeModal('addLaneModal');
+};
+
+// ── QUICK SCAN — tap a PO card ──
+window.openQuickScan = function(poKey) {
+  quickScanKey = poKey;
+  document.getElementById('quickScanInput').value = '';
+  syncQuickScanModal();
+  openModal('quickScanModal');
+  setTimeout(() => document.getElementById('quickScanInput').focus(), 80);
+};
+
+// Keeps the modal header + list live as Firebase pushes updates
+function syncQuickScanModal() {
+  if (!quickScanKey || !posData[quickScanKey]) return;
+  const po = posData[quickScanKey];
+  document.getElementById('qsPO').textContent    = po.po;
+  document.getElementById('qsLane').textContent  = 'Lane ' + po.lane;
+  document.getElementById('qsCount').textContent = (po.sscc || []).length;
+  const listEl  = document.getElementById('qsSsccList');
+  const ssccArr = po.sscc || [];
+  listEl.innerHTML = ssccArr.length === 0
+    ? '<div class="qs-sscc-item" style="color:var(--text3)">None yet</div>'
+    : [...ssccArr].reverse().map(s => `<div class="qs-sscc-item">${s}</div>`).join('');
+}
+
+window.quickAddSSCC = async function() {
+  if (!quickScanKey) return;
+  const sscc = document.getElementById('quickScanInput').value.trim();
+  if (!sscc) { toast('Scan or type an SSCC.', 'error'); return; }
+  const po = posData[quickScanKey];
+  if (!po) { toast('PO not found — may have been moved.', 'error'); closeModal('quickScanModal'); return; }
+  if ((po.sscc || []).includes(sscc)) { toast('SSCC already on this PO.', 'error'); return; }
+  const newList = [...(po.sscc || []), sscc];
+  await update(ref(db, 'imstaging/pos/' + quickScanKey), { sscc: newList, updated: Date.now() });
+  toast('SSCC added — ' + newList.length + ' total on PO ' + po.po, 'success');
+  document.getElementById('quickScanInput').value = '';
+  document.getElementById('quickScanInput').focus();
+};
+document.getElementById('quickScanInput').addEventListener('keydown', e => { if (e.key === 'Enter') window.quickAddSSCC(); });
+
+// ── ADVANCE STATUS ──
+window.openMoveOut = function(e, poKey) {
+  e.stopPropagation();
+  pendingMoveKey = poKey;
+  const po = posData[poKey];
+  const nextStatus = STATUS_FLOW[STATUS_FLOW.indexOf(po.status) + 1];
+  if (!nextStatus || nextStatus === 'SHIPPED') {
+    pendingShipKey = poKey;
+    document.getElementById('shipBody').innerHTML = 'Systemically ship <strong>PO ' + po.po + '</strong> (' + (po.sscc||[]).length + ' SSCCs)? <strong>This cannot be reversed.</strong>';
+    openModal('shipModal'); return;
+  }
+  document.getElementById('moveOutBody').innerHTML = 'Advance <strong>PO ' + po.po + '</strong> from <strong>' + po.status + '</strong> → <strong>' + nextStatus + '</strong>?';
+  openModal('moveOutModal');
+};
+window.confirmMoveOut = async function() {
+  if (!pendingMoveKey) return;
+  const po = posData[pendingMoveKey];
+  const nextStatus = STATUS_FLOW[STATUS_FLOW.indexOf(po.status) + 1];
+  await push(ref(db, 'imstaging/outbound'), { ...po, status: nextStatus, updated: Date.now() });
+  await remove(ref(db, 'imstaging/pos/' + pendingMoveKey));
+  toast('PO ' + po.po + ' moved to ' + nextStatus, 'success');
+  closeModal('moveOutModal'); pendingMoveKey = null;
+};
+
+// ── SHIP ──
+window.confirmShip = async function() {
+  const key = pendingShipKey; if (!key) return;
+  const po = outboundData[key] || posData[key]; if (!po) return;
+  await update(ref(db, 'imstaging/outbound/' + key), { status: 'SHIPPED', shipped: Date.now(), updated: Date.now() });
+  if (posData[key]) await remove(ref(db, 'imstaging/pos/' + key));
+  toast('PO ' + po.po + ' marked SHIPPED.', 'success');
+  closeModal('shipModal'); pendingShipKey = null;
+};
+
+// ── REVERSE (outbound only, SHIPPED is locked) ──
+window.openReverse = function(poKey) {
+  pendingReverseKey = poKey;
+  const po = outboundData[poKey];
+  const prevStatus = STATUS_FLOW[STATUS_FLOW.indexOf(po.status) - 1];
+  document.getElementById('reverseBody').innerHTML = 'Reverse <strong>PO ' + po.po + '</strong> from <strong>' + po.status + '</strong> → <strong>' + prevStatus + '</strong>?';
+  openModal('reverseModal');
+};
+window.confirmReverse = async function() {
+  if (!pendingReverseKey) return;
+  const po = outboundData[pendingReverseKey];
+  const prevStatus = STATUS_FLOW[STATUS_FLOW.indexOf(po.status) - 1];
+  if (prevStatus === 'INBOUND') {
+    const entry = { ...po, status: 'INBOUND', updated: Date.now() };
+    delete entry.shipped;
+    await push(ref(db, 'imstaging/pos'), entry);
+    await remove(ref(db, 'imstaging/outbound/' + pendingReverseKey));
+    toast('PO ' + po.po + ' reversed back to INBOUND.', 'warning');
+  } else {
+    await update(ref(db, 'imstaging/outbound/' + pendingReverseKey), { status: prevStatus, updated: Date.now() });
+    toast('PO ' + po.po + ' reversed to ' + prevStatus, 'warning');
+  }
+  closeModal('reverseModal'); pendingReverseKey = null;
+};
+
+// ── REMOVE PO ──
+window.openRemovePO = function(e, poKey) {
+  e.stopPropagation();
+  pendingRemoveKey = poKey;
+  const po = posData[poKey];
+  document.getElementById('removeBody').innerHTML = 'Remove <strong>PO ' + po.po + '</strong> and its ' + (po.sscc||[]).length + ' SSCC(s) from Lane ' + po.lane + '? This will delete the record.';
+  openModal('removeModal');
+};
+window.confirmRemove = async function() {
+  if (!pendingRemoveKey) return;
+  const po = posData[pendingRemoveKey];
+  await remove(ref(db, 'imstaging/pos/' + pendingRemoveKey));
+  toast('PO ' + po.po + ' removed.', 'warning');
+  closeModal('removeModal'); pendingRemoveKey = null;
+};
+
+// ── OUTBOUND ADVANCE ──
+window.outboundAdvance = function(key) {
+  const po = outboundData[key];
+  const nextStatus = STATUS_FLOW[STATUS_FLOW.indexOf(po.status) + 1];
+  if (nextStatus === 'SHIPPED') {
+    pendingShipKey = key;
+    document.getElementById('shipBody').innerHTML = 'Systemically ship <strong>PO ' + po.po + '</strong>? <strong>This cannot be reversed.</strong>';
+    openModal('shipModal');
+  } else {
+    update(ref(db, 'imstaging/outbound/' + key), { status: nextStatus, updated: Date.now() });
+    toast('PO ' + po.po + ' advanced to ' + nextStatus, 'success');
+  }
+};
+
+// ── HELPERS ──
+function getAgeInfo(ts) {
+  const hrs = (Date.now() - ts) / 3600000;
+  if (hrs < 2) return { cls:'green', badge:'< 2hr', cardCls:'green-card', label: fmtDur(hrs) };
+  if (hrs < 4) return { cls:'yellow', badge:'2–4hr', cardCls:'yellow-card', label: fmtDur(hrs) };
+  return { cls:'red', badge:'> 4hr', cardCls:'red-card', label: fmtDur(hrs) };
+}
+function fmtDur(hrs) { return hrs < 1 ? Math.round(hrs*60)+'m' : hrs.toFixed(1)+'hr'; }
+function fmtTime(ts) { return new Date(ts).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}); }
+function fmtDate(ts) { return new Date(ts).toLocaleDateString('en-US',{month:'short',day:'numeric'})+' '+fmtTime(ts); }
+
+// ── RENDER INBOUND ──
+function renderInbound() {
+  const wrapper = document.getElementById('lanesWrapper');
+  if (activeLanes.length === 0) {
+    wrapper.innerHTML = `<div class="lanes-empty"><div class="lanes-empty-icon">📦</div><div class="lanes-empty-text">No active lanes.<br>Click "+ Lane" to add one.</div></div>`;
+    return;
+  }
+  let html = '';
+  activeLanes.forEach(laneNum => {
+    const lanePOs  = Object.entries(posData).filter(([k,v]) => v.lane == laneNum && v.status === 'INBOUND').sort((a,b) => a[1].inducted - b[1].inducted);
+    const totalPcs = lanePOs.reduce((s,[k,v]) => s + (v.sscc||[]).length, 0);
+    html += `<div class="lane-group">
+      <div class="lane-header">
+        <span class="lane-num">Lane ${laneNum}</span>
+        <span class="lane-pcs">${totalPcs} pcs</span>
+      </div>`;
+    if (lanePOs.length === 0) {
+      html += `<div class="lane-empty">— empty —</div>`;
+    } else {
+      lanePOs.forEach(([poKey, po]) => {
+        const age = getAgeInfo(po.inducted);
+        const ssccList = po.sscc || [];
+        html += `<div class="po-card ${age.cardCls}" onclick="openQuickScan('${poKey}')">
+          <div class="po-card-header">
+            <div class="po-number">${po.po}</div>
+            <span class="age-badge ${age.cls}">${age.badge}</span>
+          </div>
+          <div class="po-meta">
+            <div><div class="po-meta-label">SSCCs</div><div class="po-meta-val">${ssccList.length}</div></div>
+            <div><div class="po-meta-label">Age</div><div class="po-meta-val">${age.label}</div></div>
+          </div>
+          <div class="po-inducted">${fmtDate(po.inducted)}</div>
+          <div class="sscc-list">${ssccList.map(s=>`<div class="sscc-item">${s}</div>`).join('')}</div>
+          <div class="po-scan-hint">tap to add SSCC</div>
+          <div class="po-card-footer">
+            <button class="btn btn-ghost btn-sm" style="flex:1" onclick="openMoveOut(event,'${poKey}')">→ Advance</button>
+            <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="openRemovePO(event,'${poKey}')">✕</button>
+          </div>
+        </div>`;
+      });
+    }
+    html += `</div>`;
+  });
+  wrapper.innerHTML = html;
+}
+
+// ── RENDER OUTBOUND ──
+function renderOutbound() {
+  const tbody   = document.getElementById('outboundTableBody');
+  const entries = Object.entries(outboundData).sort((a,b) => b[1].updated - a[1].updated);
+  if (entries.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text3)">No outbound activity yet.</td></tr>';
+    return;
+  }
+  const sc = { RELABELING:'status-relabeling', REPALLETIZED:'status-repalletized', SHIPPED:'status-shipped', INBOUND:'status-inbound' };
+  tbody.innerHTML = entries.map(([key, po]) => {
+    const shipped = po.status === 'SHIPPED';
+    const idx     = STATUS_FLOW.indexOf(po.status);
+    const next    = STATUS_FLOW[idx+1];
+    const prev    = STATUS_FLOW[idx-1];
+    return `<tr>
+      <td class="mono">${po.po}</td>
+      <td>Lane ${po.lane}</td>
+      <td>${(po.sscc||[]).length}</td>
+      <td><span class="status-badge ${sc[po.status]||''}">${po.status}</span></td>
+      <td style="font-size:11px;color:var(--text2)">${fmtDate(po.inducted)}</td>
+      <td style="font-size:11px;color:var(--text2)">${fmtDate(po.updated)}</td>
+      <td>
+        <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
+          ${!shipped && next ? `<button class="btn btn-primary btn-sm" onclick="outboundAdvance('${key}')">${next==='SHIPPED'?'Ship':'→ '+next}</button>` : ''}
+          ${!shipped && prev ? `<button class="btn btn-ghost btn-sm" style="color:var(--yellow)" onclick="openReverse('${key}')">← Reverse</button>` : ''}
+          ${shipped ? `<span style="font-size:10px;color:var(--text3)">Shipped ${fmtDate(po.shipped)}</span>` : ''}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ── STATS ──
+function updateStats() {
+  const inb = Object.values(posData).filter(p => p.status === 'INBOUND');
+  let g=0,y=0,r=0,sc=0;
+  inb.forEach(p => {
+    const hrs = (Date.now() - p.inducted) / 3600000;
+    sc += (p.sscc||[]).length;
+    if (hrs < 2) g++; else if (hrs < 4) y++; else r++;
+  });
+  document.getElementById('statActivePOs').textContent = inb.length;
+  document.getElementById('statSSCCs').textContent     = sc;
+  document.getElementById('statGreen').textContent     = g;
+  document.getElementById('statYellow').textContent    = y;
+  document.getElementById('statRed').textContent       = r;
+  const ob = Object.values(outboundData);
+  document.getElementById('statRelabeling').textContent   = ob.filter(p=>p.status==='RELABELING').length;
+  document.getElementById('statRepalletized').textContent = ob.filter(p=>p.status==='REPALLETIZED').length;
+  document.getElementById('statShipped').textContent      = ob.filter(p=>p.status==='SHIPPED').length;
+  document.getElementById('inboundCount').textContent     = inb.length;
+  document.getElementById('outboundCount').textContent    = ob.length;
+}
+
+// Refresh age badges every 30s without a Firebase round-trip
+setInterval(() => { renderInbound(); updateStats(); }, 30000);
+
+// ── MODALS ──
+window.openModal  = id => document.getElementById(id).classList.add('open');
+window.closeModal = id => document.getElementById(id).classList.remove('open');
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+});
+
+// ── TOAST ──
+window.toast = function(msg, type='') {
+  const t = document.createElement('div');
+  t.className = 'toast ' + type; t.textContent = msg;
+  document.getElementById('toastContainer').appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+};
+</script>
+</body>
+</html>
