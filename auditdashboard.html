@@ -188,7 +188,8 @@ tbody td { padding:5px 8px; color:var(--text); white-space:nowrap; }
     <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 8 8h-2a6 6 0 1 1-1.76-4.24l-2.74 2.74H20V4l-2.35 2.35z"/></svg>
     Load Saved Data
   </button>
-  <span class="status-txt" id="statusTxt">Loading data…</span>
+  <span class="status-txt busy" id="statusTxt">⏳ Loading data…</span>
+  <span class="status-txt idle" id="saveStatus"></span>
 
   <div class="tsep"></div>
 
@@ -358,83 +359,118 @@ function setStatus(type, msg) {
 }
 
 // ─── FIREBASE: LOAD ───────────────────────────────────────────────
+function fbFetch(url) {
+  return Promise.race([
+    fetch(url),
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Timed out')), 15000))
+  ]);
+}
+
 async function loadData() {
   setStatus('busy', '⏳ Loading data…');
   setOverlayText('Loading data…');
+  // Clear save status when manually reloading
+  const saveEl = document.getElementById('saveStatus');
+  if (saveEl) { saveEl.textContent = ''; }
   try {
-    // Load the metadata node first to find out how many chunks exist
-    const metaRes = await fetch(FB_URL + '/meta.json');
-    if (!metaRes.ok) throw new Error('HTTP ' + metaRes.status);
+    // Step 1: fetch metadata
+    let metaRes;
+    try { metaRes = await fbFetch(FB_URL + '/meta.json'); }
+    catch(e) { throw new Error('Could not reach database (' + e.message + ')'); }
+    if (!metaRes.ok) throw new Error('Database error: HTTP ' + metaRes.status);
     const meta = await metaRes.json();
 
-    if (!meta || !meta.chunkCount) {
-      setStatus('idle', 'No data found — import an Excel file to populate');
+    if (!meta || meta === null || !meta.chunkCount) {
+      setStatus('idle', 'No saved data — import an Excel file to populate');
       setOverlayText('No data yet — import an Excel file');
       return;
     }
 
-    // Fetch all chunks in parallel
-    const chunkCount = meta.chunkCount;
-    setStatus('busy', `⏳ Loading ${meta.totalRows.toLocaleString()} records…`);
-    const fetches = [];
+    // Step 2: fetch all chunks in parallel
+    const chunkCount = parseInt(meta.chunkCount);
+    setStatus('busy', '⏳ Loading ' + Number(meta.totalRows).toLocaleString() + ' records…');
+    const chunkPromises = [];
     for (let i = 0; i < chunkCount; i++) {
-      fetches.push(fetch(FB_URL + '/chunks/c' + i + '.json').then(r => r.json()));
+      chunkPromises.push(
+        fbFetch(FB_URL + '/chunks/c' + i + '.json')
+          .then(r => { if (!r.ok) throw new Error('Chunk ' + i + ' error: HTTP ' + r.status); return r.json(); })
+      );
     }
-    const chunks = await Promise.all(fetches);
+    const chunks = await Promise.all(chunkPromises);
 
-    // Flatten all chunks into one array
+    // Step 3: flatten and deserialize
     const allRows = [];
-    chunks.forEach(chunk => {
+    chunks.forEach((chunk, i) => {
+      if (!chunk) { console.warn('Chunk ' + i + ' was null/empty'); return; }
       if (Array.isArray(chunk)) chunk.forEach(r => { if (r && r.dateKey) allRows.push(r); });
     });
 
+    if (allRows.length === 0) {
+      setStatus('idle', 'No records found — import an Excel file');
+      setOverlayText('No data yet — import an Excel file');
+      return;
+    }
+
     rawData = allRows.map(deserializeRow);
-    setStatus('ok', `✓ ${rawData.length.toLocaleString()} records loaded`);
+    setStatus('ok', '✓ ' + rawData.length.toLocaleString() + ' records loaded');
     populateFilters();
     applyFilters();
+
   } catch(err) {
     console.error('loadData error:', err);
-    setStatus('err', '✗ Load failed: ' + err.message);
+    setStatus('err', '✗ ' + err.message);
     setOverlayText('Load failed — import an Excel file');
   }
 }
 
-// ─── FIREBASE: SAVE (chunked to stay under size limits) ───────────
-const CHUNK_SIZE = 500;
+// ─── FIREBASE: SAVE (chunked PUT writes) ─────────────────────────
+const CHUNK_SIZE = 250;
 
 async function saveData(rows) {
-  setStatus('busy', `⏳ Saving ${rows.length.toLocaleString()} records…`);
+  // Save runs in the background — uses its own status element so it
+  // doesn't overwrite the import success message in statusTxt
+  const setSave = (type, msg) => {
+    const el = document.getElementById('saveStatus');
+    if (el) { el.className = 'status-txt ' + type; el.textContent = msg; }
+  };
+
+  setSave('busy', '⏳ Syncing to database…');
   try {
     const chunks = [];
     for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
       chunks.push(rows.slice(i, i + CHUNK_SIZE));
     }
 
-    // First, clear old chunks by deleting the chunks node
-    await fetch(FB_URL + '/chunks.json', { method: 'DELETE' });
-
-    // Write each chunk to its own path: /chunks/c0, /chunks/c1, etc.
+    // Write each chunk (PUT overwrites existing chunk at that path)
     for (let i = 0; i < chunks.length; i++) {
-      setStatus('busy', `⏳ Saving… ${Math.min((i + 1) * CHUNK_SIZE, rows.length).toLocaleString()} / ${rows.length.toLocaleString()}`);
+      setSave('busy', '⏳ Syncing… ' + Math.min((i + 1) * CHUNK_SIZE, rows.length).toLocaleString() + ' / ' + rows.length.toLocaleString());
       const res = await fetch(FB_URL + '/chunks/c' + i + '.json', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(chunks[i])
       });
-      if (!res.ok) throw new Error('HTTP ' + res.status + ' on chunk ' + i);
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error('HTTP ' + res.status + ': ' + errText.slice(0, 120));
+      }
     }
 
-    // Write metadata so the loader knows how many chunks to fetch
-    await fetch(FB_URL + '/meta.json', {
+    // Write metadata LAST — loader won't read until this exists
+    const metaRes = await fetch(FB_URL + '/meta.json', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chunkCount: chunks.length, totalRows: rows.length, savedAt: new Date().toISOString() })
+      body: JSON.stringify({
+        chunkCount: chunks.length,
+        totalRows: rows.length,
+        savedAt: new Date().toISOString()
+      })
     });
+    if (!metaRes.ok) throw new Error('Metadata write HTTP ' + metaRes.status);
 
-    setStatus('ok', `✓ ${rows.length.toLocaleString()} records saved`);
+    setSave('ok', '✓ Synced to database');
   } catch(err) {
     console.error('saveData error:', err);
-    setStatus('err', '✗ Save failed: ' + err.message);
+    setSave('err', '✗ Sync failed: ' + err.message);
   }
 }
 
@@ -566,11 +602,11 @@ function handleFile(e) {
       }
 
       rawData = rows;
-      setStatus('busy', `Parsed ${rows.length.toLocaleString()} records — saving…`);
+      setStatus('ok', '✓ ' + rows.length.toLocaleString() + ' records imported from "' + file.name + '"');
       populateFilters();
       applyFilters();
 
-      // Save to Firebase (serialize removes the non-JSON-safe Date object)
+      // Save to Firebase in background
       saveData(rows.map(serializeRow));
 
     } catch(err) {
