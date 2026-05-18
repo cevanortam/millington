@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Picking & Audit Accuracy — CEVA Logistics</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --navy:      #003057;
+  --navy-deep: #001f3d;
+  --red:       #C8102E;
+  --red-dark:  #a00e25;
+  --bg:        #f4f6fa;
+  --surface:   #ffffff;
+  --surface2:  #eef1f6;
+  --border:    #cdd4df;
+  --border2:   #b3bece;
+  --text:      #1a2340;
+  --text2:     #3d4f6b;
+  --text3:     #7a8aaa;
+  --green:     #16803a;
+  --amber:     #b45309;
+  --amber-bg:  #fef3e2;
+  --blue-acc:  #0369a1;
+  --blue-bg:   #e0f0fb;
+  --font:      'Barlow', sans-serif;
+  --cond:      'Barlow Condensed', sans-serif;
+}
+
+body { font-family:var(--font); background:var(--bg); color:var(--text); min-height:100vh; display:flex; flex-direction:column; font-size:13px; }
+
+/* ── HEADER ── */
+header { background:var(--navy); height:60px; display:flex; align-items:center; padding:0 20px; gap:14px; flex-shrink:0; box-shadow:0 2px 8px rgba(0,0,0,0.25); position:sticky; top:0; z-index:300; }
+.header-logo { height:30px; width:auto; object-fit:contain; filter:brightness(0) invert(1); }
+.hd { width:1px; height:26px; background:rgba(255,255,255,0.2); flex-shrink:0; }
+.header-title { font-family:var(--cond); font-size:20px; font-weight:700; color:#fff; letter-spacing:.5px; text-transform:uppercase; flex:1; }
+.header-kpis { display:flex; gap:8px; }
+.kpi-pill { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.14); border-radius:6px; padding:5px 14px; text-align:center; min-width:100px; }
+.kpi-pill .kv { font-family:var(--cond); font-size:20px; font-weight:700; color:#fff; line-height:1.1; }
+.kpi-pill .kl { font-size:10px; color:rgba(255,255,255,.55); text-transform:uppercase; letter-spacing:.5px; }
+.kpi-pill.hl .kv { color:#fbbf24; }
+
+/* ── TOOLBAR ── */
+.toolbar { background:var(--surface); border-bottom:2px solid var(--border); padding:8px 20px; display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+.import-btn { background:var(--red); color:#fff; border:none; padding:7px 18px; border-radius:5px; font-family:var(--cond); font-size:15px; font-weight:700; letter-spacing:.4px; cursor:pointer; display:flex; align-items:center; gap:6px; transition:background .15s; flex-shrink:0; }
+.import-btn:hover { background:var(--red-dark); }
+.load-btn { background:var(--navy); color:#fff; border:none; padding:7px 18px; border-radius:5px; font-family:var(--cond); font-size:15px; font-weight:700; letter-spacing:.4px; cursor:pointer; display:flex; align-items:center; gap:6px; transition:background .15s; flex-shrink:0; }
+.load-btn:hover { background:var(--navy-deep); }
+#fileInput { display:none; }
+.status-txt { font-size:12px; color:var(--text3); flex:1; min-width:120px; }
+.status-txt.ok  { color:var(--green); font-weight:500; }
+.status-txt.err { color:var(--red);   font-weight:500; }
+.status-txt.busy { color:var(--amber); font-weight:500; }
+.tsep { width:1px; height:22px; background:var(--border); flex-shrink:0; }
+
+/* ── MULTI-SELECT ── */
+.ms-wrap { position:relative; flex-shrink:0; }
+.ms-label-row { display:flex; align-items:center; gap:6px; }
+.ms-label-row label { font-size:11px; font-weight:600; color:var(--text3); text-transform:uppercase; letter-spacing:.4px; white-space:nowrap; }
+.ms-trigger { background:var(--surface2); border:1px solid var(--border); color:var(--text); border-radius:4px; padding:4px 28px 4px 8px; font-family:var(--font); font-size:12px; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:110px; max-width:160px; position:relative; user-select:none; transition:border-color .15s; }
+.ms-trigger:hover, .ms-trigger.open { border-color:var(--navy); }
+.ms-trigger::after { content:'▾'; position:absolute; right:7px; top:50%; transform:translateY(-50%); font-size:10px; color:var(--text3); pointer-events:none; }
+.ms-trigger.has-selection { border-color:var(--navy); background:#e8f0fb; color:var(--navy); font-weight:600; }
+.ms-dropdown { position:absolute; top:calc(100% + 4px); left:0; min-width:180px; max-width:260px; background:var(--surface); border:1px solid var(--border2); border-radius:6px; box-shadow:0 6px 20px rgba(0,0,0,0.12); z-index:400; display:none; overflow:hidden; }
+.ms-dropdown.open { display:block; }
+.ms-search { width:100%; border:none; border-bottom:1px solid var(--border); padding:7px 10px; font-family:var(--font); font-size:12px; color:var(--text); outline:none; background:var(--surface2); }
+.ms-actions { display:flex; border-bottom:1px solid var(--border); }
+.ms-act-btn { flex:1; background:none; border:none; padding:5px 0; font-size:11px; font-weight:600; color:var(--navy); cursor:pointer; font-family:var(--font); transition:background .1s; }
+.ms-act-btn:hover { background:var(--surface2); }
+.ms-act-btn + .ms-act-btn { border-left:1px solid var(--border); }
+.ms-list { max-height:200px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:var(--border2) transparent; }
+.ms-list::-webkit-scrollbar { width:5px; }
+.ms-list::-webkit-scrollbar-thumb { background:var(--border2); border-radius:3px; }
+.ms-option { display:flex; align-items:center; gap:8px; padding:6px 10px; cursor:pointer; font-size:12px; color:var(--text); transition:background .1s; }
+.ms-option:hover { background:var(--surface2); }
+.ms-option input[type=checkbox] { accent-color:var(--navy); width:13px; height:13px; cursor:pointer; flex-shrink:0; }
+.ms-option span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+/* error-only filter */
+.fg { display:flex; align-items:center; gap:6px; flex-shrink:0; }
+.fg label { font-size:11px; font-weight:600; color:var(--text3); text-transform:uppercase; letter-spacing:.4px; white-space:nowrap; }
+.fg select { background:var(--surface2); border:1px solid var(--border); color:var(--text); border-radius:4px; padding:4px 8px; font-family:var(--font); font-size:12px; outline:none; cursor:pointer; }
+.fg select:focus { border-color:var(--navy); }
+.clear-all-btn { background:none; border:1px solid var(--border2); color:var(--text3); padding:4px 10px; border-radius:4px; font-size:11px; font-family:var(--font); cursor:pointer; transition:all .15s; flex-shrink:0; }
+.clear-all-btn:hover { border-color:var(--red); color:var(--red); }
+
+/* ── MAIN GRID ── */
+.main { flex:1; padding:14px 16px; display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.span2 { grid-column:span 2; }
+.panel { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:14px 16px; position:relative; overflow:hidden; }
+.panel::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:var(--navy); border-radius:8px 8px 0 0; }
+.ptitle { font-family:var(--cond); font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.8px; color:var(--navy); margin-bottom:12px; }
+
+/* ── CHARTS ── */
+.scroll-out { overflow-x:auto; scrollbar-width:thin; scrollbar-color:var(--border2) transparent; }
+.scroll-out::-webkit-scrollbar { height:5px; }
+.scroll-out::-webkit-scrollbar-thumb { background:var(--border2); border-radius:3px; }
+.cwrap { position:relative; }
+
+/* ── THREE-COL ── */
+.three-col { grid-column:span 2; display:grid; grid-template-columns:1fr 220px 1fr; gap:12px; }
+
+/* ── HBARS ── */
+.hbar-list { display:flex; flex-direction:column; gap:5px; }
+.hbar-row  { display:flex; align-items:center; gap:8px; }
+.hbar-lbl  { font-size:11px; color:var(--text2); width:72px; text-align:right; flex-shrink:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600; }
+.hbar-track { flex:1; background:var(--surface2); border-radius:3px; height:18px; overflow:hidden; border:1px solid var(--border); }
+.hbar-fill  { height:100%; background:var(--navy); border-radius:2px; transition:width .5s ease; display:flex; align-items:center; padding-left:6px; }
+.hbar-fill.red { background:var(--red); }
+.hbar-cnt   { font-size:10px; font-weight:700; font-family:var(--cond); color:#fff; white-space:nowrap; }
+
+/* ── DONUT ── */
+.donut-area { display:flex; flex-direction:column; align-items:center; gap:10px; }
+.donut-wrap { position:relative; display:flex; align-items:center; justify-content:center; }
+.donut-center { position:absolute; text-align:center; pointer-events:none; }
+.donut-center .dcv { font-family:var(--cond); font-size:26px; font-weight:800; color:var(--navy); line-height:1; }
+.donut-center .dcl { font-size:10px; color:var(--text3); text-transform:uppercase; }
+.donut-legend { display:flex; flex-direction:column; gap:5px; width:100%; }
+.dl-row { display:flex; align-items:center; justify-content:space-between; padding:4px 8px; border-radius:4px; background:var(--surface2); }
+.dl-left { display:flex; align-items:center; gap:6px; }
+.dl-dot  { width:10px; height:10px; border-radius:2px; flex-shrink:0; }
+.dl-name { font-size:11px; color:var(--text2); font-weight:500; }
+.dl-val  { font-family:var(--cond); font-size:13px; font-weight:700; color:var(--text); }
+.dl-pct  { font-size:10px; color:var(--text3); margin-left:3px; }
+
+/* ── TABLE ── */
+.tbl-scroll { overflow:auto; max-height:230px; scrollbar-width:thin; scrollbar-color:var(--border2) transparent; }
+.tbl-scroll::-webkit-scrollbar { width:5px; height:5px; }
+.tbl-scroll::-webkit-scrollbar-thumb { background:var(--border2); border-radius:3px; }
+table { width:100%; border-collapse:collapse; font-size:11px; }
+thead th { background:var(--navy); color:rgba(255,255,255,.85); font-family:var(--cond); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; padding:6px 8px; position:sticky; top:0; text-align:left; white-space:nowrap; z-index:1; }
+tbody tr { border-bottom:1px solid var(--border); transition:background .1s; }
+tbody tr:hover { background:var(--surface2); }
+tbody tr.err-row { background:#fff7f7; }
+tbody tr.err-row:hover { background:#ffeaed; }
+tbody td { padding:5px 8px; color:var(--text); white-space:nowrap; }
+.ebadge { display:inline-block; padding:1px 7px; border-radius:3px; font-size:10px; font-weight:700; font-family:var(--cond); }
+.eb-over  { background:var(--blue-bg);  color:var(--blue-acc); }
+.eb-short { background:#fde8eb;          color:var(--red); }
+.eb-wrong { background:var(--amber-bg); color:var(--amber); }
+
+/* ── PAGINATION ── */
+.pag-row { display:flex; align-items:center; justify-content:space-between; margin-top:8px; font-size:11px; color:var(--text3); }
+.pag-btns { display:flex; gap:6px; }
+.pag-btn { background:var(--surface2); border:1px solid var(--border); color:var(--text2); padding:3px 12px; border-radius:4px; cursor:pointer; font-size:11px; font-family:var(--font); font-weight:600; transition:all .15s; }
+.pag-btn:hover:not(:disabled) { border-color:var(--navy); color:var(--navy); }
+.pag-btn:disabled { opacity:.35; cursor:default; }
+
+/* ── NO-DATA OVERLAY ── */
+.nd { position:absolute; inset:0; background:rgba(244,246,250,.9); display:flex; align-items:center; justify-content:center; border-radius:8px; z-index:5; color:var(--text3); font-size:12px; pointer-events:none; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <img class="header-logo"
+    src="https://www.freelogovectors.net/wp-content/uploads/2022/07/ceva-logistics-logo-freelogovectors.net_.png"
+    alt="CEVA Logistics"
+    onerror="this.style.display='none';document.getElementById('logofb').style.display='flex'">
+  <div id="logofb" style="display:none;align-items:baseline;gap:5px;">
+    <span style="font-family:var(--cond);font-size:22px;font-weight:700;color:#fff;">CEVA</span>
+    <span style="font-family:var(--cond);font-size:11px;color:rgba(255,255,255,.55);letter-spacing:2px;">LOGISTICS</span>
+  </div>
+  <div class="hd"></div>
+  <div class="header-title">Picking &amp; Audit Accuracy</div>
+  <div class="header-kpis">
+    <div class="kpi-pill"><div class="kv" id="kpi-units">—</div><div class="kl">Units Counted</div></div>
+    <div class="kpi-pill hl"><div class="kv" id="kpi-acc">—</div><div class="kl">Avg Accuracy</div></div>
+    <div class="kpi-pill"><div class="kv" id="kpi-total">—</div><div class="kl">Total Audits</div></div>
+    <div class="kpi-pill"><div class="kv" id="kpi-errors">—</div><div class="kl">Total Errors</div></div>
+  </div>
+</header>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <input type="file" id="fileInput" accept=".xlsx,.xls" onchange="handleFile(event)">
+  <button class="import-btn" onclick="document.getElementById('fileInput').click()">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+    Import Excel
+  </button>
+  <button class="load-btn" onclick="loadData()">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 8 8h-2a6 6 0 1 1-1.76-4.24l-2.74 2.74H20V4l-2.35 2.35z"/></svg>
+    Load Saved Data
+  </button>
+  <span class="status-txt" id="statusTxt">Loading data…</span>
+
+  <div class="tsep"></div>
+
+  <div class="ms-label-row">
+    <label>Date</label>
+    <div class="ms-wrap">
+      <div class="ms-trigger" id="trig-date" onclick="toggleDrop('date')">All Dates</div>
+      <div class="ms-dropdown" id="drop-date">
+        <input class="ms-search" type="text" placeholder="Search…" oninput="filterOpts('date',this.value)">
+        <div class="ms-actions"><button class="ms-act-btn" onclick="selectAll('date')">All</button><button class="ms-act-btn" onclick="clearSel('date')">Clear</button></div>
+        <div class="ms-list" id="list-date"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ms-label-row">
+    <label>Auditor</label>
+    <div class="ms-wrap">
+      <div class="ms-trigger" id="trig-auditor" onclick="toggleDrop('auditor')">All Auditors</div>
+      <div class="ms-dropdown" id="drop-auditor">
+        <input class="ms-search" type="text" placeholder="Search…" oninput="filterOpts('auditor',this.value)">
+        <div class="ms-actions"><button class="ms-act-btn" onclick="selectAll('auditor')">All</button><button class="ms-act-btn" onclick="clearSel('auditor')">Clear</button></div>
+        <div class="ms-list" id="list-auditor"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ms-label-row">
+    <label>Picker</label>
+    <div class="ms-wrap">
+      <div class="ms-trigger" id="trig-picker" onclick="toggleDrop('picker')">All Pickers</div>
+      <div class="ms-dropdown" id="drop-picker">
+        <input class="ms-search" type="text" placeholder="Search…" oninput="filterOpts('picker',this.value)">
+        <div class="ms-actions"><button class="ms-act-btn" onclick="selectAll('picker')">All</button><button class="ms-act-btn" onclick="clearSel('picker')">Clear</button></div>
+        <div class="ms-list" id="list-picker"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ms-label-row">
+    <label>Location</label>
+    <div class="ms-wrap">
+      <div class="ms-trigger" id="trig-loc" onclick="toggleDrop('loc')">All Locations</div>
+      <div class="ms-dropdown" id="drop-loc">
+        <input class="ms-search" type="text" placeholder="Search…" oninput="filterOpts('loc',this.value)">
+        <div class="ms-actions"><button class="ms-act-btn" onclick="selectAll('loc')">All</button><button class="ms-act-btn" onclick="clearSel('loc')">Clear</button></div>
+        <div class="ms-list" id="list-loc"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="fg">
+    <label>Records</label>
+    <select id="fError" onchange="applyFilters()">
+      <option value="ALL">All Records</option>
+      <option value="YES">Errors Only</option>
+      <option value="NO">No Errors</option>
+    </select>
+  </div>
+
+  <button class="clear-all-btn" onclick="clearAllFilters()">✕ Clear Filters</button>
+</div>
+
+<!-- MAIN GRID -->
+<div class="main">
+
+  <div class="panel span2" id="p-picker">
+    <div class="nd" id="nd-picker">Loading data…</div>
+    <div class="ptitle">Picker Accuracy (Audit Percentage)</div>
+    <div class="scroll-out"><div class="cwrap" id="pickerWrap" style="min-width:600px;height:220px;"><canvas id="cPicker"></canvas></div></div>
+  </div>
+
+  <div class="panel" id="p-auditor">
+    <div class="nd" id="nd-auditor">Loading data…</div>
+    <div class="ptitle">Errors Reported by Auditor</div>
+    <div class="scroll-out"><div class="cwrap" id="auditorWrap" style="min-width:480px;height:220px;"><canvas id="cAuditor"></canvas></div></div>
+  </div>
+
+  <div class="panel" id="p-time">
+    <div class="nd" id="nd-time">Loading data…</div>
+    <div class="ptitle">Errors by Audit Time</div>
+    <div class="cwrap" style="height:220px;"><canvas id="cTime"></canvas></div>
+  </div>
+
+  <div class="three-col">
+    <div class="panel" id="p-loc">
+      <div class="nd" id="nd-loc">Loading data…</div>
+      <div class="ptitle">Errors by Location (Top 10)</div>
+      <div class="hbar-list" id="locBars"></div>
+    </div>
+
+    <div class="panel" id="p-donut">
+      <div class="nd" id="nd-donut">Loading data…</div>
+      <div class="ptitle">Error Breakdown</div>
+      <div class="donut-area">
+        <div class="donut-wrap" style="width:140px;height:140px;">
+          <canvas id="cDonut" style="width:140px;height:140px;"></canvas>
+          <div class="donut-center" id="dcenter"><div class="dcv">—</div><div class="dcl">Total Errors</div></div>
+        </div>
+        <div class="donut-legend">
+          <div class="dl-row"><div class="dl-left"><div class="dl-dot" style="background:#C8102E;"></div><div class="dl-name">Short</div></div><div><span class="dl-val" id="dl-short">0</span><span class="dl-pct" id="dlp-short"></span></div></div>
+          <div class="dl-row"><div class="dl-left"><div class="dl-dot" style="background:#0369a1;"></div><div class="dl-name">Over</div></div><div><span class="dl-val" id="dl-over">0</span><span class="dl-pct" id="dlp-over"></span></div></div>
+          <div class="dl-row"><div class="dl-left"><div class="dl-dot" style="background:#b45309;"></div><div class="dl-name">Wrong Pick</div></div><div><span class="dl-val" id="dl-wrong">0</span><span class="dl-pct" id="dlp-wrong"></span></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="p-pickerErr">
+      <div class="nd" id="nd-pickerErr">Loading data…</div>
+      <div class="ptitle">Top Pickers by Error Count</div>
+      <div class="hbar-list" id="pickerErrBars"></div>
+    </div>
+  </div>
+
+  <div class="panel span2">
+    <div class="ptitle">Audit Detail</div>
+    <div class="tbl-scroll">
+      <table>
+        <thead><tr>
+          <th>Audit Date</th><th>Time</th><th>Auditor</th>
+          <th>Carton TRK ID</th><th>IML Order #</th><th>DN #</th>
+          <th>Part ID</th><th>Description</th><th>UPC Code</th>
+          <th>Picker</th><th>Location</th>
+          <th>Conf Qty</th><th>Audit Qty</th>
+          <th>Over</th><th>Short</th><th>Wrong</th>
+        </tr></thead>
+        <tbody id="tblBody">
+          <tr><td colspan="16" style="text-align:center;color:var(--text3);padding:24px;">Loading data…</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pag-row">
+      <span id="pagInfo">—</span>
+      <div class="pag-btns">
+        <button class="pag-btn" id="prevBtn" onclick="changePage(-1)" disabled>◀ Prev</button>
+        <button class="pag-btn" id="nextBtn" onclick="changePage(1)" disabled>Next ▶</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ─── FIREBASE CONFIG ──────────────────────────────────────────────
+const FB_URL = 'https://pickingaccuracy-e4137-default-rtdb.firebaseio.com';
+// Data is stored at /auditRows.json as a flat array
+
+// ─── STATE ────────────────────────────────────────────────────────
+let rawData = [], filteredData = [];
+let curPage = 1;
+const PAGE_SIZE = 50;
+let cPicker=null, cAuditor=null, cTime=null, cDonut=null;
+
+const msState    = { date:new Set(), auditor:new Set(), picker:new Set(), loc:new Set() };
+const msAllVals  = { date:[], auditor:[], picker:[], loc:[] };
+const msFieldMap = { date:'dateKey', auditor:'auditor', picker:'picker', loc:'confLocId' };
+const msLabels   = { date:'All Dates', auditor:'All Auditors', picker:'All Pickers', loc:'All Locations' };
+
+Chart.defaults.font.family = "'Barlow', sans-serif";
+Chart.defaults.color = '#7a8aaa';
+
+// ─── STATUS HELPER ────────────────────────────────────────────────
+function setStatus(type, msg) {
+  const el = document.getElementById('statusTxt');
+  el.className = 'status-txt ' + type;
+  el.textContent = msg;
+}
+
+// ─── FIREBASE: LOAD ───────────────────────────────────────────────
+async function loadData() {
+  setStatus('busy', '⏳ Loading data…');
+  setOverlayText('Loading data…');
+  try {
+    // Load the metadata node first to find out how many chunks exist
+    const metaRes = await fetch(FB_URL + '/meta.json');
+    if (!metaRes.ok) throw new Error('HTTP ' + metaRes.status);
+    const meta = await metaRes.json();
+
+    if (!meta || !meta.chunkCount) {
+      setStatus('idle', 'No data found — import an Excel file to populate');
+      setOverlayText('No data yet — import an Excel file');
+      return;
+    }
+
+    // Fetch all chunks in parallel
+    const chunkCount = meta.chunkCount;
+    setStatus('busy', `⏳ Loading ${meta.totalRows.toLocaleString()} records…`);
+    const fetches = [];
+    for (let i = 0; i < chunkCount; i++) {
+      fetches.push(fetch(FB_URL + '/chunks/c' + i + '.json').then(r => r.json()));
+    }
+    const chunks = await Promise.all(fetches);
+
+    // Flatten all chunks into one array
+    const allRows = [];
+    chunks.forEach(chunk => {
+      if (Array.isArray(chunk)) chunk.forEach(r => { if (r && r.dateKey) allRows.push(r); });
+    });
+
+    rawData = allRows.map(deserializeRow);
+    setStatus('ok', `✓ ${rawData.length.toLocaleString()} records loaded`);
+    populateFilters();
+    applyFilters();
+  } catch(err) {
+    console.error('loadData error:', err);
+    setStatus('err', '✗ Load failed: ' + err.message);
+    setOverlayText('Load failed — import an Excel file');
+  }
+}
+
+// ─── FIREBASE: SAVE (chunked to stay under size limits) ───────────
+const CHUNK_SIZE = 500;
+
+async function saveData(rows) {
+  setStatus('busy', `⏳ Saving ${rows.length.toLocaleString()} records…`);
+  try {
+    const chunks = [];
+    for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
+      chunks.push(rows.slice(i, i + CHUNK_SIZE));
+    }
+
+    // First, clear old chunks by deleting the chunks node
+    await fetch(FB_URL + '/chunks.json', { method: 'DELETE' });
+
+    // Write each chunk to its own path: /chunks/c0, /chunks/c1, etc.
+    for (let i = 0; i < chunks.length; i++) {
+      setStatus('busy', `⏳ Saving… ${Math.min((i + 1) * CHUNK_SIZE, rows.length).toLocaleString()} / ${rows.length.toLocaleString()}`);
+      const res = await fetch(FB_URL + '/chunks/c' + i + '.json', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(chunks[i])
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status + ' on chunk ' + i);
+    }
+
+    // Write metadata so the loader knows how many chunks to fetch
+    await fetch(FB_URL + '/meta.json', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chunkCount: chunks.length, totalRows: rows.length, savedAt: new Date().toISOString() })
+    });
+
+    setStatus('ok', `✓ ${rows.length.toLocaleString()} records saved`);
+  } catch(err) {
+    console.error('saveData error:', err);
+    setStatus('err', '✗ Save failed: ' + err.message);
+  }
+}
+
+// ─── SERIALIZE / DESERIALIZE ──────────────────────────────────────
+// Store plain objects — Firebase handles JSON natively, no tricks needed
+function serializeRow(r) {
+  return {
+    dateKey:     r.dateKey,
+    dateFmt:     r.dateFmt,
+    auditTime:   r.auditTime,
+    auditHour:   r.auditHour,
+    auditMin:    r.auditMin,
+    cartonTrkId: r.cartonTrkId,
+    imlOrderNbr: r.imlOrderNbr,
+    dnNumber:    r.dnNumber,
+    partId:      r.partId,
+    partDesc:    r.partDesc,
+    upcCode:     r.upcCode,
+    picker:      r.picker,
+    confLocId:   r.confLocId,
+    confQty:     r.confQty,
+    auditQty:    r.auditQty,
+    auditor:     r.auditor,
+    qtyOver:     r.qtyOver,
+    qtyShort:    r.qtyShort,
+    qtyWrong:    r.qtyWrong,
+    hasErr:      r.hasErr
+  };
+}
+
+function deserializeRow(r) {
+  const n = k => parseFloat(r[k]) || 0;
+  const i = k => parseInt(r[k])   || 0;
+  return {
+    auditDate:   new Date(r.dateKey),
+    dateKey:     String(r.dateKey   || ''),
+    dateFmt:     String(r.dateFmt   || ''),
+    auditTime:   String(r.auditTime || '00:00:00'),
+    auditHour:   i('auditHour'),
+    auditMin:    i('auditMin'),
+    cartonTrkId: String(r.cartonTrkId || ''),
+    imlOrderNbr: String(r.imlOrderNbr || ''),
+    dnNumber:    String(r.dnNumber    || ''),
+    partId:      String(r.partId      || ''),
+    partDesc:    String(r.partDesc    || ''),
+    upcCode:     String(r.upcCode     || ''),
+    picker:      String(r.picker      || ''),
+    confLocId:   String(r.confLocId   || ''),
+    confQty:     n('confQty'),
+    auditQty:    n('auditQty'),
+    auditor:     String(r.auditor     || ''),
+    qtyOver:     n('qtyOver'),
+    qtyShort:    n('qtyShort'),
+    qtyWrong:    n('qtyWrong'),
+    hasErr:      r.hasErr === true || r.hasErr === 'true' || r.hasErr === 1
+  };
+}
+
+// ─── FILE IMPORT ──────────────────────────────────────────────────
+function handleFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  setStatus('busy', 'Reading file…');
+
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const wb   = XLSX.read(ev.target.result, { type:'array', cellDates:true });
+      const ws   = wb.Sheets[wb.SheetNames[0]];
+      const json = XLSX.utils.sheet_to_json(ws, { header:1, defval:null });
+
+      // Find header row (contains "Audit Date")
+      let hi = 4;
+      for (let i = 0; i < Math.min(json.length, 12); i++) {
+        if (json[i] && json[i].some(c => typeof c==='string' && c.toLowerCase().includes('audit date'))) { hi=i; break; }
+      }
+
+      const rows = [];
+      for (let r = hi+1; r < json.length; r++) {
+        const row = json[r];
+        if (!row) continue;
+        const fc = row[0];
+        if (fc===null || fc===undefined) continue;
+        if (typeof fc==='string' && (fc.trim()==='' || fc.toUpperCase().includes('TOTAL'))) continue;
+
+        // Parse date
+        let ad;
+        if (fc instanceof Date) { ad = fc; }
+        else if (typeof fc==='number') {
+          const d = XLSX.SSF.parse_date_code(fc);
+          if (!d) continue;
+          ad = new Date(d.y, d.m-1, d.d);
+        } else { ad = new Date(fc); if (isNaN(ad)) continue; }
+
+        // Parse time
+        let ts='00:00:00', th=0, tm=0;
+        const tv = row[1];
+        if (tv instanceof Date) {
+          ts = tv.toTimeString().slice(0,8); th = tv.getHours(); tm = tv.getMinutes();
+        } else if (typeof tv==='string' && tv.includes(':')) {
+          ts=tv; th=parseInt(tv); tm=parseInt(tv.split(':')[1]);
+        } else if (typeof tv==='number') {
+          const sec=Math.round(tv*86400), h=Math.floor(sec/3600), m=Math.floor((sec%3600)/60), s=sec%60;
+          ts=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+          th=h; tm=m;
+        }
+
+        const cq=parseFloat(row[15])||0, aq=parseFloat(row[16])||0;
+        const ov=parseFloat(row[18])||0, sh=parseFloat(row[19])||0, wr=parseFloat(row[20])||0;
+
+        rows.push({
+          auditDate: ad,
+          dateKey:   ad.toISOString().slice(0,10),
+          dateFmt:   ad.toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'}),
+          auditTime: ts, auditHour: th, auditMin: tm,
+          cartonTrkId: String(row[2]||''),
+          imlOrderNbr: String(row[3]||''),
+          dnNumber:    String(row[4]||''),
+          partId:      String(row[7]||''),
+          partDesc:    String(row[9]||''),
+          upcCode:     String(row[11]||''),
+          picker:      String(row[12]||'').trim(),
+          confLocId:   String(row[14]||'').trim(),
+          confQty: cq, auditQty: aq,
+          auditor: String(row[17]||'').trim(),
+          qtyOver: ov, qtyShort: sh, qtyWrong: wr,
+          hasErr: ov>0||sh>0||wr>0
+        });
+      }
+
+      rawData = rows;
+      setStatus('busy', `Parsed ${rows.length.toLocaleString()} records — saving…`);
+      populateFilters();
+      applyFilters();
+
+      // Save to Firebase (serialize removes the non-JSON-safe Date object)
+      saveData(rows.map(serializeRow));
+
+    } catch(err) {
+      console.error(err);
+      setStatus('err', '✗ File error: ' + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+  e.target.value = '';
+}
+
+// ─── OVERLAY TEXT ─────────────────────────────────────────────────
+function setOverlayText(msg) {
+  ['nd-picker','nd-auditor','nd-time','nd-loc','nd-donut','nd-pickerErr'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = msg;
+  });
+}
+
+// ─── MULTI-SELECT FILTERS ─────────────────────────────────────────
+// msState tracks EXCLUDED values (unchecked items).
+// Empty set = nothing excluded = show all.
+// Unchecking a value adds it to the exclusion set.
+
+function populateFilters() {
+  const uniq = k => [...new Set(rawData.map(r=>r[k]).filter(Boolean))].sort();
+  msAllVals.date    = [...new Set(rawData.map(r=>r.dateKey).filter(Boolean))].sort();
+  msAllVals.auditor = uniq('auditor');
+  msAllVals.picker  = uniq('picker');
+  msAllVals.loc     = uniq('confLocId');
+  // Clear all exclusions and rebuild dropdowns with everything checked
+  Object.keys(msState).forEach(k => { msState[k].clear(); buildDropdown(k); });
+  updateAllTriggers();
+}
+
+function buildDropdown(key) {
+  const list = document.getElementById('list-'+key);
+  if (!list) return;
+  list.innerHTML = '';
+  msAllVals[key].forEach(v => {
+    const lbl = document.createElement('label');
+    lbl.className = 'ms-option';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.value = v;
+    cb.checked = !msState[key].has(v); // checked = NOT excluded
+    cb.addEventListener('change', () => {
+      if (cb.checked) msState[key].delete(v); // re-include
+      else            msState[key].add(v);     // exclude
+      updateTrigger(key);
+      applyFilters();
+    });
+    const sp = document.createElement('span');
+    sp.textContent = v;
+    lbl.appendChild(cb); lbl.appendChild(sp);
+    list.appendChild(lbl);
+  });
+}
+
+function filterOpts(key, q) {
+  const lq = q.toLowerCase();
+  document.getElementById('list-'+key).querySelectorAll('.ms-option').forEach(o => {
+    o.style.display = o.querySelector('span').textContent.toLowerCase().includes(lq) ? '' : 'none';
+  });
+}
+
+// "All" = check everything = clear all exclusions
+function selectAll(key) {
+  msState[key].clear();
+  document.getElementById('list-'+key).querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = true);
+  updateTrigger(key); applyFilters();
+}
+
+// "Clear" = uncheck everything = exclude everything (show nothing)
+function clearSel(key) {
+  msAllVals[key].forEach(v => msState[key].add(v));
+  document.getElementById('list-'+key).querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = false);
+  updateTrigger(key); applyFilters();
+}
+
+function updateTrigger(key) {
+  const trig = document.getElementById('trig-'+key);
+  const excluded = msState[key];
+  const total = msAllVals[key].length;
+  const showing = total - excluded.size;
+
+  if (excluded.size === 0) {
+    // All selected — default state
+    trig.textContent = msLabels[key];
+    trig.classList.remove('has-selection');
+  } else if (excluded.size === total) {
+    // Nothing selected
+    trig.textContent = 'None selected';
+    trig.classList.add('has-selection');
+  } else {
+    // Some excluded — show how many are active
+    trig.textContent = showing + ' / ' + total + ' selected';
+    trig.classList.add('has-selection');
+  }
+}
+function updateAllTriggers() { Object.keys(msState).forEach(k=>updateTrigger(k)); }
+
+function toggleDrop(key) {
+  const drop = document.getElementById('drop-'+key);
+  const isOpen = drop.classList.contains('open');
+  document.querySelectorAll('.ms-dropdown.open').forEach(d=>d.classList.remove('open'));
+  document.querySelectorAll('.ms-trigger.open').forEach(t=>t.classList.remove('open'));
+  if (!isOpen) { drop.classList.add('open'); document.getElementById('trig-'+key).classList.add('open'); }
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('.ms-wrap') && !e.target.closest('.ms-label-row')) {
+    document.querySelectorAll('.ms-dropdown.open').forEach(d=>d.classList.remove('open'));
+    document.querySelectorAll('.ms-trigger.open').forEach(t=>t.classList.remove('open'));
+  }
+});
+
+function clearAllFilters() {
+  Object.keys(msState).forEach(k => {
+    msState[k].clear();
+    const list = document.getElementById('list-'+k);
+    if (list) { list.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = true); }
+    const drop = document.getElementById('drop-'+k);
+    if (drop) { const si=drop.querySelector('.ms-search'); if(si){si.value='';filterOpts(k,'');} }
+  });
+  document.getElementById('fError').value='ALL';
+  updateAllTriggers(); applyFilters();
+}
+
+function applyFilters() {
+  const fE = document.getElementById('fError').value;
+  filteredData = rawData.filter(r => {
+    // Exclude any row whose field value is in the exclusion set
+    for (const [key, excluded] of Object.entries(msState)) {
+      if (excluded.size === 0) continue;
+      if (excluded.has(r[msFieldMap[key]])) return false;
+    }
+    if (fE==='YES' && !r.hasErr) return false;
+    if (fE==='NO'  &&  r.hasErr) return false;
+    return true;
+  });
+  curPage=1; renderAll();
+}
+    return true;
+  });
+  curPage=1; renderAll();
+}
+
+// ─── RENDER ALL ───────────────────────────────────────────────────
+function renderAll() {
+  const has = filteredData.length > 0;
+  ['nd-picker','nd-auditor','nd-time','nd-loc','nd-donut','nd-pickerErr'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = has ? 'none' : 'flex';
+  });
+  updateKPIs(); renderPickerChart(); renderAuditorChart(); renderTimeChart();
+  renderLocBars(); renderDonut(); renderPickerErrBars(); renderTable();
+}
+
+// ─── KPIs ─────────────────────────────────────────────────────────
+function updateKPIs() {
+  const n=filteredData.length, errs=filteredData.filter(r=>r.hasErr).length;
+  const units=filteredData.reduce((s,r)=>s+r.auditQty,0);
+  document.getElementById('kpi-units').textContent  = n ? units.toLocaleString() : '—';
+  document.getElementById('kpi-acc').textContent    = n ? ((n-errs)/n*100).toFixed(2)+'%' : '—';
+  document.getElementById('kpi-total').textContent  = n ? n.toLocaleString() : '—';
+  document.getElementById('kpi-errors').textContent = n ? errs.toLocaleString() : '—';
+}
+
+// ─── PICKER ACCURACY ──────────────────────────────────────────────
+function renderPickerChart() {
+  if(cPicker){cPicker.destroy();cPicker=null;}
+  if(!filteredData.length) return;
+  const map={};
+  filteredData.forEach(r=>{ if(!r.picker)return; if(!map[r.picker])map[r.picker]={t:0,e:0}; map[r.picker].t++; if(r.hasErr)map[r.picker].e++; });
+  const items=Object.entries(map).map(([k,v])=>({label:k,acc:(v.t-v.e)/v.t*100})).sort((a,b)=>a.acc-b.acc);
+  document.getElementById('pickerWrap').style.minWidth=Math.max(600,items.length*40)+'px';
+  cPicker=new Chart(document.getElementById('cPicker').getContext('2d'),{
+    type:'bar',
+    data:{ labels:items.map(i=>i.label), datasets:[{data:items.map(i=>i.acc),backgroundColor:'#C8102E',borderRadius:3,barPercentage:0.65}] },
+    options:{
+      responsive:true,maintainAspectRatio:false,animation:{duration:300},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.y.toFixed(2)+'%'}}},
+      scales:{
+        y:{min:0,max:100,ticks:{callback:v=>v+'%',color:'#7a8aaa',font:{size:11}},grid:{color:'#e8ebf2'}},
+        x:{ticks:{color:'#7a8aaa',font:{size:10},maxRotation:45},grid:{display:false}}
+      }
+    },
+    plugins:[{id:'lbl',afterDatasetsDraw(ch){
+      const{ctx,data}=ch;ctx.save();ctx.font='bold 9px Barlow Condensed,sans-serif';ctx.fillStyle='#3d4f6b';ctx.textAlign='center';
+      data.datasets[0].data.forEach((v,i)=>{const m=ch.getDatasetMeta(0);if(!m.data[i])return;const b=m.data[i];ctx.fillText(v.toFixed(1)+'%',b.x,b.y-4);});
+      ctx.restore();
+    }}]
+  });
+}
+
+// ─── AUDITOR ERRORS ───────────────────────────────────────────────
+function renderAuditorChart() {
+  if(cAuditor){cAuditor.destroy();cAuditor=null;}
+  if(!filteredData.length) return;
+  const map={};
+  filteredData.filter(r=>r.hasErr).forEach(r=>{if(r.auditor)map[r.auditor]=(map[r.auditor]||0)+1;});
+  const items=Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,30);
+  document.getElementById('auditorWrap').style.minWidth=Math.max(480,items.length*42)+'px';
+  cAuditor=new Chart(document.getElementById('cAuditor').getContext('2d'),{
+    type:'bar',
+    data:{labels:items.map(i=>i[0]),datasets:[{data:items.map(i=>i[1]),backgroundColor:'#003057',borderRadius:3,barPercentage:0.65}]},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:300},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.y+' errors'}}},
+      scales:{y:{ticks:{color:'#7a8aaa',font:{size:11}},grid:{color:'#e8ebf2'}},x:{ticks:{color:'#7a8aaa',font:{size:10},maxRotation:45},grid:{display:false}}}}
+  });
+}
+
+// ─── TIME CHART ───────────────────────────────────────────────────
+function renderTimeChart() {
+  if(cTime){cTime.destroy();cTime=null;}
+  if(!filteredData.length) return;
+  const buckets=new Array(48).fill(0);
+  filteredData.filter(r=>r.hasErr).forEach(r=>{const sl=r.auditHour*2+(r.auditMin>=30?1:0);if(sl>=0&&sl<48)buckets[sl]++;});
+  const labels=Array.from({length:48},(_,i)=>{const h=Math.floor(i/2),m=i%2===0?'00':'30';return i%4===0?`${String(h).padStart(2,'0')}:${m}`:''});
+  cTime=new Chart(document.getElementById('cTime').getContext('2d'),{
+    type:'line',
+    data:{labels,datasets:[{data:buckets,borderColor:'#C8102E',backgroundColor:'rgba(200,16,46,0.07)',borderWidth:2,fill:true,tension:0.35,pointRadius:0,pointHoverRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:300},plugins:{legend:{display:false}},
+      scales:{y:{min:0,ticks:{color:'#7a8aaa',font:{size:11}},grid:{color:'#e8ebf2'}},x:{ticks:{color:'#7a8aaa',font:{size:10}},grid:{display:false}}}}
+  });
+}
+
+// ─── LOCATION BARS ────────────────────────────────────────────────
+function renderLocBars() {
+  const el=document.getElementById('locBars');el.innerHTML='';
+  if(!filteredData.length)return;
+  const map={};
+  filteredData.filter(r=>r.hasErr&&r.confLocId).forEach(r=>{map[r.confLocId]=(map[r.confLocId]||0)+1;});
+  const items=Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  if(!items.length){el.innerHTML='<div style="color:var(--text3);font-size:12px;padding:6px 0;">No location errors in filtered data</div>';return;}
+  const mx=items[0][1];
+  items.forEach(([loc,cnt])=>{const pct=mx>0?cnt/mx*100:0;el.insertAdjacentHTML('beforeend',`<div class="hbar-row"><div class="hbar-lbl" title="${loc}">${loc}</div><div class="hbar-track"><div class="hbar-fill" style="width:${pct}%"><span class="hbar-cnt">${cnt}</span></div></div></div>`);});
+}
+
+// ─── PICKER ERROR BARS ────────────────────────────────────────────
+function renderPickerErrBars() {
+  const el=document.getElementById('pickerErrBars');el.innerHTML='';
+  if(!filteredData.length)return;
+  const map={};
+  filteredData.filter(r=>r.hasErr&&r.picker).forEach(r=>{map[r.picker]=(map[r.picker]||0)+1;});
+  const items=Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  if(!items.length){el.innerHTML='<div style="color:var(--text3);font-size:12px;padding:6px 0;">No picker errors in filtered data</div>';return;}
+  const mx=items[0][1];
+  items.forEach(([pk,cnt])=>{const pct=mx>0?cnt/mx*100:0;el.insertAdjacentHTML('beforeend',`<div class="hbar-row"><div class="hbar-lbl" title="${pk}">${pk}</div><div class="hbar-track"><div class="hbar-fill red" style="width:${pct}%"><span class="hbar-cnt">${cnt}</span></div></div></div>`);});
+}
+
+// ─── DONUT ────────────────────────────────────────────────────────
+function renderDonut() {
+  if(cDonut){cDonut.destroy();cDonut=null;}
+  if(!filteredData.length)return;
+  const errs=filteredData.filter(r=>r.hasErr);
+  const sh=errs.filter(r=>r.qtyShort>0).length,ov=errs.filter(r=>r.qtyOver>0).length,wr=errs.filter(r=>r.qtyWrong>0).length;
+  const tot=sh+ov+wr;
+  const pct=v=>tot>0?` (${(v/tot*100).toFixed(1)}%)`:'';
+  document.getElementById('dcenter').querySelector('.dcv').textContent=tot||'0';
+  ['short','over','wrong'].forEach((k,i)=>{const v=[sh,ov,wr][i];document.getElementById('dl-'+k).textContent=v;document.getElementById('dlp-'+k).textContent=pct(v);});
+  cDonut=new Chart(document.getElementById('cDonut').getContext('2d'),{
+    type:'doughnut',
+    data:{labels:['Short','Over','Wrong Pick'],datasets:[{data:[sh,ov,wr],backgroundColor:['#C8102E','#0369a1','#b45309'],borderWidth:0,hoverOffset:5}]},
+    options:{cutout:'62%',animation:{duration:300},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.label}: ${c.parsed}${pct(c.parsed)}`}}}}
+  });
+}
+
+// ─── TABLE ────────────────────────────────────────────────────────
+function renderTable() {
+  const tbody=document.getElementById('tblBody'),pi=document.getElementById('pagInfo'),pb=document.getElementById('prevBtn'),nb=document.getElementById('nextBtn');
+  tbody.innerHTML='';
+  if(!filteredData.length){tbody.innerHTML='<tr><td colspan="16" style="text-align:center;color:var(--text3);padding:20px;">No records match current filters</td></tr>';pi.textContent='—';pb.disabled=true;nb.disabled=true;return;}
+  const tp=Math.ceil(filteredData.length/PAGE_SIZE);
+  curPage=Math.max(1,Math.min(tp,curPage));
+  const s=(curPage-1)*PAGE_SIZE,end=Math.min(s+PAGE_SIZE,filteredData.length);
+  filteredData.slice(s,end).forEach(r=>{
+    const tr=document.createElement('tr');
+    if(r.hasErr)tr.classList.add('err-row');
+    const ov=r.qtyOver>0?`<span class="ebadge eb-over">+${r.qtyOver}</span>`:'<span style="color:var(--text3)">—</span>';
+    const sh=r.qtyShort>0?`<span class="ebadge eb-short">-${r.qtyShort}</span>`:'<span style="color:var(--text3)">—</span>';
+    const wr=r.qtyWrong>0?`<span class="ebadge eb-wrong">${r.qtyWrong}</span>`:'<span style="color:var(--text3)">—</span>';
+    tr.innerHTML=`<td>${r.dateFmt}</td><td>${r.auditTime}</td><td>${r.auditor}</td><td style="font-size:10px;">${r.cartonTrkId}</td><td style="font-size:10px;">${r.imlOrderNbr}</td><td>${r.dnNumber}</td><td>${r.partId}</td><td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;" title="${r.partDesc}">${r.partDesc}</td><td>${r.upcCode}</td><td>${r.picker}</td><td>${r.confLocId}</td><td style="text-align:center;">${r.confQty}</td><td style="text-align:center;">${r.auditQty}</td><td style="text-align:center;">${ov}</td><td style="text-align:center;">${sh}</td><td style="text-align:center;">${wr}</td>`;
+    tbody.appendChild(tr);
+  });
+  pi.textContent=`Showing ${(s+1).toLocaleString()}–${end.toLocaleString()} of ${filteredData.length.toLocaleString()} records`;
+  pb.disabled=curPage<=1;nb.disabled=curPage>=tp;
+}
+function changePage(d){curPage=Math.max(1,Math.min(Math.ceil(filteredData.length/PAGE_SIZE),curPage+d));renderTable();}
+
+// ─── AUTO-LOAD ON PAGE OPEN ───────────────────────────────────────
+window.addEventListener('DOMContentLoaded', loadData);
+</script>
+</body>
+</html>
