@@ -359,28 +359,39 @@ function setStatus(type, msg) {
 }
 
 // ─── FIREBASE: LOAD ───────────────────────────────────────────────
-function fbFetch(url) {
-  return Promise.race([
-    fetch(url),
-    new Promise((_, reject) => setTimeout(() => reject(new Error('Timed out')), 15000))
-  ]);
-}
-
 async function loadData() {
   setStatus('busy', '⏳ Loading data…');
   setOverlayText('Loading data…');
-  // Clear save status when manually reloading
   const saveEl = document.getElementById('saveStatus');
-  if (saveEl) { saveEl.textContent = ''; }
+  if (saveEl) saveEl.textContent = '';
+
+  // Short timeout to show any error quickly
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 12000);
+
   try {
     // Step 1: fetch metadata
-    let metaRes;
-    try { metaRes = await fbFetch(FB_URL + '/meta.json'); }
-    catch(e) { throw new Error('Could not reach database (' + e.message + ')'); }
-    if (!metaRes.ok) throw new Error('Database error: HTTP ' + metaRes.status);
-    const meta = await metaRes.json();
+    let metaRes, metaText;
+    try {
+      metaRes = await fetch(FB_URL + '/meta.json', { signal: controller.signal });
+      metaText = await metaRes.text();
+    } catch(e) {
+      clearTimeout(timer);
+      if (e.name === 'AbortError') throw new Error('Request timed out — check Firebase rules allow public read');
+      throw new Error('Network error: ' + e.message);
+    }
+    clearTimeout(timer);
 
-    if (!meta || meta === null || !meta.chunkCount) {
+    // Show the raw response if it's an error
+    if (!metaRes.ok) {
+      throw new Error('Database HTTP ' + metaRes.status + ' — ' + metaText.slice(0, 100));
+    }
+
+    let meta;
+    try { meta = JSON.parse(metaText); }
+    catch(e) { throw new Error('Bad response: ' + metaText.slice(0, 100)); }
+
+    if (!meta || !meta.chunkCount) {
       setStatus('idle', 'No saved data — import an Excel file to populate');
       setOverlayText('No data yet — import an Excel file');
       return;
@@ -389,11 +400,17 @@ async function loadData() {
     // Step 2: fetch all chunks in parallel
     const chunkCount = parseInt(meta.chunkCount);
     setStatus('busy', '⏳ Loading ' + Number(meta.totalRows).toLocaleString() + ' records…');
+
     const chunkPromises = [];
     for (let i = 0; i < chunkCount; i++) {
       chunkPromises.push(
-        fbFetch(FB_URL + '/chunks/c' + i + '.json')
-          .then(r => { if (!r.ok) throw new Error('Chunk ' + i + ' error: HTTP ' + r.status); return r.json(); })
+        fetch(FB_URL + '/chunks/c' + i + '.json')
+          .then(async r => {
+            const txt = await r.text();
+            if (!r.ok) throw new Error('Chunk ' + i + ' HTTP ' + r.status + ': ' + txt.slice(0,80));
+            try { return JSON.parse(txt); }
+            catch(e) { throw new Error('Chunk ' + i + ' bad JSON: ' + txt.slice(0,80)); }
+          })
       );
     }
     const chunks = await Promise.all(chunkPromises);
@@ -401,7 +418,7 @@ async function loadData() {
     // Step 3: flatten and deserialize
     const allRows = [];
     chunks.forEach((chunk, i) => {
-      if (!chunk) { console.warn('Chunk ' + i + ' was null/empty'); return; }
+      if (!chunk) return;
       if (Array.isArray(chunk)) chunk.forEach(r => { if (r && r.dateKey) allRows.push(r); });
     });
 
