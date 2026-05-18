@@ -3,10 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VAS Order Status — CEVA Logistics</title>
+<title>Order Status Portal — CEVA Logistics</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   :root {
     --navy: #003057;
@@ -14,6 +13,7 @@
     --navy-light: #d6e4f0;
     --red: #C8102E;
     --red-light: #fbe8eb;
+    --red-mid: #e84060;
     --gold: #f5a623;
     --gold-light: #fef3dc;
     --white: #ffffff;
@@ -33,29 +33,50 @@
     --shadow: 0 2px 8px rgba(0,48,87,0.10);
     --shadow-lg: 0 4px 20px rgba(0,48,87,0.15);
   }
+
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: var(--font); background: var(--gray-100); color: var(--gray-900); min-height: 100vh; }
 
-  /* ── Header ── */
+  /* Header */
   .app-header {
-    background: var(--navy); display: flex; align-items: center; justify-content: space-between;
-    padding: 0 28px; height: 60px; position: sticky; top: 0; z-index: 100;
+    background: var(--navy);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 28px; height: 60px;
+    position: sticky; top: 0; z-index: 100;
     box-shadow: 0 2px 12px rgba(0,0,0,0.3);
   }
   .header-brand { display: flex; align-items: center; gap: 14px; }
+  .ceva-badge {
+    background: var(--red); color: white;
+    font-family: var(--font-condensed); font-size: 18px; font-weight: 700;
+    padding: 3px 10px; border-radius: 3px; letter-spacing: 1px;
+  }
   .header-title { color: white; font-size: 15px; font-weight: 500; letter-spacing: 0.5px; }
-  .header-right { display: flex; align-items: center; gap: 14px; }
-  .last-updated { color: rgba(255,255,255,0.5); font-size: 12px; }
-  .conn-pill {
-    display: flex; align-items: center; gap: 8px;
+  .header-meta {
+    display: flex; align-items: center; gap: 16px;
+  }
+  .header-badge {
+    display: flex; align-items: center; gap: 7px;
     background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
     border-radius: 6px; padding: 5px 12px;
   }
-  #connDot { width: 9px; height: 9px; border-radius: 50%; background: var(--gold); flex-shrink: 0; }
-  #connLabel { color: rgba(255,255,255,0.75); font-size: 12px; font-weight: 500; }
+  .conn-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--gold); flex-shrink: 0; }
+  .conn-label { color: rgba(255,255,255,0.75); font-size: 12px; font-weight: 500; }
+  .last-updated { color: rgba(255,255,255,0.45); font-size: 11.5px; }
 
-  /* ── Nav ── */
-  .nav-bar { background: var(--navy-mid); display: flex; gap: 2px; padding: 0 28px; }
+  /* Read-only banner */
+  .ro-banner {
+    background: linear-gradient(90deg, var(--navy-mid) 0%, #005a9e 100%);
+    padding: 9px 28px; display: flex; align-items: center; gap: 10px;
+    font-size: 12.5px; color: rgba(255,255,255,0.85); border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .ro-banner .icon { font-size: 14px; }
+  .ro-banner strong { color: white; }
+
+  /* Nav tabs */
+  .nav-bar {
+    background: var(--navy-mid); display: flex; gap: 2px; padding: 0 28px;
+  }
   .nav-tab {
     color: rgba(255,255,255,0.65); font-size: 13px; font-weight: 600;
     padding: 10px 18px; cursor: pointer; border-bottom: 3px solid transparent;
@@ -65,58 +86,11 @@
   .nav-tab:hover { color: white; }
   .nav-tab.active { color: white; border-bottom-color: var(--gold); }
 
-  /* ── Pages ── */
+  /* Main content */
   .page { display: none; padding: 24px 28px; }
   .page.active { display: block; }
 
-  /* ── Metric cards ── */
-  .metrics-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 28px; }
-  .metric-card {
-    background: white; border-radius: var(--radius-lg); padding: 22px 20px;
-    box-shadow: var(--shadow); border-top: 4px solid var(--navy);
-  }
-  .metric-card.red-accent   { border-top-color: var(--red); }
-  .metric-card.gold-accent  { border-top-color: var(--gold); }
-  .metric-card.green-accent { border-top-color: var(--green); }
-  .metric-label { font-size: 13px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--gray-400); font-weight: 700; margin-bottom: 10px; }
-  .metric-value { font-size: 56px; font-weight: 700; font-family: var(--font-condensed); color: var(--navy); line-height: 1; }
-  .metric-value.red   { color: var(--red); }
-  .metric-value.gold  { color: #c07400; }
-  .metric-value.green { color: var(--green); }
-  .metric-sub { font-size: 13px; color: var(--gray-400); margin-top: 8px; }
-
-  /* ── Charts ── */
-  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 24px; }
-  .chart-card { background: white; border-radius: var(--radius-lg); padding: 18px 20px; box-shadow: var(--shadow); }
-  .chart-title { font-family: var(--font-condensed); font-size: 13px; font-weight: 700; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px; }
-  .metrics-section-title {
-    font-family: var(--font-condensed); font-size: 14px; font-weight: 700; letter-spacing: 0.5px;
-    color: var(--navy); text-transform: uppercase; margin: 0 0 12px;
-    padding-bottom: 6px; border-bottom: 2px solid var(--navy-light);
-  }
-  .bar-chart { display: flex; flex-direction: column; gap: 8px; }
-  .bar-row { display: flex; align-items: center; gap: 8px; }
-  .bar-label { font-size: 12px; color: var(--gray-500); width: 90px; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .bar-track { flex: 1; background: var(--gray-100); border-radius: 3px; height: 18px; }
-  .bar-fill { height: 100%; border-radius: 3px; background: var(--navy); transition: width 0.4s ease; }
-  .bar-fill.red { background: var(--red); }
-  .bar-val { font-size: 11px; font-weight: 600; color: var(--gray-500); min-width: 28px; text-align: right; }
-
-  /* ── Aging table ── */
-  .aging-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  .aging-table th { color: var(--gray-400); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--gray-200); }
-  .aging-table td { padding: 7px 8px; border-bottom: 1px solid var(--gray-200); }
-  .aging-table tr:last-child td { border-bottom: none; }
-  .aging-tag { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 700; }
-
-  /* ── Trend period buttons ── */
-  .btn { padding: 7px 16px; border-radius: var(--radius); font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; }
-  .btn-outline { background: white; color: var(--gray-700); border: 1px solid var(--gray-300); }
-  .btn-outline:hover { background: var(--gray-100); }
-  .btn-sm { padding: 4px 10px; font-size: 12px; }
-  .trend-period-btn.active { background: var(--navy); color: white; border-color: var(--navy); }
-
-  /* ── Orders table ── */
+  /* Toolbar */
   .toolbar {
     display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap;
   }
@@ -124,9 +98,18 @@
     padding: 7px 12px; border: 1px solid var(--gray-300); border-radius: var(--radius);
     font-family: var(--font); font-size: 13px; background: white; color: var(--gray-900);
   }
-  .toolbar input { width: 200px; }
   .search-box { flex: 1; min-width: 180px; max-width: 300px; }
+  .btn {
+    padding: 7px 16px; border-radius: var(--radius); font-family: var(--font);
+    font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-outline { background: white; color: var(--gray-700); border: 1px solid var(--gray-300); }
+  .btn-outline:hover { background: var(--gray-100); }
+  .route-window-btn.active { background: var(--red); color: white; border-color: var(--red); }
+  .btn-sm { padding: 4px 10px; font-size: 12px; }
 
+  /* Table */
   .table-wrap { background: white; border-radius: var(--radius-lg); box-shadow: var(--shadow); overflow: hidden; }
   .table-header {
     padding: 12px 16px; background: var(--navy); color: white;
@@ -135,135 +118,192 @@
   .table-header .title { font-family: var(--font-condensed); font-size: 15px; font-weight: 700; letter-spacing: 0.5px; }
   .table-header .count { font-size: 12px; color: rgba(255,255,255,0.6); }
 
-  .orders-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .orders-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
   .orders-table th {
     background: var(--gray-100); color: var(--gray-500); font-weight: 600;
     text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.6px;
     padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--gray-200);
-    white-space: nowrap; position: sticky; top: 0;
+    white-space: nowrap; position: sticky; top: 0; z-index: 2;
   }
-  .orders-table td { padding: 8px 10px; border-bottom: 1px solid var(--gray-200); vertical-align: middle; }
+
+  .orders-table .sc-num      { width: 36px;  min-width: 36px;  left: 0px;   }
+  .orders-table .sc-entered  { width: 110px; min-width: 110px; left: 36px;  }
+  .orders-table .sc-dn       { width: 120px; min-width: 120px; left: 146px; }
+  .orders-table .sc-customer { width: 140px; min-width: 140px; left: 266px; }
+
+  .orders-table th.sticky-col,
+  .orders-table td.sticky-col {
+    position: sticky;
+    background: var(--gray-100);
+  }
+  .orders-table th.sticky-col { z-index: 5; }
+  .orders-table td.sticky-col { z-index: 3; background: white; }
+
+  .orders-table tr:hover td.sticky-col { background: var(--gray-100); }
+  .overdue-row td.sticky-col            { background: #fff5f5; }
+  .overdue-row:hover td.sticky-col      { background: #ffeaea; }
+  .due-soon-row td.sticky-col           { background: #fffbf0; }
+  .due-soon-row:hover td.sticky-col     { background: #fff5dc; }
+
+  .orders-table th.sticky-col,
+  .orders-table td.sticky-col { border-right: 1px solid var(--gray-300); }
+
+  .orders-table th.sticky-last,
+  .orders-table td.sticky-last {
+    border-right: none;
+    box-shadow: 3px 0 6px -2px rgba(0,48,87,0.15);
+  }
+
+  .orders-table td {
+    padding: 8px 10px; border-bottom: 1px solid var(--gray-200);
+    vertical-align: middle;
+  }
   .orders-table tr:last-child td { border-bottom: none; }
   .orders-table tr:hover td { background: var(--gray-100); }
   .orders-table .dn { font-weight: 600; color: var(--navy); font-size: 12.5px; }
+  .orders-table .units-cell { font-weight: 600; color: var(--gray-700); }
+
+  /* Read-only cell styles */
+  .cell-text { font-size: 12.5px; color: var(--gray-900); white-space: nowrap; }
+  .cell-muted { font-size: 12px; color: var(--gray-400); }
+  .cell-date { font-size: 12px; color: var(--gray-700); white-space: nowrap; }
+  .check-icon { font-size: 14px; }
 
   .status-badge {
     display: inline-block; padding: 2px 8px; border-radius: 3px;
     font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase;
   }
-  .badge-routed  { background: var(--green-light); color: var(--green); }
-  .badge-hold    { background: var(--red-light); color: var(--red); }
+  .badge-routed { background: var(--green-light); color: var(--green); }
+  .badge-hold { background: var(--red-light); color: var(--red); }
   .badge-process { background: var(--gold-light); color: #7a4f00; }
-  .badge-open    { background: var(--navy-light); color: var(--navy); }
+  .badge-open { background: var(--navy-light); color: var(--navy); }
 
-  .overdue-row td   { background: #fff5f5; }
-  .overdue-row:hover td  { background: #ffeaea; }
-  .due-soon-row td  { background: #fffbf0; }
+  .overdue-row td { background: #fff5f5; }
+  .overdue-row:hover td { background: #ffeaea; }
+  .due-soon-row td { background: #fffbf0; }
   .due-soon-row:hover td { background: #fff5dc; }
 
-  .table-scroll { overflow-x: auto; max-height: 60vh; overflow-y: auto; }
+  /* Overdue / due-soon pill */
+  .urgency-pill {
+    display: inline-block; padding: 1px 7px; border-radius: 3px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase;
+    margin-left: 4px; vertical-align: middle;
+  }
+  .urgency-overdue { background: var(--red-light); color: var(--red); }
+  .urgency-soon { background: var(--gold-light); color: #7a4f00; }
 
+  /* Empty state */
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--gray-400); }
+  .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+  .empty-state p { font-size: 14px; }
+
+  /* Loading */
   .loading { text-align: center; padding: 40px; color: var(--gray-400); font-size: 14px; }
   .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid var(--gray-200); border-top-color: var(--navy); border-radius: 50%; animation: spin 0.7s linear infinite; margin-right: 8px; vertical-align: middle; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  .empty-state { text-align: center; padding: 60px 20px; color: var(--gray-400); }
-  .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
-
+  /* Pagination */
   .pagination { display: flex; align-items: center; gap: 6px; padding: 10px 14px; border-top: 1px solid var(--gray-200); background: var(--gray-100); }
   .page-btn { padding: 4px 10px; border: 1px solid var(--gray-300); border-radius: var(--radius); font-size: 12px; cursor: pointer; background: white; font-family: var(--font); }
   .page-btn:hover { background: var(--gray-100); }
   .page-btn.current { background: var(--navy); color: white; border-color: var(--navy); }
   .page-info { font-size: 12px; color: var(--gray-400); margin-left: auto; }
 
-  /* Date filter panel */
-  #dateFilterPanel { display:none; background:white; border:1px solid var(--gray-200); border-radius:var(--radius-lg); padding:14px 18px; margin-bottom:12px; box-shadow:var(--shadow); }
-  #dateFilterBadge { display:none; background:var(--red); color:white; border-radius:10px; font-size:10px; padding:1px 6px; font-weight:700; }
+  /* Table scroll */
+  .table-scroll { overflow-x: auto; max-height: 60vh; overflow-y: auto; }
 
-    @media (max-width: 768px) {
+  /* ========== METRICS PAGE ========== */
+  .metrics-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 28px; }
+  .metric-card {
+    background: white; border-radius: var(--radius-lg); padding: 22px 20px;
+    box-shadow: var(--shadow); border-top: 4px solid var(--navy);
+  }
+  .metric-card.red-accent { border-top-color: var(--red); }
+  .metric-card.gold-accent { border-top-color: var(--gold); }
+  .metric-card.green-accent { border-top-color: var(--green); }
+  .metric-label { font-size: 13px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--gray-400); font-weight: 700; margin-bottom: 10px; }
+  .metric-value { font-size: 56px; font-weight: 700; font-family: var(--font-condensed); color: var(--navy); line-height: 1; }
+  .metric-value.red { color: var(--red); }
+  .metric-value.gold { color: #c07400; }
+  .metric-value.green { color: var(--green); }
+  .metric-sub { font-size: 13px; color: var(--gray-400); margin-top: 8px; }
+
+  .metrics-section-title {
+    font-family: var(--font-condensed); font-size: 14px; font-weight: 700; letter-spacing: 0.5px;
+    color: var(--navy); text-transform: uppercase; margin: 0 0 12px;
+    padding-bottom: 6px; border-bottom: 2px solid var(--navy-light);
+  }
+
+  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 24px; }
+  .chart-card { background: white; border-radius: var(--radius-lg); padding: 18px 20px; box-shadow: var(--shadow); }
+  .chart-title { font-family: var(--font-condensed); font-size: 13px; font-weight: 700; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px; }
+
+  .bar-chart { display: flex; flex-direction: column; gap: 8px; }
+  .bar-row { display: flex; align-items: center; gap: 8px; }
+  .bar-label { font-size: 12px; color: var(--gray-500); width: 90px; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-track { flex: 1; background: var(--gray-100); border-radius: 3px; height: 18px; position: relative; }
+  .bar-fill { height: 100%; border-radius: 3px; background: var(--navy); transition: width 0.4s ease; }
+  .bar-fill.red { background: var(--red); }
+  .bar-val { font-size: 11px; font-weight: 600; color: var(--gray-500); min-width: 28px; text-align: right; }
+
+  .aging-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .aging-table th { color: var(--gray-400); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--gray-200); }
+  .aging-table td { padding: 7px 8px; border-bottom: 1px solid var(--gray-200); }
+  .aging-table tr:last-child td { border-bottom: none; }
+  .aging-tag { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 700; }
+
+  .trend-period-btn.active { background: var(--navy); color: white; border-color: var(--navy); }
+
+  /* Date filter panel */
+  #dateFilterPanel { background: white; border: 1px solid var(--gray-200); border-radius: var(--radius-lg); padding: 14px 18px; margin-bottom: 12px; box-shadow: var(--shadow); }
+
+  @media (max-width: 768px) {
     .charts-grid { grid-template-columns: 1fr; }
     .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+    .page { padding: 16px; }
+    .app-header { padding: 0 16px; }
   }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
 <body>
 
+<!-- Header -->
 <header class="app-header">
   <div class="header-brand">
     <img src="https://www.freelogovectors.net/wp-content/uploads/2022/07/ceva-logistics-logo-freelogovectors.net_.png"
          alt="CEVA Logistics"
          style="height:36px;width:auto;object-fit:contain;filter:brightness(0) invert(1);"
-         onerror="this.style.display='none'">
+         onerror="this.style.display='none';document.getElementById('ceva-fallback').style.display='inline-block'">
+    <div class="ceva-badge" id="ceva-fallback" style="display:none">CEVA</div>
     <div style="width:1px;height:28px;background:rgba(255,255,255,0.2);margin:0 2px;"></div>
-    <span class="header-title">VAS Order Status Portal</span>
+    <span class="header-title">Order Status Portal — Millington</span>
   </div>
-  <div class="header-right">
-    <span class="last-updated" id="lastUpdated">Loading…</span>
-    <div class="conn-pill">
-      <div id="connDot"></div>
-      <span id="connLabel">Connecting…</span>
+  <div class="header-meta">
+    <span class="last-updated" id="lastUpdated"></span>
+    <div class="header-badge">
+      <div class="conn-dot" id="connDot"></div>
+      <span class="conn-label" id="connLabel">Connecting…</span>
     </div>
   </div>
 </header>
 
-<nav class="nav-bar">
-  <div class="nav-tab active" onclick="showPage('metrics', this)">Metrics</div>
-  <div class="nav-tab" onclick="showPage('orders', this)">Orders</div>
-</nav>
-
-
-<!-- ====== METRICS PAGE ====== -->
-<div class="page active" id="page-metrics">
-  <div style="display:flex;justify-content:center;gap:14px;margin-bottom:14px;">
-    <div class="metric-card" style="flex:0 1 calc(20% - 11px);min-width:160px"><div class="metric-label">Open Orders</div><div class="metric-value red" id="m-open">—</div><div class="metric-sub">No ship date</div></div>
-    <div class="metric-card gold-accent" style="flex:0 1 calc(20% - 11px);min-width:160px"><div class="metric-label">Open Units</div><div class="metric-value gold" id="m-units">—</div><div class="metric-sub">Units on open orders</div></div>
-    <div class="metric-card gold-accent" style="flex:0 1 calc(20% - 11px);min-width:160px"><div class="metric-label">On Hold</div><div class="metric-value gold" id="m-hold">—</div><div class="metric-sub">Current holds</div></div>
-    <div class="metric-card" style="flex:0 1 calc(20% - 11px);min-width:160px"><div class="metric-label">Routed Today</div><div class="metric-value" id="m-routed-today">—</div><div class="metric-sub">Shipped today</div></div>
-  </div>
-  <div class="metrics-grid">
-    <div class="metric-card gold-accent"><div class="metric-label">Due Within 48 hrs</div><div class="metric-value gold" id="m-due48">—</div><div class="metric-sub">Open, route-by &lt; 48 hours</div></div>
-    <div class="metric-card red-accent"><div class="metric-label">Due Within 24 hrs</div><div class="metric-value red" id="m-due24">—</div><div class="metric-sub">Open, route-by &lt; 24 hours</div></div>
-    <div class="metric-card red-accent"><div class="metric-label">Overdue</div><div class="metric-value red" id="m-overdue">—</div><div class="metric-sub">Past route-by date</div></div>
-    <div class="metric-card green-accent"><div class="metric-label">Avg Close Time</div><div class="metric-value green" id="m-avgclose">—</div><div class="metric-sub">Days waived to ship</div></div>
-    <div class="metric-card green-accent"><div class="metric-label">Closed This Week</div><div class="metric-value green" id="m-week">—</div><div class="metric-sub">Orders with ship date this week</div></div>
-  </div>
-
-  <div class="charts-grid">
-    <div class="chart-card">
-      <div class="chart-title">Open Orders by Customer</div>
-      <div class="bar-chart" id="customerChart"></div>
-    </div>
-    <div class="chart-card">
-      <div class="chart-title">Order Status Breakdown</div>
-      <div class="bar-chart" id="statusChart"></div>
-    </div>
-  </div>
-
-  <div style="margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
-    <div class="metrics-section-title" style="margin:0">Closure Trends</div>
-    <div style="display:flex;gap:6px;">
-      <button class="btn btn-outline btn-sm trend-period-btn active" onclick="setTrendPeriod('daily',this)">Daily</button>
-      <button class="btn btn-outline btn-sm trend-period-btn" onclick="setTrendPeriod('weekly',this)">Weekly</button>
-      <button class="btn btn-outline btn-sm trend-period-btn" onclick="setTrendPeriod('monthly',this)">Monthly</button>
-    </div>
-  </div>
-  <div class="charts-grid" style="margin-bottom:24px;">
-    <div class="chart-card">
-      <div class="chart-title">Orders Closed</div>
-      <canvas id="trendOrdersChart" height="140"></canvas>
-    </div>
-    <div class="chart-card">
-      <div class="chart-title">Units Closed</div>
-      <canvas id="trendUnitsChart" height="140"></canvas>
-    </div>
-  </div>
-
+<!-- Read-only notice -->
+<div class="ro-banner">
+  <span class="icon">🔒</span>
+  <span><strong>View Only</strong> — This portal displays live order status information. Contact your CEVA Logistics representative for changes or inquiries.</span>
 </div>
 
+<!-- Nav -->
+<nav class="nav-bar">
+  <div class="nav-tab active" onclick="showPage('orders', this)">Orders</div>
+  <div class="nav-tab" onclick="showPage('metrics', this)">Metrics</div>
+</nav>
+
 <!-- ====== ORDERS PAGE ====== -->
-<div class="page" id="page-orders">
+<div class="page active" id="page-orders">
   <div class="toolbar">
-    <input type="text" class="search-box" placeholder="🔍  Search DN/SO, PO, customer…" oninput="filterOrders()" id="searchInput">
+    <input type="text" class="search-box" placeholder="🔍  Search DN/SO, PO, customer..." oninput="filterOrders()" id="searchInput">
     <select onchange="filterOrders()" id="filterStatus">
       <option value="">All Statuses</option>
       <option value="ROUTED">Routed</option>
@@ -279,14 +319,21 @@
     <select onchange="filterOrders()" id="filterCustomer">
       <option value="">All Customers</option>
     </select>
+    <div style="display:flex;gap:4px;align-items:center;">
+      <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray-500);white-space:nowrap;">Route By:</span>
+      <button class="btn btn-outline btn-sm route-window-btn" id="rw72" onclick="setRouteWindow(72, this)" title="Orders with Route By date within 72 hours">72 hr</button>
+      <button class="btn btn-outline btn-sm route-window-btn" id="rw48" onclick="setRouteWindow(48, this)" title="Orders with Route By date within 48 hours">48 hr</button>
+      <button class="btn btn-outline btn-sm route-window-btn" id="rw24" onclick="setRouteWindow(24, this)" title="Orders with Route By date within 24 hours">24 hr</button>
+    </div>
     <button class="btn btn-outline btn-sm" id="dateFilterToggle" onclick="toggleDateFilters()" style="display:inline-flex;align-items:center;gap:5px;">
-      📅 Date Filters <span id="dateFilterBadge"></span>
+      📅 Date Filters <span id="dateFilterBadge" style="display:none;background:var(--red);color:white;border-radius:10px;font-size:10px;padding:1px 6px;font-weight:700;"></span>
     </button>
     <button class="btn btn-outline btn-sm" onclick="clearFilters()">Clear All</button>
     <span style="margin-left:auto;font-size:12px;color:var(--gray-400)" id="rowCount"></span>
   </div>
 
-  <div id="dateFilterPanel">
+  <!-- Date filter panel -->
+  <div id="dateFilterPanel" style="display:none;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
       <span style="font-family:var(--font-condensed);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--navy);">Date Filters</span>
       <span style="font-size:11px;color:var(--gray-400);">Leave blank to show all.</span>
@@ -332,14 +379,6 @@
           <input type="date" id="df_ship_to" onchange="filterOrders()" style="flex:1;font-size:12px;padding:5px 8px;">
         </div>
       </div>
-      <div style="display:flex;flex-direction:column;gap:4px;">
-        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray-500);">Date Released</label>
-        <div style="display:flex;gap:6px;align-items:center;">
-          <input type="date" id="df_released_from" onchange="filterOrders()" style="flex:1;font-size:12px;padding:5px 8px;">
-          <span style="font-size:11px;color:var(--gray-400);">to</span>
-          <input type="date" id="df_released_to" onchange="filterOrders()" style="flex:1;font-size:12px;padding:5px 8px;">
-        </div>
-      </div>
     </div>
     <div style="margin-top:10px;text-align:right;">
       <button class="btn btn-outline btn-sm" onclick="clearDateFilters()">Clear Date Filters</button>
@@ -351,15 +390,24 @@
       <span class="title">VAS Orders</span>
       <span class="count" id="tableCount">—</span>
     </div>
-    <div class="table-scroll">
-      <div class="loading" id="tableLoading"><span class="spinner"></span> Loading orders…</div>
+    <div class="table-scroll" id="tableScroll">
+      <div class="loading" id="tableLoading">
+        <div style="display:inline-flex;flex-direction:column;align-items:center;gap:10px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="spinner" id="loadSpinner"></span>
+            <span id="loadMsg" style="font-size:14px;color:var(--gray-500);font-weight:500;">Connecting to database…</span>
+          </div>
+          <span id="loadSub" style="font-size:12px;color:var(--gray-400);"></span>
+          <button id="loadRetryBtn" onclick="loadFromSheets(true)" class="btn btn-outline btn-sm" style="display:none;margin-top:4px;">↻ Retry Now</button>
+        </div>
+      </div>
       <table class="orders-table" id="ordersTable" style="display:none">
         <thead>
           <tr>
-            <th style="width:32px">#</th>
-            <th style="width:120px">Entered</th>
-            <th>DN/SO</th>
-            <th>Customer</th>
+            <th class="sticky-col sc-num"></th>
+            <th class="sticky-col sc-entered">Entered</th>
+            <th class="sticky-col sc-dn">DN/SO</th>
+            <th class="sticky-col sticky-last sc-customer">Customer</th>
             <th>Waived Date</th>
             <th>Date Released</th>
             <th>Route By</th>
@@ -367,15 +415,11 @@
             <th>Units</th>
             <th>CEVA ID</th>
             <th>PO</th>
-            <th>Routed / Status</th>
+            <th>Status</th>
             <th>Ship Date</th>
             <th>S7</th>
-            <th>Status</th>
-            <th>Days Lost - Hold</th>
-            <th>To LTL</th>
-            <th>Gridded</th>
+            <th>Status Notes</th>
             <th>Hold Reason</th>
-            <th>Resolved</th>
             <th>Comments</th>
           </tr>
         </thead>
@@ -383,7 +427,7 @@
       </table>
       <div class="empty-state" id="emptyState" style="display:none">
         <div class="icon">📦</div>
-        <p>No orders match your current filters.</p>
+        <p>No orders found matching your filters.</p>
       </div>
     </div>
     <div class="pagination" id="pagination" style="display:none">
@@ -393,51 +437,180 @@
   </div>
 </div>
 
-<script>
-// ── Config ──────────────────────────────────────────────────
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbzBV0qhKWH6leYg5ND1KgPRbwhhO_5nMGZYdvkYa4gqBTUZpnmMMaIhIhE4xDzWigXqUQ/exec';
-const PAGE_SIZE = 50;
-const DATE_ONLY_FIELDS = ['waived_date','route_by_date','cancel_date','ship_date','date_released'];
-const DATE_FILTERS = [
-  ['df_entered_from',  'df_entered_to',  'created_at',    true],
-  ['df_waived_from',   'df_waived_to',   'waived_date',   false],
-  ['df_routeby_from',  'df_routeby_to',  'route_by_date', false],
-  ['df_cancel_from',   'df_cancel_to',   'cancel_date',   false],
-  ['df_ship_from',     'df_ship_to',     'ship_date',     false],
-  ['df_released_from', 'df_released_to', 'date_released', false],
-];
+<!-- ====== METRICS PAGE ====== -->
+<div class="page" id="page-metrics">
+  <!-- Row 1 -->
+  <div style="display:flex;justify-content:center;gap:14px;margin-bottom:14px;">
+    <div class="metric-card" style="flex:0 1 calc(20% - 11px);min-width:160px"><div class="metric-label">Open Orders</div><div class="metric-value red" id="m-open">—</div><div class="metric-sub">No ship date</div></div>
+    <div class="metric-card gold-accent" style="flex:0 1 calc(20% - 11px);min-width:160px"><div class="metric-label">Open Units</div><div class="metric-value gold" id="m-units">—</div><div class="metric-sub">Units on open orders</div></div>
+    <div class="metric-card gold-accent" style="flex:0 1 calc(20% - 11px);min-width:160px"><div class="metric-label">On Hold</div><div class="metric-value gold" id="m-hold">—</div><div class="metric-sub">Current holds</div></div>
+    <div class="metric-card" style="flex:0 1 calc(20% - 11px);min-width:160px"><div class="metric-label">Routed Today</div><div class="metric-value" id="m-routed-today">—</div><div class="metric-sub">Shipped today</div></div>
+  </div>
+  <!-- Row 2 -->
+  <div class="metrics-grid" style="margin-bottom:28px;">
+    <div class="metric-card gold-accent"><div class="metric-label">Due Within 48 hrs</div><div class="metric-value gold" id="m-due48">—</div><div class="metric-sub">Open, route-by &lt; 48 hours</div></div>
+    <div class="metric-card red-accent"><div class="metric-label">Due Within 24 hrs</div><div class="metric-value red" id="m-due24">—</div><div class="metric-sub">Open, route-by &lt; 24 hours</div></div>
+    <div class="metric-card red-accent"><div class="metric-label">Overdue</div><div class="metric-value red" id="m-overdue">—</div><div class="metric-sub">Past route-by date</div></div>
+    <div class="metric-card green-accent"><div class="metric-label">Avg Close Time</div><div class="metric-value green" id="m-avgclose">—</div><div class="metric-sub">Days waived to ship</div></div>
+    <div class="metric-card green-accent"><div class="metric-label">Closed This Week</div><div class="metric-value green" id="m-week">—</div><div class="metric-sub">Orders with ship date this week</div></div>
+  </div>
 
+  <!-- Snapshot charts -->
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">Open Orders by Customer</div>
+      <div class="bar-chart" id="customerChart"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Order Status Breakdown</div>
+      <div class="bar-chart" id="statusChart"></div>
+    </div>
+  </div>
+
+  <!-- Trend Charts -->
+  <div style="margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+    <div class="metrics-section-title" style="margin:0">Closure Trends</div>
+    <div style="display:flex;gap:6px;">
+      <button class="btn btn-outline btn-sm trend-period-btn active" data-period="daily" onclick="setTrendPeriod('daily',this)">Daily</button>
+      <button class="btn btn-outline btn-sm trend-period-btn" data-period="weekly" onclick="setTrendPeriod('weekly',this)">Weekly</button>
+      <button class="btn btn-outline btn-sm trend-period-btn" data-period="monthly" onclick="setTrendPeriod('monthly',this)">Monthly</button>
+    </div>
+  </div>
+  <div class="charts-grid" style="margin-bottom:24px;">
+    <div class="chart-card">
+      <div class="chart-title">Orders Closed</div>
+      <canvas id="trendOrdersChart" height="140"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Units Closed</div>
+      <canvas id="trendUnitsChart" height="140"></canvas>
+    </div>
+  </div>
+
+  <!-- Open Order Aging -->
+  <div class="chart-card" style="margin-bottom:24px;">
+    <div class="chart-title">Open Order Aging</div>
+    <table class="aging-table" id="agingTable">
+      <thead><tr><th>DN/SO</th><th>Customer</th><th>Waived Date</th><th>Route By</th><th>Units</th><th>Days Open</th><th>Status</th></tr></thead>
+      <tbody id="agingBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzBV0qhKWH6leYg5ND1KgPRbwhhO_5nMGZYdvkYa4gqBTUZpnmMMaIhIhE4xDzWigXqUQ/exec';
 let allOrders = [];
 let filteredOrders = [];
 let currentPage = 1;
-let trendPeriod = 'daily';
-let ordersChart = null;
-let unitsChart  = null;
+const PAGE_SIZE = 50;
+let routeWindowHours = 0;
 
-// ── Init ────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => { loadFromSheets(); });
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  loadFromSheets();
+});
 
-// ── Navigation ──────────────────────────────────────────────
-function showPage(id, tab) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  document.getElementById('page-' + id).classList.add('active');
-  tab.classList.add('active');
+// ============================================================
+// DATA LOAD
+// ============================================================
+const LOAD_TIMEOUT_MS = 15000;
+const LOAD_MAX_RETRIES = 3;
+let loadAttempt = 0;
+let loadTimerInterval = null;
+
+function setLoadMsg(msg, sub = '', showRetry = false) {
+  const msgEl  = document.getElementById('loadMsg');
+  const subEl  = document.getElementById('loadSub');
+  const retBtn = document.getElementById('loadRetryBtn');
+  const spinner = document.getElementById('loadSpinner');
+  if (msgEl)  msgEl.textContent  = msg;
+  if (subEl)  subEl.textContent  = sub;
+  if (retBtn) retBtn.style.display = showRetry ? 'inline-flex' : 'none';
+  if (spinner) spinner.style.display = showRetry ? 'none' : 'inline-block';
 }
 
-// ── JSONP loader ─────────────────────────────────────────────
+function startLoadTimer() {
+  let secs = 0;
+  clearInterval(loadTimerInterval);
+  loadTimerInterval = setInterval(() => {
+    secs++;
+    const subEl = document.getElementById('loadSub');
+    if (subEl) subEl.textContent = `${secs}s elapsed`;
+  }, 1000);
+}
+
+function stopLoadTimer() {
+  clearInterval(loadTimerInterval);
+  loadTimerInterval = null;
+}
+
+async function loadFromSheets(manual = false) {
+  if (manual) loadAttempt = 0;
+  loadAttempt++;
+
+  document.getElementById('tableLoading').style.display = 'block';
+  document.getElementById('ordersTable').style.display  = 'none';
+  document.getElementById('emptyState').style.display   = 'none';
+
+  setLoadMsg('Loading order data…', '', false);
+  setConnectionStatus('checking');
+  startLoadTimer();
+
+  try {
+    const data = await loadViaJsonp(GAS_URL + '?action=getAll&callback=onSheetsData', LOAD_TIMEOUT_MS);
+    stopLoadTimer();
+
+    if (data && data.rows) {
+      allOrders = data.rows.map(sanitizeRow);
+      setConnectionStatus('connected');
+      loadAttempt = 0;
+      updateLastUpdated();
+    }
+    renderOrders();
+    renderMetrics();
+
+  } catch (e) {
+    stopLoadTimer();
+    console.error('Load error (attempt ' + loadAttempt + ')', e);
+
+    if (loadAttempt < LOAD_MAX_RETRIES) {
+      setLoadMsg(`Connection timed out — retrying…`, `Attempt ${loadAttempt} of ${LOAD_MAX_RETRIES} failed`, false);
+      await new Promise(r => setTimeout(r, 2000));
+      return loadFromSheets(false);
+    }
+
+    setConnectionStatus('error');
+    setLoadMsg('Could not reach the database', `Tried ${LOAD_MAX_RETRIES} times. Please refresh the page.`, true);
+    allOrders = [];
+    renderOrders();
+    renderMetrics();
+  }
+}
+
+function updateLastUpdated() {
+  const el = document.getElementById('lastUpdated');
+  if (el) el.textContent = 'Updated ' + new Date().toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', hour12: true });
+}
+
 function loadViaJsonp(url, timeout) {
   return new Promise((resolve, reject) => {
-    const cbName = 'onPortalData';
+    const cbName = 'onSheetsData';
     let done = false;
     const timer = setTimeout(() => {
-      if (done) return; done = true;
+      if (done) return;
+      done = true;
       window[cbName] = null;
       if (s.parentNode) s.parentNode.removeChild(s);
       reject(new Error('Timeout'));
     }, timeout);
     window[cbName] = function(data) {
-      if (done) return; done = true;
+      if (done) return;
+      done = true;
       clearTimeout(timer);
       window[cbName] = null;
       if (s.parentNode) s.parentNode.removeChild(s);
@@ -445,27 +618,18 @@ function loadViaJsonp(url, timeout) {
     };
     const s = document.createElement('script');
     s.src = url;
-    s.onerror = () => { if (done) return; done = true; clearTimeout(timer); reject(new Error('Load error')); };
+    s.onerror = () => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      window[cbName] = null;
+      reject(new Error('Script load error'));
+    };
     document.head.appendChild(s);
   });
 }
 
-// ── Load data ────────────────────────────────────────────────
-async function loadFromSheets() {
-  setConn('checking');
-  try {
-    const data = await loadViaJsonp(GAS_URL + '?action=getAll&callback=onPortalData', 10000);
-    if (data && data.rows) {
-      allOrders = data.rows.map(sanitizeRow);
-      setConn('connected');
-      document.getElementById('lastUpdated').textContent = 'Updated ' + new Date().toLocaleTimeString(undefined, {hour:'numeric',minute:'2-digit'});
-    }
-  } catch(e) {
-    setConn('error');
-    document.getElementById('lastUpdated').textContent = 'Failed to load';
-  }
-  renderAll();
-}
+const DATE_ONLY_FIELDS = ['waived_date','route_by_date','cancel_date','ship_date','date_released'];
 
 function sanitizeRow(row) {
   const clean = Object.assign({}, row);
@@ -475,156 +639,126 @@ function sanitizeRow(row) {
     if (/^\d{4}-\d{2}-\d{2}$/.test(String(val))) return;
     const d = new Date(val);
     if (!isNaN(d)) {
-      clean[field] = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-    } else { clean[field] = ''; }
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const dy = String(d.getDate()).padStart(2, '0');
+      clean[field] = `${y}-${m}-${dy}`;
+    } else {
+      clean[field] = '';
+    }
   });
   return clean;
 }
 
-function setConn(state) {
+function setConnectionStatus(state) {
   const dot = document.getElementById('connDot');
   const label = document.getElementById('connLabel');
-  if (state === 'connected')  { dot.style.background = '#22c55e'; label.textContent = 'Live'; }
-  else if (state === 'error') { dot.style.background = 'var(--red)'; label.textContent = 'Offline'; }
-  else                        { dot.style.background = 'var(--gold)'; label.textContent = 'Connecting…'; }
-}
-
-function renderAll() {
-  renderMetrics();
-  populateCustomerFilter();
-  filterOrders();
-  document.getElementById('tableLoading').style.display = 'none';
-}
-
-// ── Metrics ──────────────────────────────────────────────────
-function renderMetrics() {
-  const today = new Date(); today.setHours(0,0,0,0);
-  const weekStart = new Date(today); weekStart.setDate(today.getDate() - today.getDay());
-  const now = new Date();
-  const open   = allOrders.filter(o => !o.ship_date);
-  const closed = allOrders.filter(o => o.ship_date);
-  const overdue = open.filter(o => o.route_by_date && parseLocalDate(o.route_by_date) < today);
-  const due48   = open.filter(o => { if (!o.route_by_date) return false; const ms = parseLocalDate(o.route_by_date) - now; return ms >= 0 && ms <= 172800000; });
-  const due24   = open.filter(o => { if (!o.route_by_date) return false; const ms = parseLocalDate(o.route_by_date) - now; return ms >= 0 && ms <= 86400000; });
-  const onHold  = allOrders.filter(o => (o.routed_status||'').toUpperCase() === 'HOLD');
-  const routedToday = allOrders.filter(o => o.ship_date && new Date(o.ship_date).toDateString() === today.toDateString());
-  const closedWeek  = closed.filter(o => new Date(o.ship_date) >= weekStart);
-  const openUnits   = open.reduce((s,o) => s + (parseInt(o.units)||0), 0);
-
-  let avgDays = '—';
-  const diffs = closed.filter(o => o.waived_date && o.ship_date).map(o => (new Date(o.ship_date) - new Date(o.waived_date)) / 86400000).filter(d => d >= 0);
-  if (diffs.length) avgDays = (diffs.reduce((a,b)=>a+b,0)/diffs.length).toFixed(1) + 'd';
-
-  set('m-open',         open.length);
-  set('m-units',        openUnits.toLocaleString());
-  set('m-hold',         onHold.length);
-  set('m-routed-today', routedToday.length);
-  set('m-due48',        due48.length);
-  set('m-due24',        due24.length);
-  set('m-overdue',      overdue.length);
-  set('m-avgclose',     avgDays);
-  set('m-week',         closedWeek.length);
-
-  // Customer bar
-  const custCounts = {};
-  open.forEach(o => { if (o.customer) custCounts[o.customer] = (custCounts[o.customer]||0)+1; });
-  const sortedCust = Object.entries(custCounts).sort((a,b)=>b[1]-a[1]).slice(0,8);
-  const maxC = sortedCust.length ? sortedCust[0][1] : 1;
-  document.getElementById('customerChart').innerHTML = sortedCust.length
-    ? sortedCust.map(([n,c]) => `<div class="bar-row"><div class="bar-label" title="${esc(n)}">${esc(n)}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(c/maxC*100)}%"></div></div><div class="bar-val">${c}</div></div>`).join('')
-    : '<p style="font-size:13px;color:var(--gray-400)">No open orders</p>';
-
-  // Status bar
-  const stCounts = {};
-  allOrders.forEach(o => { const s=o.routed_status||'No Status'; stCounts[s]=(stCounts[s]||0)+1; });
-  const sortedSt = Object.entries(stCounts).sort((a,b)=>b[1]-a[1]);
-  const maxS = sortedSt.length ? sortedSt[0][1] : 1;
-  document.getElementById('statusChart').innerHTML = sortedSt.map(([n,c]) =>
-    `<div class="bar-row"><div class="bar-label">${esc(n)}</div><div class="bar-track"><div class="bar-fill${n==='HOLD'?' red':''}" style="width:${Math.round(c/maxS*100)}%"></div></div><div class="bar-val">${c}</div></div>`).join('');
-
-  renderTrendCharts();
-}
-
-// ── Trend charts ─────────────────────────────────────────────
-function setTrendPeriod(period, btn) {
-  trendPeriod = period;
-  document.querySelectorAll('.trend-period-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  renderTrendCharts();
-}
-
-function renderTrendCharts() {
-  const closed = allOrders.filter(o => o.ship_date);
-  if (!closed.length) return;
-  const buckets = {};
-  closed.forEach(o => {
-    const d = new Date(o.ship_date); if (isNaN(d)) return;
-    let key;
-    if (trendPeriod === 'daily') {
-      key = d.toLocaleDateString('en-US', {month:'numeric',day:'numeric',year:'2-digit'});
-    } else if (trendPeriod === 'weekly') {
-      const diff = d.getDate() - d.getDay() + (d.getDay()===0?-6:1);
-      const mon = new Date(d); mon.setDate(diff); mon.setHours(0,0,0,0);
-      key = 'Wk ' + mon.toLocaleDateString('en-US',{month:'numeric',day:'numeric'});
-    } else {
-      key = d.toLocaleDateString('en-US',{month:'short',year:'numeric'});
-    }
-    if (!buckets[key]) buckets[key] = {orders:0,units:0,sortKey:d};
-    buckets[key].orders++;
-    buckets[key].units += parseInt(o.units)||0;
-  });
-  const limit = trendPeriod==='daily'?30:trendPeriod==='weekly'?16:24;
-  const display = Object.entries(buckets).sort((a,b)=>a[1].sortKey-b[1].sortKey).slice(-limit);
-  const labels = display.map(e=>e[0]);
-  const navy='#003057', red='#C8102E';
-  const cfg = (color,fill) => ({fill:true,tension:0.35,borderColor:color,backgroundColor:fill,borderWidth:2,pointBackgroundColor:color,pointRadius:display.length>20?2:4,pointHoverRadius:6});
-  const axis = {grid:{color:'rgba(0,0,0,0.06)'},ticks:{font:{family:"'Barlow',sans-serif",size:11},color:'#647a93'}};
-  function mkChart(id,label,vals,color,fill,old) {
-    const ctx = document.getElementById(id); if (!ctx) return null;
-    if (old) old.destroy();
-    return new Chart(ctx,{type:'line',data:{labels,datasets:[{label,data:vals,...cfg(color,fill)}]},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+c.parsed.y.toLocaleString()+' '+label.toLowerCase()}}},scales:{x:axis,y:{...axis,beginAtZero:true,ticks:{...axis.ticks,precision:0}}}}});
+  if (!dot) return;
+  if (state === 'connected') {
+    dot.style.background = '#22c55e'; label.textContent = 'Live Data';
+  } else if (state === 'error') {
+    dot.style.background = 'var(--red)'; label.textContent = 'Offline';
+  } else {
+    dot.style.background = 'var(--gold)'; label.textContent = 'Connecting…';
   }
-  ordersChart = mkChart('trendOrdersChart','Orders',display.map(e=>e[1].orders),navy,'rgba(0,48,87,0.15)',ordersChart);
-  unitsChart  = mkChart('trendUnitsChart', 'Units', display.map(e=>e[1].units), red, 'rgba(200,16,46,0.15)',unitsChart);
 }
 
-// ── Orders table ─────────────────────────────────────────────
-function populateCustomerFilter() {
-  const customers = [...new Set(allOrders.map(o => o.customer).filter(Boolean))].sort();
-  const sel = document.getElementById('filterCustomer');
-  const cur = sel.value;
-  sel.innerHTML = '<option value="">All Customers</option>' +
-    customers.map(c => `<option value="${esc(c)}"${c===cur?' selected':''}>${esc(c)}</option>`).join('');
+// ============================================================
+// PAGES
+// ============================================================
+function showPage(id, tab) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  tab.classList.add('active');
+  if (id === 'metrics') renderMetrics();
 }
 
+// ============================================================
+// DATE FILTERS
+// ============================================================
+const DATE_FILTERS = [
+  ['df_entered_from',  'df_entered_to',  'created_at',    true],
+  ['df_waived_from',   'df_waived_to',   'waived_date',   false],
+  ['df_routeby_from',  'df_routeby_to',  'route_by_date', false],
+  ['df_cancel_from',   'df_cancel_to',   'cancel_date',   false],
+  ['df_ship_from',     'df_ship_to',     'ship_date',     false],
+];
+
+function toggleDateFilters() {
+  const panel = document.getElementById('dateFilterPanel');
+  const isOpen = panel.style.display !== 'none';
+  panel.style.display = isOpen ? 'none' : 'block';
+  document.getElementById('dateFilterToggle').style.background = isOpen ? '' : 'var(--navy-light)';
+}
+
+function clearDateFilters() {
+  DATE_FILTERS.forEach(([fromId, toId]) => {
+    const f = document.getElementById(fromId); if (f) f.value = '';
+    const t = document.getElementById(toId);   if (t) t.value = '';
+  });
+  filterOrders();
+}
+
+// ============================================================
+// ROUTE WINDOW
+// ============================================================
+function setRouteWindow(hours, btn) {
+  if (routeWindowHours === hours) {
+    routeWindowHours = 0;
+    document.querySelectorAll('.route-window-btn').forEach(b => b.classList.remove('active'));
+  } else {
+    routeWindowHours = hours;
+    document.querySelectorAll('.route-window-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+  filterOrders();
+}
+
+// ============================================================
+// FILTER & RENDER
+// ============================================================
 function filterOrders() {
-  const q  = (document.getElementById('searchInput').value||'').toLowerCase();
-  const fs = (document.getElementById('filterStatus').value||'').toLowerCase();
+  const q = (document.getElementById('searchInput').value || '').toLowerCase();
+  const fs = (document.getElementById('filterStatus').value || '').toLowerCase();
   const fo = document.getElementById('filterOpen').value;
-  const fc = (document.getElementById('filterCustomer').value||'').toLowerCase();
+  const fc = (document.getElementById('filterCustomer').value || '').toLowerCase();
 
-  const dateRanges = DATE_FILTERS.map(([fromId,toId,field,useTime]) => {
+  const dateRanges = DATE_FILTERS.map(([fromId, toId, field, useTime]) => {
     const fromVal = document.getElementById(fromId)?.value;
     const toVal   = document.getElementById(toId)?.value;
     const from = fromVal ? new Date(fromVal) : null;
     let to = null;
-    if (toVal) { to = new Date(toVal); if (!useTime) to.setHours(23,59,59,999); }
-    return {field,from,to};
-  }).filter(r => r.from||r.to);
+    if (toVal) { to = new Date(toVal); if (!useTime) to.setHours(23, 59, 59, 999); }
+    return { field, from, to };
+  }).filter(r => r.from || r.to);
 
   const badge = document.getElementById('dateFilterBadge');
-  badge.style.display = dateRanges.length ? 'inline-block' : 'none';
-  badge.textContent = dateRanges.length || '';
+  if (badge) {
+    const active = dateRanges.length;
+    badge.style.display = active ? 'inline-block' : 'none';
+    badge.textContent = active;
+  }
 
   filteredOrders = allOrders.filter(o => {
     if (q && !JSON.stringify(o).toLowerCase().includes(q)) return false;
-    if (fs && (o.routed_status||'').toLowerCase() !== fs) return false;
-    if (fo === 'open'   && o.ship_date)  return false;
+    if (fs && (o.routed_status || '').toLowerCase() !== fs) return false;
+    if (fo === 'open' && o.ship_date) return false;
     if (fo === 'closed' && !o.ship_date) return false;
-    if (fc && (o.customer||'').toLowerCase() !== fc) return false;
-    for (const {field,from,to} of dateRanges) {
-      const raw = o[field]; if (!raw) return false;
-      const d = new Date(raw); if (isNaN(d)) return false;
+    if (fc && (o.customer || '').toLowerCase() !== fc) return false;
+    if (routeWindowHours > 0) {
+      if (!o.route_by_date) return false;
+      const rb = parseLocalDate(o.route_by_date);
+      if (!rb) return false;
+      const now = new Date();
+      const windowEnd = new Date(now.getTime() + routeWindowHours * 3600000);
+      if (rb < now || rb > windowEnd) return false;
+    }
+    for (const { field, from, to } of dateRanges) {
+      const raw = o[field];
+      if (!raw) return false;
+      const d = new Date(raw);
+      if (isNaN(d)) return false;
       if (from && d < from) return false;
       if (to   && d > to)   return false;
     }
@@ -634,13 +768,36 @@ function filterOrders() {
   renderTable();
 }
 
+function clearFilters() {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('filterStatus').value = '';
+  document.getElementById('filterOpen').value = '';
+  document.getElementById('filterCustomer').value = '';
+  routeWindowHours = 0;
+  document.querySelectorAll('.route-window-btn').forEach(b => b.classList.remove('active'));
+  clearDateFilters();
+}
+
+function renderOrders() {
+  const customers = [...new Set(allOrders.map(o => o.customer).filter(Boolean))].sort();
+  const sel = document.getElementById('filterCustomer');
+  const current = sel.value;
+  sel.innerHTML = '<option value="">All Customers</option>' +
+    customers.map(c => `<option value="${esc(c)}"${c===current?' selected':''}>${esc(c)}</option>`).join('');
+
+  filteredOrders = [...allOrders];
+  renderTable();
+  document.getElementById('tableLoading').style.display = 'none';
+}
+
 function renderTable() {
   const today = new Date(); today.setHours(0,0,0,0);
-  const soon  = new Date(today); soon.setDate(soon.getDate()+3);
+  const soon = new Date(today); soon.setDate(soon.getDate() + 3);
+
   const total = filteredOrders.length;
-  const start = (currentPage-1)*PAGE_SIZE;
-  const end   = Math.min(start+PAGE_SIZE, total);
-  const rows  = filteredOrders.slice(start, end);
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const end = Math.min(start + PAGE_SIZE, total);
+  const pageRows = filteredOrders.slice(start, end);
 
   document.getElementById('tableCount').textContent = total + ' orders';
   document.getElementById('rowCount').textContent = total === allOrders.length ? '' : `${total} of ${allOrders.length} shown`;
@@ -655,111 +812,279 @@ function renderTable() {
   document.getElementById('ordersTable').style.display = 'table';
   document.getElementById('emptyState').style.display = 'none';
 
-  tbody.innerHTML = rows.map((o, idx) => {
+  tbody.innerHTML = pageRows.map((o, idx) => {
+    const absIdx = start + idx;
     const rb = o.route_by_date ? parseLocalDate(o.route_by_date) : null;
     let rowClass = '';
+    let urgencyPill = '';
     if (rb && !o.ship_date) {
-      if (rb < today) rowClass = 'overdue-row';
-      else if (rb <= soon) rowClass = 'due-soon-row';
+      if (rb < today) {
+        rowClass = 'overdue-row';
+        urgencyPill = '<span class="urgency-pill urgency-overdue">Overdue</span>';
+      } else if (rb <= soon) {
+        rowClass = 'due-soon-row';
+        urgencyPill = '<span class="urgency-pill urgency-soon">Due Soon</span>';
+      }
     }
+
     return `<tr class="${rowClass}">
-      <td style="color:var(--gray-400);font-size:11px;text-align:center">${start+idx+1}</td>
-      <td style="white-space:nowrap">${fmtEntered(o.created_at)}</td>
-      <td class="dn">${esc(o.dn_so||'')}</td>
-      <td>${esc(o.customer||'')}</td>
-      <td>${fmtDate(o.waived_date)}</td>
-      <td>${fmtDate(o.date_released)}</td>
-      <td>${fmtDate(o.route_by_date)}</td>
-      <td>${fmtDate(o.cancel_date)}</td>
-      <td style="font-weight:600;text-align:right">${o.units?parseInt(o.units).toLocaleString():''}</td>
-      <td>${esc(o.ceva_id||'')}</td>
-      <td>${esc(o.po||'')}</td>
-      <td>${o.routed_status ? `<span class="status-badge ${badgeClass(o.routed_status)}">${esc(o.routed_status)}</span>` : ''}</td>
-      <td>${fmtDate(o.ship_date)}</td>
-      <td>${esc(o.s7||'')}</td>
-      <td>${esc(o.status||'')}</td>
-      <td style="text-align:center">${esc(o.days_lost_hold||'')}</td>
-      <td>${esc(o.to_ltl||'')}</td>
-      <td style="text-align:center">${parseBool(o.gridded)?'✓':''}</td>
-      <td>${esc(o.hold_reason||'')}</td>
-      <td style="text-align:center">${parseBool(o.resolved)?'✓':''}</td>
-      <td>${esc(o.comments||'')}</td>
+      <td class="sticky-col sc-num" style="color:var(--gray-400);font-size:11px;text-align:center">${start+idx+1}</td>
+      <td class="sticky-col sc-entered" style="white-space:nowrap">${fmtEntered(o.created_at)}</td>
+      <td class="sticky-col sc-dn dn">${esc(o.dn_so||'')}</td>
+      <td class="sticky-col sticky-last sc-customer"><span class="cell-text">${esc(o.customer||'—')}</span></td>
+      <td><span class="cell-date">${fmtDate(o.waived_date)}</span></td>
+      <td><span class="cell-date">${fmtDate(o.date_released)}</span></td>
+      <td><span class="cell-date">${fmtDate(o.route_by_date)}${urgencyPill}</span></td>
+      <td><span class="cell-date">${fmtDate(o.cancel_date)}</span></td>
+      <td class="units-cell" style="text-align:right"><span class="cell-text">${o.units ? parseInt(o.units).toLocaleString() : '—'}</span></td>
+      <td><span class="cell-text">${esc(o.ceva_id||'—')}</span></td>
+      <td><span class="cell-text">${esc(o.po||'—')}</span></td>
+      <td>${o.routed_status ? `<span class="status-badge ${badgeClass(o.routed_status)}">${esc(o.routed_status)}</span>` : '<span class="cell-muted">—</span>'}</td>
+      <td><span class="cell-date">${fmtDate(o.ship_date)}</span></td>
+      <td style="text-align:center"><span class="check-icon">${parseBool(o.s7) ? '✅' : ''}</span></td>
+      <td><span class="cell-text" style="max-width:120px;display:inline-block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(o.status||'')}">${esc(o.status||'—')}</span></td>
+      <td><span class="cell-text" style="max-width:120px;display:inline-block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(o.hold_reason||'')}">${esc(o.hold_reason||'—')}</span></td>
+      <td><span class="cell-text" style="max-width:160px;display:inline-block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(o.comments||'')}">${esc(o.comments||'—')}</span></td>
     </tr>`;
   }).join('');
 
-  const pages = Math.ceil(total/PAGE_SIZE);
+  // Pagination
+  const pages = Math.ceil(total / PAGE_SIZE);
   if (pages <= 1) { document.getElementById('pagination').style.display = 'none'; return; }
   document.getElementById('pagination').style.display = 'flex';
   let btns = '';
-  for (let p=1;p<=pages;p++) btns+=`<button class="page-btn${p===currentPage?' current':''}" onclick="goPage(${p})">${p}</button>`;
+  for (let p = 1; p <= pages; p++) {
+    btns += `<button class="page-btn${p===currentPage?' current':''}" onclick="goPage(${p})">${p}</button>`;
+  }
   document.getElementById('pageButtons').innerHTML = btns;
   document.getElementById('pageInfo').textContent = `Showing ${start+1}–${end} of ${total}`;
 }
 
-function goPage(p) { currentPage=p; renderTable(); document.querySelector('.table-scroll')?.scrollTo(0,0); }
+function goPage(p) { currentPage = p; renderTable(); document.getElementById('tableScroll').scrollTop = 0; }
 
 function badgeClass(s) {
-  const u=(s||'').toUpperCase();
-  if (u==='ROUTED') return 'badge-routed';
-  if (u==='HOLD')   return 'badge-hold';
-  if (u==='IN PROCESS') return 'badge-process';
+  if (!s) return 'badge-open';
+  const u = s.toUpperCase();
+  if (u === 'ROUTED') return 'badge-routed';
+  if (u === 'HOLD') return 'badge-hold';
+  if (u === 'IN PROCESS') return 'badge-process';
   return 'badge-open';
 }
 
-// ── Filters ───────────────────────────────────────────────────
-function toggleDateFilters() {
-  const panel = document.getElementById('dateFilterPanel');
-  const open  = panel.style.display !== 'none';
-  panel.style.display = open ? 'none' : 'block';
-  document.getElementById('dateFilterToggle').style.background = open ? '' : 'var(--navy-light)';
-}
+// ============================================================
+// METRICS
+// ============================================================
+function renderMetrics() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const weekStart = new Date(today); weekStart.setDate(today.getDate() - today.getDay());
+  const now = new Date();
 
-function clearDateFilters() {
-  DATE_FILTERS.forEach(([fromId,toId]) => {
-    const f=document.getElementById(fromId); if(f) f.value='';
-    const t=document.getElementById(toId);   if(t) t.value='';
+  const open = allOrders.filter(o => !o.ship_date);
+  const closed = allOrders.filter(o => o.ship_date);
+  const overdue = open.filter(o => o.route_by_date && parseLocalDate(o.route_by_date) < today);
+  const due48 = open.filter(o => {
+    if (!o.route_by_date) return false;
+    const rb = parseLocalDate(o.route_by_date);
+    const msUntil = rb - now;
+    return msUntil >= 0 && msUntil <= 48 * 60 * 60 * 1000;
   });
-  filterOrders();
+  const due24 = open.filter(o => {
+    if (!o.route_by_date) return false;
+    const rb = parseLocalDate(o.route_by_date);
+    const msUntil = rb - now;
+    return msUntil >= 0 && msUntil <= 24 * 60 * 60 * 1000;
+  });
+  const onHold = allOrders.filter(o => (o.routed_status||'').toUpperCase() === 'HOLD');
+  const routedToday = allOrders.filter(o => o.ship_date && new Date(o.ship_date).toDateString() === today.toDateString());
+  const closedWeek = closed.filter(o => new Date(o.ship_date) >= weekStart);
+  const openUnits = open.reduce((s, o) => s + (parseInt(o.units)||0), 0);
+
+  let avgDays = '—';
+  if (closed.length > 0) {
+    const diffs = closed.filter(o => o.waived_date && o.ship_date).map(o => {
+      return (new Date(o.ship_date) - new Date(o.waived_date)) / 86400000;
+    }).filter(d => d >= 0);
+    if (diffs.length > 0) avgDays = (diffs.reduce((a,b)=>a+b,0)/diffs.length).toFixed(1);
+  }
+
+  document.getElementById('m-open').textContent = open.length;
+  document.getElementById('m-units').textContent = openUnits.toLocaleString();
+  document.getElementById('m-avgclose').textContent = avgDays === '—' ? '—' : avgDays + 'd';
+  document.getElementById('m-overdue').textContent = overdue.length;
+  document.getElementById('m-hold').textContent = onHold.length;
+  document.getElementById('m-due48').textContent = due48.length;
+  document.getElementById('m-due24').textContent = due24.length;
+  document.getElementById('m-routed-today').textContent = routedToday.length;
+  document.getElementById('m-week').textContent = closedWeek.length;
+
+  // Customer bar chart
+  const custCounts = {};
+  open.forEach(o => { if (o.customer) custCounts[o.customer] = (custCounts[o.customer]||0) + 1; });
+  const sortedCust = Object.entries(custCounts).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const maxCust = sortedCust.length ? sortedCust[0][1] : 1;
+  document.getElementById('customerChart').innerHTML = sortedCust.length ? sortedCust.map(([name, cnt]) =>
+    `<div class="bar-row">
+      <div class="bar-label" title="${esc(name)}">${esc(name)}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.round(cnt/maxCust*100)}%"></div></div>
+      <div class="bar-val">${cnt}</div>
+    </div>`).join('') : '<p style="font-size:13px;color:var(--gray-400)">No open orders</p>';
+
+  // Status breakdown
+  const statusCounts = {};
+  allOrders.forEach(o => { const s = o.routed_status||'No Status'; statusCounts[s] = (statusCounts[s]||0)+1; });
+  const sortedStatus = Object.entries(statusCounts).sort((a,b)=>b[1]-a[1]);
+  const maxSt = sortedStatus.length ? sortedStatus[0][1] : 1;
+  document.getElementById('statusChart').innerHTML = sortedStatus.map(([name, cnt]) =>
+    `<div class="bar-row">
+      <div class="bar-label">${esc(name)}</div>
+      <div class="bar-track"><div class="bar-fill${name==='HOLD'?' red':''}" style="width:${Math.round(cnt/maxSt*100)}%"></div></div>
+      <div class="bar-val">${cnt}</div>
+    </div>`).join('');
+
+  // Aging table
+  const sorted = [...open].sort((a,b) => {
+    const da = a.waived_date ? new Date(a.waived_date) : new Date('2999-01-01');
+    const db = b.waived_date ? new Date(b.waived_date) : new Date('2999-01-01');
+    return da - db;
+  }).slice(0,20);
+
+  renderTrendCharts();
+
+  document.getElementById('agingBody').innerHTML = sorted.map(o => {
+    const daysOpen = o.waived_date ? Math.floor((today - new Date(o.waived_date))/86400000) : '—';
+    let tagStyle = 'background:var(--navy-light);color:var(--navy)';
+    if (typeof daysOpen === 'number') {
+      if (daysOpen > 14) tagStyle = 'background:var(--red-light);color:var(--red)';
+      else if (daysOpen > 7) tagStyle = 'background:var(--gold-light);color:#7a4f00';
+    }
+    return `<tr>
+      <td style="font-weight:600;font-size:12.5px;color:var(--navy)">${esc(o.dn_so)}</td>
+      <td>${esc(o.customer||'—')}</td>
+      <td>${o.waived_date ? new Date(o.waived_date).toLocaleDateString(undefined,{month:'numeric',day:'numeric',year:'numeric'}) : '—'}</td>
+      <td style="${!o.route_by_date?'':(new Date(o.route_by_date)<today?'color:var(--red);font-weight:600':'')}">${o.route_by_date ? new Date(o.route_by_date).toLocaleDateString(undefined,{month:'numeric',day:'numeric',year:'numeric'}) : '—'}</td>
+      <td style="font-weight:600">${o.units?parseInt(o.units).toLocaleString():'—'}</td>
+      <td><span class="aging-tag" style="${tagStyle}">${daysOpen} days</span></td>
+      <td>${esc(o.routed_status||'—')}</td>
+    </tr>`;
+  }).join('');
 }
 
-function clearFilters() {
-  document.getElementById('searchInput').value='';
-  document.getElementById('filterStatus').value='';
-  document.getElementById('filterOpen').value='';
-  document.getElementById('filterCustomer').value='';
-  clearDateFilters();
+// ============================================================
+// TREND CHARTS
+// ============================================================
+let trendPeriod = 'daily';
+let ordersChart = null;
+let unitsChart = null;
+
+function setTrendPeriod(period, btn) {
+  trendPeriod = period;
+  document.querySelectorAll('.trend-period-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTrendCharts();
 }
 
-// ── Utils ─────────────────────────────────────────────────────
-function set(id,val) { const el=document.getElementById(id); if(el) el.textContent=val; }
+function renderTrendCharts() {
+  const closed = allOrders.filter(o => o.ship_date);
+  if (!closed.length) return;
 
+  const buckets = {};
+  closed.forEach(o => {
+    const d = new Date(o.ship_date);
+    if (isNaN(d)) return;
+    let key;
+    if (trendPeriod === 'daily') {
+      key = d.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: '2-digit' });
+    } else if (trendPeriod === 'weekly') {
+      const day = d.getDay();
+      const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+      const mon = new Date(d); mon.setDate(diff); mon.setHours(0,0,0,0);
+      key = 'Wk ' + mon.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });
+    } else {
+      key = d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    }
+    if (!buckets[key]) buckets[key] = { orders: 0, units: 0, sortKey: d };
+    buckets[key].orders++;
+    buckets[key].units += parseInt(o.units) || 0;
+  });
+
+  const sorted = Object.entries(buckets).sort((a, b) => a[1].sortKey - b[1].sortKey);
+  const limit = trendPeriod === 'daily' ? 30 : trendPeriod === 'weekly' ? 16 : 24;
+  const display = sorted.slice(-limit);
+  const labels = display.map(e => e[0]);
+  const orderVals = display.map(e => e[1].orders);
+  const unitVals = display.map(e => e[1].units);
+
+  const navy = '#003057';
+  const red = '#C8102E';
+  const navyAlpha = 'rgba(0,48,87,0.15)';
+  const redAlpha = 'rgba(200,16,46,0.15)';
+
+  const baseConfig = (color, fillColor) => ({
+    fill: true, tension: 0.35,
+    borderColor: color, backgroundColor: fillColor, borderWidth: 2,
+    pointBackgroundColor: color,
+    pointRadius: display.length > 20 ? 2 : 4, pointHoverRadius: 6,
+  });
+
+  const axisStyle = {
+    grid: { color: 'rgba(0,0,0,0.06)' },
+    ticks: { font: { family: "'Barlow', sans-serif", size: 11 }, color: '#647a93' }
+  };
+
+  function buildChart(canvasId, label, data, color, fillColor, existing) {
+    const ctx = document.getElementById(canvasId);
+    if (!ctx) return null;
+    if (existing) existing.destroy();
+    return new Chart(ctx, {
+      type: 'line',
+      data: { labels, datasets: [{ label, data, ...baseConfig(color, fillColor) }] },
+      options: {
+        responsive: true, maintainAspectRatio: true,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' ' + ctx.parsed.y.toLocaleString() + ' ' + label.toLowerCase() } } },
+        scales: { x: axisStyle, y: { ...axisStyle, beginAtZero: true, ticks: { ...axisStyle.ticks, precision: 0 } } }
+      }
+    });
+  }
+
+  ordersChart = buildChart('trendOrdersChart', 'Orders', orderVals, navy, navyAlpha, ordersChart);
+  unitsChart  = buildChart('trendUnitsChart',  'Units',  unitVals,  red,  redAlpha,  unitsChart);
+}
+
+// ============================================================
+// UTILS
+// ============================================================
 function parseLocalDate(str) {
   if (!str) return null;
   if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
-    const [y,m,d]=str.split('-').map(Number); return new Date(y,m-1,d);
+    const [y, m, d] = str.split('-').map(Number);
+    return new Date(y, m - 1, d);
   }
   return new Date(str);
 }
 
-function parseBool(val) {
-  if (typeof val==='boolean') return val;
-  if (typeof val==='string') return val.toLowerCase()==='true';
-  return false;
-}
-
 function fmtDate(str) {
-  if (!str) return '<span style="color:var(--gray-300)">—</span>';
+  if (!str) return '<span class="cell-muted">—</span>';
   const d = parseLocalDate(str);
-  if (!d||isNaN(d)) return '<span style="color:var(--gray-300)">—</span>';
-  return d.toLocaleDateString(undefined,{month:'numeric',day:'numeric',year:'numeric'});
+  if (!d || isNaN(d)) return '<span class="cell-muted">—</span>';
+  return `<span class="cell-date">${(d.getMonth()+1)}/${d.getDate()}/${d.getFullYear()}</span>`;
 }
 
 function fmtEntered(iso) {
   if (!iso) return '<span style="color:var(--gray-300)">—</span>';
-  const d=new Date(iso); if(isNaN(d)) return '<span style="color:var(--gray-300)">—</span>';
-  const date=d.toLocaleDateString(undefined,{month:'numeric',day:'numeric',year:'2-digit'});
-  const time=d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit',hour12:true});
-  return `<span style="font-size:11.5px;color:var(--gray-700);line-height:1.3;display:inline-block"><span style="display:block;font-weight:600">${date}</span><span style="display:block;color:var(--gray-400)">${time}</span></span>`;
+  const d = new Date(iso);
+  if (isNaN(d)) return '<span style="color:var(--gray-300)">—</span>';
+  const date = d.toLocaleDateString(undefined, { month: 'numeric', day: 'numeric', year: '2-digit' });
+  const time = d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', hour12: true });
+  return `<span style="font-size:11.5px;color:var(--gray-700);line-height:1.3;display:inline-block">
+    <span style="display:block;font-weight:600">${date}</span>
+    <span style="display:block;color:var(--gray-400)">${time}</span>
+  </span>`;
+}
+
+function parseBool(val) {
+  if (typeof val === 'boolean') return val;
+  if (typeof val === 'string') return val.toLowerCase() === 'true';
+  return false;
 }
 
 function esc(s) {
