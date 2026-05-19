@@ -467,8 +467,7 @@ function loadData(rows) {
     return;
   }
   populateFilters();
-  filteredData = [...rawData];
-  renderAll();
+  applyFilters();
   $('emptyState').style.display  = 'none';
   $('dashboard').style.display   = 'block';
   $('filterBar').style.display   = 'flex';
@@ -477,9 +476,20 @@ function loadData(rows) {
 }
 
 function populateFilters() {
-  const dates = rawData.map(r => r.date).filter(Boolean).sort();
-  $('filterStart').value = dates[0] || '';
-  $('filterEnd').value   = dates[dates.length - 1] || '';
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  const thirtyDaysAgo = new Date(today);
+  thirtyDaysAgo.setDate(today.getDate() - 30);
+
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+
+  const toISO = d => d.toISOString().slice(0, 10);
+
+  $('filterStart').value = toISO(thirtyDaysAgo);
+  $('filterEnd').value   = toISO(yesterday);
+
   const custs = [...new Set(rawData.map(r => r.name))].sort();
   const sel   = $('filterCustomer');
   sel.innerHTML = '<option value="">All Customers</option>' + custs.map(c => `<option>${c}</option>`).join('');
