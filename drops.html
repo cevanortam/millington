@@ -774,7 +774,10 @@ function handleFile(file) {
 
 $('fileInput').addEventListener('change',  e => handleFile(e.target.files[0]));
 $('fileInput2').addEventListener('change', e => handleFile(e.target.files[0]));
-$('fetchBtn').addEventListener('click', fetchFromSheets);
+$('fetchBtn').addEventListener('click', () => fetchFromSheets());
+
+// Auto-load from Google Sheets on page open
+fetchFromSheets();
 </script>
 </body>
 </html>
