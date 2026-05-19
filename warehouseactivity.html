@@ -363,7 +363,7 @@ tbody td.num{text-align:right;font-family:'Courier New',monospace;font-size:11px
 // CONFIGURATION — Replace with your Firebase values
 // ═══════════════════════════════════════════════════════
 const FB_CONFIG = {
-  dbUrl: 'https://console.firebase.google.com/project/warehouse-activity-9a0f7/database/warehouse-activity-9a0f7-default-rtdb/data/~2F'
+  dbUrl: 'https://YOUR-PROJECT-ID-default-rtdb.firebaseio.com'
 };
 
 const VENDOR_MAP = {411735:'Jellycat',411379:'Libbey',411750:'Airthings',411372:'Ableton',411350:'Bedjet',700646:'Fluence'};
@@ -381,6 +381,7 @@ let charts = {};
 async function fbGet(path) {
   const url = `${FB_CONFIG.dbUrl}/${path}.json`;
   const r = await fetch(url);
+  if (r.status === 404) return null; // empty path — Firebase returns 404 when no data exists
   if (!r.ok) throw new Error(`Firebase GET failed: ${r.status}`);
   return r.json();
 }
