@@ -7,6 +7,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -333,9 +335,18 @@ tbody td { padding:5px 8px; color:var(--text); white-space:nowrap; }
 </div>
 
 <script>
-// ─── FIREBASE CONFIG ──────────────────────────────────────────────
-const FB_URL = 'https://pickingaccuracy-e4137-default-rtdb.firebaseio.com';
-// Data is stored at /auditRows.json as a flat array
+// ─── FIREBASE CONFIG & SDK INIT ──────────────────────────────────
+const firebaseConfig = {
+  apiKey:            'AIzaSyAlHjmWm2ji4k0HISh9caUV2hhmqHPjlUk',
+  authDomain:        'pickingaccuracy-e4137.firebaseapp.com',
+  databaseURL:       'https://pickingaccuracy-e4137-default-rtdb.firebaseio.com',
+  projectId:         'pickingaccuracy-e4137',
+  storageBucket:     'pickingaccuracy-e4137.firebasestorage.app',
+  messagingSenderId: '441941262511',
+  appId:             '1:441941262511:web:2093971f97832c2047145a'
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
 // ─── STATE ────────────────────────────────────────────────────────
 let rawData = [], filteredData = [];
@@ -366,18 +377,9 @@ async function loadData() {
   if (saveEl) saveEl.textContent = '';
 
   try {
-    // Step 1: fetch metadata — read raw text first so we can show exactly what came back
-    setStatus('busy', '⏳ Step 1: reading metadata…');
-    const metaRes = await fetch(FB_URL + '/meta.json');
-    const metaText = await metaRes.text();
-
-    if (!metaRes.ok) {
-      throw new Error('Metadata HTTP ' + metaRes.status + ' — ' + metaText.slice(0, 200));
-    }
-
-    let meta;
-    try { meta = JSON.parse(metaText); }
-    catch(e) { throw new Error('Metadata JSON parse failed. Raw: ' + metaText.slice(0, 200)); }
+    // Read metadata node using Firebase SDK
+    const metaSnap = await db.ref('meta').once('value');
+    const meta = metaSnap.val();
 
     if (!meta || !meta.chunkCount) {
       setStatus('idle', 'No saved data — import an Excel file to populate');
@@ -385,21 +387,27 @@ async function loadData() {
       return;
     }
 
-    // Step 2: fetch chunks one at a time so we know exactly which one fails
     const chunkCount = parseInt(meta.chunkCount);
-    setStatus('busy', '⏳ Step 2: loading ' + chunkCount + ' chunks (' + Number(meta.totalRows).toLocaleString() + ' records)…');
+    setStatus('busy', '⏳ Loading ' + Number(meta.totalRows).toLocaleString() + ' records…');
 
-    const allRows = [];
+    // Read all chunks in parallel using Firebase SDK
+    const chunkPromises = [];
     for (let i = 0; i < chunkCount; i++) {
-      setStatus('busy', '⏳ Loading chunk ' + (i+1) + ' of ' + chunkCount + '…');
-      const r = await fetch(FB_URL + '/chunks/c' + i + '.json');
-      const txt = await r.text();
-      if (!r.ok) throw new Error('Chunk ' + i + ' HTTP ' + r.status + ': ' + txt.slice(0, 200));
-      let chunk;
-      try { chunk = JSON.parse(txt); }
-      catch(e) { throw new Error('Chunk ' + i + ' bad JSON: ' + txt.slice(0, 200)); }
-      if (Array.isArray(chunk)) chunk.forEach(row => { if (row && row.dateKey) allRows.push(row); });
+      chunkPromises.push(db.ref('chunks/c' + i).once('value').then(s => s.val()));
     }
+    const chunks = await Promise.all(chunkPromises);
+
+    // Flatten
+    const allRows = [];
+    chunks.forEach(chunk => {
+      if (!chunk) return;
+      if (Array.isArray(chunk)) {
+        chunk.forEach(r => { if (r && r.dateKey) allRows.push(r); });
+      } else if (typeof chunk === 'object') {
+        // Firebase sometimes returns objects instead of arrays
+        Object.values(chunk).forEach(r => { if (r && r.dateKey) allRows.push(r); });
+      }
+    });
 
     if (allRows.length === 0) {
       setStatus('idle', 'No records found — import an Excel file');
@@ -414,22 +422,19 @@ async function loadData() {
 
   } catch(err) {
     console.error('loadData error:', err);
-    setStatus('err', '✗ ' + err.message);
+    setStatus('err', '✗ Load error: ' + err.message);
     setOverlayText('Load failed — import an Excel file');
   }
 }
 
-// ─── FIREBASE: SAVE (chunked PUT writes) ─────────────────────────
+// ─── FIREBASE: SAVE (chunked SDK writes) ─────────────────────────
 const CHUNK_SIZE = 250;
 
 async function saveData(rows) {
-  // Save runs in the background — uses its own status element so it
-  // doesn't overwrite the import success message in statusTxt
   const setSave = (type, msg) => {
     const el = document.getElementById('saveStatus');
     if (el) { el.className = 'status-txt ' + type; el.textContent = msg; }
   };
-
   setSave('busy', '⏳ Syncing to database…');
   try {
     const chunks = [];
@@ -437,31 +442,25 @@ async function saveData(rows) {
       chunks.push(rows.slice(i, i + CHUNK_SIZE));
     }
 
-    // Write each chunk (PUT overwrites existing chunk at that path)
+    // Write each chunk using Firebase SDK
     for (let i = 0; i < chunks.length; i++) {
-      setSave('busy', '⏳ Syncing… ' + Math.min((i + 1) * CHUNK_SIZE, rows.length).toLocaleString() + ' / ' + rows.length.toLocaleString());
-      const res = await fetch(FB_URL + '/chunks/c' + i + '.json', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(chunks[i])
-      });
-      if (!res.ok) {
-        const errText = await res.text();
-        throw new Error('HTTP ' + res.status + ': ' + errText.slice(0, 120));
-      }
+      setSave('busy', '⏳ Syncing… ' + Math.min((i+1)*CHUNK_SIZE, rows.length).toLocaleString() + ' / ' + rows.length.toLocaleString());
+      await db.ref('chunks/c' + i).set(chunks[i]);
     }
 
-    // Write metadata LAST — loader won't read until this exists
-    const metaRes = await fetch(FB_URL + '/meta.json', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chunkCount: chunks.length,
-        totalRows: rows.length,
-        savedAt: new Date().toISOString()
-      })
+    // Remove any leftover chunks from a previous larger import
+    const metaSnap = await db.ref('meta/chunkCount').once('value');
+    const oldCount = metaSnap.val() || 0;
+    for (let i = chunks.length; i < oldCount; i++) {
+      await db.ref('chunks/c' + i).remove();
+    }
+
+    // Write metadata last
+    await db.ref('meta').set({
+      chunkCount: chunks.length,
+      totalRows:  rows.length,
+      savedAt:    new Date().toISOString()
     });
-    if (!metaRes.ok) throw new Error('Metadata write HTTP ' + metaRes.status);
 
     setSave('ok', '✓ Synced to database');
   } catch(err) {
@@ -741,10 +740,6 @@ function applyFilters() {
     }
     if (fE==='YES' && !r.hasErr) return false;
     if (fE==='NO'  &&  r.hasErr) return false;
-    return true;
-  });
-  curPage=1; renderAll();
-}
     return true;
   });
   curPage=1; renderAll();
