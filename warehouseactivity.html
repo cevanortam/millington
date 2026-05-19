@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Warehouse Activity — CEVA Logistics</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#003057;--navy-deep:#001f3d;--red:#C8102E;--red-dark:#a00e25;
+  --bg:#f4f6fa;--surface:#ffffff;--surface2:#eef1f6;
+  --border:#cdd4df;--border2:#b3bece;
+  --text:#1a2340;--text2:#3d4f6b;--text3:#7a8aaa;
+  --green:#16803a;--amber:#b45309;--amber-bg:#fef3e2;
+  --blue-acc:#0369a1;--blue-bg:#e0f0fb;
+  --font:'Barlow',sans-serif;--cond:'Barlow Condensed',sans-serif;
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;font-size:13px}
+
+/* ── HEADER ── */
+header{background:var(--navy);height:60px;display:flex;align-items:center;padding:0 20px;gap:14px;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,0.25);position:sticky;top:0;z-index:300}
+.logo-text{display:flex;align-items:baseline;gap:7px}
+.logo-ceva{font-family:var(--cond);font-size:26px;font-weight:800;color:#fff;letter-spacing:.05em}
+.logo-logistics{font-family:var(--cond);font-size:13px;font-weight:600;color:rgba(255,255,255,.5);letter-spacing:.22em;text-transform:uppercase}
+.hd{width:1px;height:26px;background:rgba(255,255,255,.2);flex-shrink:0}
+.header-title{font-family:var(--cond);font-size:20px;font-weight:700;color:#fff;letter-spacing:.5px;text-transform:uppercase;flex:1}
+.header-right{display:flex;align-items:center;gap:12px}
+#last-updated{font-size:11px;color:rgba(255,255,255,.6)}
+#db-status{display:flex;align-items:center;gap:5px;font-size:11px;color:rgba(255,255,255,.7)}
+.dot{width:7px;height:7px;border-radius:50%;background:#22c55e}
+.dot.offline{background:#ef4444}
+
+/* ── TOOLBAR ── */
+.toolbar{background:var(--navy-deep);padding:10px 20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-bottom:2px solid var(--red)}
+.toolbar label{font-size:11px;color:rgba(255,255,255,.6);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-right:2px}
+.toolbar select,.toolbar input{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:4px;color:#fff;font-family:var(--font);font-size:12px;padding:5px 8px;height:30px}
+.toolbar select option{background:var(--navy-deep);color:#fff}
+.toolbar-sep{width:1px;height:24px;background:rgba(255,255,255,.15);margin:0 4px}
+.btn{height:30px;padding:0 12px;border-radius:4px;border:none;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px}
+.btn-red{background:var(--red);color:#fff}
+.btn-red:hover{background:var(--red-dark)}
+.btn-outline{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.3)}
+.btn-outline:hover{background:rgba(255,255,255,.1)}
+#upload-btn{position:relative;overflow:hidden}
+#file-input{position:absolute;inset:0;opacity:0;cursor:pointer}
+
+/* ── KPI STRIP ── */
+.kpi-strip{display:flex;gap:12px;padding:14px 20px;overflow-x:auto;flex-shrink:0;background:var(--surface);border-bottom:1px solid var(--border)}
+.kpi{flex:1;min-width:110px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;border-left:3px solid var(--navy)}
+.kpi.accent{border-left-color:var(--red)}
+.kpi.green{border-left-color:var(--green)}
+.kpi.amber{border-left-color:var(--amber)}
+.kpi.blue{border-left-color:var(--blue-acc)}
+.kpi-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:4px}
+.kpi-val{font-family:var(--cond);font-size:24px;font-weight:700;color:var(--text);line-height:1}
+.kpi-sub{font-size:10px;color:var(--text3);margin-top:3px}
+
+/* ── MAIN GRID ── */
+.main{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto auto auto;gap:12px;padding:14px 20px;overflow:auto}
+@media(max-width:1100px){.main{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
+.card.full-width{grid-column:1/-1}
+.card-header{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--surface2)}
+.card-title{font-family:var(--cond);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text2)}
+.card-body{padding:12px;flex:1;position:relative;min-height:220px}
+.chart-wrap{position:relative;height:220px}
+.chart-wrap canvas{max-height:220px}
+
+/* ── TABLES ── */
+.tbl-wrap{overflow-x:auto;max-height:320px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead{position:sticky;top:0;z-index:2}
+thead th{background:var(--navy);color:#fff;padding:7px 10px;text-align:left;font-family:var(--cond);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+thead th.num{text-align:right}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+tbody tr:hover{background:var(--surface2)}
+tbody td{padding:6px 10px;color:var(--text2);white-space:nowrap}
+tbody td.num{text-align:right;font-family:'Courier New',monospace;font-size:11px}
+.badge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.badge-k{background:#dbeafe;color:#1d4ed8}
+.badge-m{background:#ede9fe;color:#6d28d9}
+.badge-r{background:#d1fae5;color:#065f46}
+.badge-e{background:#fef3c7;color:#92400e}
+.badge-p{background:#fce7f3;color:#9d174d}
+.badge-x{background:#fee2e2;color:#991b1b}
+.badge-u{background:#f3f4f6;color:#4b5563}
+.badge-a{background:#ecfdf5;color:#047857}
+
+/* ── HOUR TABLE ── */
+.hour-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;padding:8px 0}
+.hour-cell{background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:5px 6px;text-align:center}
+.hour-cell .h-label{font-size:10px;color:var(--text3);font-weight:600}
+.hour-cell .h-lines{font-family:var(--cond);font-size:15px;font-weight:700;color:var(--text)}
+.hour-cell .h-units{font-size:10px;color:var(--text3)}
+.hour-cell.hot{background:rgba(200,16,46,.08);border-color:rgba(200,16,46,.3)}
+.hour-cell.hot .h-lines{color:var(--red)}
+
+/* ── EMPTY / LOADING ── */
+.empty{display:flex;align-items:center;justify-content:center;height:100%;color:var(--text3);font-size:12px;flex-direction:column;gap:6px;padding:20px}
+.empty svg{opacity:.3}
+#loading-overlay{position:fixed;inset:0;background:rgba(0,30,57,.85);z-index:999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px}
+#loading-overlay p{color:#fff;font-size:14px;font-weight:600}
+.spinner{width:36px;height:36px;border:3px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.hidden{display:none!important}
+
+/* ── IMPORT PANEL ── */
+#import-panel{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:400;display:flex;align-items:center;justify-content:center}
+.import-box{background:#fff;border-radius:12px;padding:24px;width:480px;max-width:95vw}
+.import-box h3{font-family:var(--cond);font-size:18px;font-weight:700;color:var(--navy);margin-bottom:14px}
+.import-box p{font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.5}
+.import-progress{height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;margin:10px 0}
+.import-bar{height:100%;width:0;background:var(--red);transition:width .3s}
+#import-log{font-size:11px;color:var(--text3);max-height:120px;overflow-y:auto;font-family:'Courier New',monospace;background:var(--surface2);padding:8px;border-radius:5px;margin-top:8px}
+</style>
+</head>
+<body>
+
+<!-- LOADING OVERLAY -->
+<div id="loading-overlay">
+  <div class="spinner"></div>
+  <p id="loading-msg">Connecting to Firebase…</p>
+</div>
+
+<!-- IMPORT PANEL -->
+<div id="import-panel" class="hidden">
+  <div class="import-box">
+    <h3>Import Activity Data</h3>
+    <p>Select an Excel file (.xlsx) matching the Warehouse Trace Activity format. New records will be merged with existing data. Records older than 31 days are automatically purged.</p>
+    <input type="file" id="import-file-input" accept=".xlsx" style="margin-bottom:10px;font-size:12px">
+    <div class="import-progress"><div class="import-bar" id="import-bar"></div></div>
+    <div id="import-log">Select a file to begin…</div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn btn-red" id="import-go-btn">Import</button>
+      <button class="btn btn-outline" style="color:var(--text);border-color:var(--border)" id="import-cancel-btn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo-text">
+    <span class="logo-ceva">CEVA</span>
+    <span class="logo-logistics">Logistics</span>
+  </div>
+  <div class="hd"></div>
+  <div class="header-title">Warehouse Activity</div>
+  <div class="header-right">
+    <div id="db-status"><div class="dot offline" id="db-dot"></div><span id="db-label">Connecting…</span></div>
+    <span id="last-updated"></span>
+  </div>
+</header>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <label>Date Range</label>
+  <input type="date" id="filter-from">
+  <span style="color:rgba(255,255,255,.5);font-size:12px">→</span>
+  <input type="date" id="filter-to">
+  <div class="toolbar-sep"></div>
+  <label>Trans Type</label>
+  <select id="filter-source">
+    <option value="">All</option>
+    <option value="K">Picks (K)</option>
+    <option value="M">Moves (M)</option>
+    <option value="R">Receipts (R)</option>
+    <option value="E">Replenishments (E)</option>
+    <option value="P">Putaways (P)</option>
+    <option value="X">Void (X)</option>
+    <option value="U">Bin Hold (U)</option>
+    <option value="A">Adjustments (A)</option>
+  </select>
+  <div class="toolbar-sep"></div>
+  <label>Customer</label>
+  <select id="filter-vendor">
+    <option value="">All</option>
+    <option value="411735">Jellycat</option>
+    <option value="411379">Libbey</option>
+    <option value="411750">Airthings</option>
+    <option value="411372">Ableton</option>
+    <option value="411350">Bedjet</option>
+    <option value="700646">Fluence</option>
+  </select>
+  <div class="toolbar-sep"></div>
+  <label>Supervisor</label>
+  <select id="filter-super"><option value="">All</option></select>
+  <div class="toolbar-sep"></div>
+  <button class="btn btn-red" id="apply-filter-btn">Apply</button>
+  <button class="btn btn-outline" id="reset-filter-btn">Reset</button>
+  <div style="flex:1"></div>
+  <button class="btn btn-outline" id="import-btn">⬆ Import Data</button>
+</div>
+
+<!-- KPI STRIP -->
+<div class="kpi-strip">
+  <div class="kpi accent">
+    <div class="kpi-label">Total Lines</div>
+    <div class="kpi-val" id="kpi-lines">—</div>
+    <div class="kpi-sub">Unique transactions</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Total Units</div>
+    <div class="kpi-val" id="kpi-units">—</div>
+    <div class="kpi-sub">Sum of TRANS_QTY</div>
+  </div>
+  <div class="kpi green">
+    <div class="kpi-label">Pick Lines</div>
+    <div class="kpi-val" id="kpi-pick-lines">—</div>
+    <div class="kpi-sub" id="kpi-pick-units">— units</div>
+  </div>
+  <div class="kpi blue">
+    <div class="kpi-label">Move Lines</div>
+    <div class="kpi-val" id="kpi-move-lines">—</div>
+    <div class="kpi-sub" id="kpi-move-units">— units</div>
+  </div>
+  <div class="kpi amber">
+    <div class="kpi-label">Receipt Lines</div>
+    <div class="kpi-val" id="kpi-recv-lines">—</div>
+    <div class="kpi-sub" id="kpi-recv-units">— units</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Active Associates</div>
+    <div class="kpi-val" id="kpi-users">—</div>
+    <div class="kpi-sub">Unique user IDs</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Date Range</div>
+    <div class="kpi-val" id="kpi-dates" style="font-size:14px">—</div>
+    <div class="kpi-sub" id="kpi-days">— days</div>
+  </div>
+</div>
+
+<!-- MAIN GRID -->
+<div class="main">
+
+  <!-- Trans Type Breakdown -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Lines & Units by Transaction Type</span>
+    </div>
+    <div class="card-body">
+      <div class="chart-wrap"><canvas id="chart-source"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Customer Breakdown -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Lines & Units by Customer</span>
+    </div>
+    <div class="card-body">
+      <div class="chart-wrap"><canvas id="chart-vendor"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Hourly Activity -->
+  <div class="card full-width">
+    <div class="card-header">
+      <span class="card-title">Activity by Hour of Day</span>
+      <select id="hour-metric" style="font-size:11px;border:1px solid var(--border);border-radius:4px;padding:2px 6px;color:var(--text2)">
+        <option value="lines">Lines</option>
+        <option value="units">Units</option>
+      </select>
+    </div>
+    <div class="card-body">
+      <div class="chart-wrap" style="height:180px"><canvas id="chart-hour"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Associate Productivity by Hour -->
+  <div class="card full-width">
+    <div class="card-header">
+      <span class="card-title">Associate Productivity by Hour</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <label style="font-size:11px;color:var(--text3)">User</label>
+        <select id="user-select" style="font-size:11px;border:1px solid var(--border);border-radius:4px;padding:2px 6px;color:var(--text2);max-width:200px">
+          <option value="">— Select Associate —</option>
+        </select>
+        <label style="font-size:11px;color:var(--text3)">Metric</label>
+        <select id="user-hour-metric" style="font-size:11px;border:1px solid var(--border);border-radius:4px;padding:2px 6px;color:var(--text2)">
+          <option value="lines">Lines</option>
+          <option value="units">Units</option>
+        </select>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="chart-wrap" style="height:180px"><canvas id="chart-user-hour"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Associate Leaderboard -->
+  <div class="card full-width">
+    <div class="card-header">
+      <span class="card-title">Associate Leaderboard</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <label style="font-size:11px;color:var(--text3)">Sort by</label>
+        <select id="lb-sort" style="font-size:11px;border:1px solid var(--border);border-radius:4px;padding:2px 6px;color:var(--text2)">
+          <option value="lines">Lines</option>
+          <option value="units">Units</option>
+        </select>
+      </div>
+    </div>
+    <div class="card-body" style="padding:0;min-height:unset">
+      <div class="tbl-wrap" id="lb-table">
+        <table>
+          <thead><tr>
+            <th>#</th><th>User ID</th><th>Name</th><th>Supervisor</th>
+            <th class="num">Lines</th><th class="num">Units</th>
+            <th class="num">Picks</th><th class="num">Moves</th><th class="num">Other</th>
+          </tr></thead>
+          <tbody id="lb-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Location Activity -->
+  <div class="card full-width">
+    <div class="card-header">
+      <span class="card-title">Top Locations by Lines</span>
+      <span id="loc-count" style="font-size:11px;color:var(--text3)"></span>
+    </div>
+    <div class="card-body" style="padding:0;min-height:unset">
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>#</th><th>Location</th><th class="num">Lines</th><th class="num">Units</th>
+            <th class="num">Picks</th><th class="num">Putaways</th><th class="num">Moves</th><th>Top Source</th>
+          </tr></thead>
+          <tbody id="loc-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Transaction Type Detail Table -->
+  <div class="card full-width">
+    <div class="card-header">
+      <span class="card-title">Transaction Type Summary</span>
+    </div>
+    <div class="card-body" style="padding:0;min-height:unset">
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>Trans Source</th><th>Description</th>
+            <th class="num">Lines</th><th class="num">Units</th>
+            <th class="num">% of Lines</th><th class="num">Avg Units/Line</th>
+          </tr></thead>
+          <tbody id="src-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- SCRIPTS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════
+// CONFIGURATION — Replace with your Firebase values
+// ═══════════════════════════════════════════════════════
+const FB_CONFIG = {
+  dbUrl: 'https://YOUR-PROJECT-ID-default-rtdb.firebaseio.com'
+};
+
+const VENDOR_MAP = {411735:'Jellycat',411379:'Libbey',411750:'Airthings',411372:'Ableton',411350:'Bedjet',700646:'Fluence'};
+const SOURCE_MAP = {K:'Picks',M:'Moves',R:'Receipts',E:'Replenishments',P:'Putaways',X:'Void',U:'Bin Hold',A:'Adjustments'};
+const SOURCE_BADGE = {K:'badge-k',M:'badge-m',R:'badge-r',E:'badge-e',P:'badge-p',X:'badge-x',U:'badge-u',A:'badge-a'};
+const CHART_COLORS = ['#C8102E','#003057','#2563eb','#16803a','#b45309','#7c3aed','#0891b2','#be185d'];
+
+let allData = [];        // filtered working set
+let rawData = [];        // everything from Firebase
+let charts = {};
+
+// ═══════════════════════════════════════════════════════
+// FIREBASE HELPERS
+// ═══════════════════════════════════════════════════════
+async function fbGet(path) {
+  const url = `${FB_CONFIG.dbUrl}/${path}.json`;
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`Firebase GET failed: ${r.status}`);
+  return r.json();
+}
+
+async function fbPut(path, data) {
+  const url = `${FB_CONFIG.dbUrl}/${path}.json`;
+  const r = await fetch(url, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+  if (!r.ok) throw new Error(`Firebase PUT failed: ${r.status}`);
+  return r.json();
+}
+
+async function fbPatch(path, data) {
+  const url = `${FB_CONFIG.dbUrl}/${path}.json`;
+  const r = await fetch(url, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+  if (!r.ok) throw new Error(`Firebase PATCH failed: ${r.status}`);
+  return r.json();
+}
+
+async function fbDelete(path) {
+  const url = `${FB_CONFIG.dbUrl}/${path}.json`;
+  const r = await fetch(url, {method:'DELETE'});
+  if (!r.ok) throw new Error(`Firebase DELETE failed: ${r.status}`);
+  return r.json();
+}
+
+// ═══════════════════════════════════════════════════════
+// DATA LOADING
+// ═══════════════════════════════════════════════════════
+async function loadFromFirebase() {
+  setLoading('Loading activity data from Firebase…');
+  try {
+    const snap = await fbGet('warehouse_activity');
+    rawData = snap ? Object.values(snap) : [];
+    setDbStatus(true);
+    setLoading(null);
+    populateSupervisorFilter();
+    populateUserSelect();
+    applyFilters();
+    document.getElementById('last-updated').textContent = 'Loaded ' + new Date().toLocaleTimeString();
+  } catch(e) {
+    setDbStatus(false);
+    setLoading(null);
+    console.error(e);
+    // Show demo message
+    document.getElementById('db-label').textContent = 'Not configured — import data to begin';
+    document.getElementById('loading-overlay').classList.add('hidden');
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// PURGE OLD DATA (> 31 days)
+// ═══════════════════════════════════════════════════════
+async function purgeOldData() {
+  const snap = await fbGet('warehouse_activity');
+  if (!snap) return 0;
+  const cutoff = Date.now() - 31 * 24 * 60 * 60 * 1000;
+  const toDelete = Object.entries(snap).filter(([k,v]) => {
+    const d = new Date(v.TRANS_DATE).getTime();
+    return d < cutoff;
+  });
+  for (const [k] of toDelete) {
+    await fbDelete(`warehouse_activity/${k}`);
+  }
+  return toDelete.length;
+}
+
+// ═══════════════════════════════════════════════════════
+// EXCEL IMPORT
+// ═══════════════════════════════════════════════════════
+function makeRowKey(row) {
+  // Unique key: date + time + cntl_id (or hash of fields)
+  return `${row.TRANS_DATE}_${row.TRANS_TIME}_${row.CNTL_ID || ''}`
+    .replace(/[.#$/\[\]]/g,'_').substring(0,100);
+}
+
+async function importExcel(file) {
+  const log = (msg) => { document.getElementById('import-log').textContent += msg + '\n'; };
+  const setBar = (pct) => { document.getElementById('import-bar').style.width = pct + '%'; };
+
+  log('Reading file…');
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(buf, {type:'array', cellDates:true});
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(ws, {raw:false, dateNF:'yyyy-mm-dd'});
+  log(`Found ${rows.length.toLocaleString()} rows.`);
+  setBar(10);
+
+  // Normalize rows
+  const normalized = rows.map(r => ({
+    TRANS_DATE:  r['TRANS_DATE']  || r[Object.keys(r)[0]] || '',
+    TRANS_TIME:  r['TRANS_TIME']  || '',
+    CNTL_ID:     r['CNTL_ID']    || '',
+    PART_ID:     r['PART_ID']    || '',
+    VENDOR_ID:   r['VENDOR_ID']  || '',
+    DESCRIPTION: r['DESCRIPTION']|| '',
+    HOLD_REASON_CODE: r['HOLD_REASON_CODE'] || '',
+    LOCATION_ID: r['LOCATION_ID']|| '',
+    TRANS_TYPE:  r['TRANS_TYPE'] || '',
+    TRANS_SOURCE:r['TRANS_SOURCE']|| '',
+    SOURCE_NAME: r['SOURCE_NAME'] || '',
+    TRANS_QTY:   parseFloat(r['TRANS_QTY']) || 0,
+    USER_ID:     r['USER_ID']    || '',
+    USER_NAME:   r['USER_NAME']  || '',
+    SUPERVISOR:  r['SUPERVISOR'] || '',
+  }));
+
+  log('Purging data older than 31 days…');
+  const purged = await purgeOldData();
+  log(`Purged ${purged} old records.`);
+  setBar(25);
+
+  // Fetch existing keys to avoid duplicates
+  log('Checking for duplicates…');
+  const existing = await fbGet('warehouse_activity');
+  const existingKeys = new Set(existing ? Object.keys(existing) : []);
+  setBar(35);
+
+  const toWrite = {};
+  let skipped = 0;
+  for (const row of normalized) {
+    const k = makeRowKey(row);
+    if (existingKeys.has(k)) { skipped++; continue; }
+    toWrite[k] = row;
+  }
+  log(`${Object.keys(toWrite).length.toLocaleString()} new records to write, ${skipped.toLocaleString()} duplicates skipped.`);
+  setBar(50);
+
+  // Write in chunks of 500
+  const entries = Object.entries(toWrite);
+  const CHUNK = 500;
+  for (let i = 0; i < entries.length; i += CHUNK) {
+    const chunk = Object.fromEntries(entries.slice(i, i + CHUNK));
+    await fbPatch('warehouse_activity', chunk);
+    const pct = 50 + Math.round((i / entries.length) * 45);
+    setBar(pct);
+    log(`Wrote ${Math.min(i + CHUNK, entries.length).toLocaleString()} / ${entries.length.toLocaleString()}…`);
+  }
+
+  setBar(100);
+  log(`Import complete! Reloading dashboard…`);
+  setTimeout(() => {
+    document.getElementById('import-panel').classList.add('hidden');
+    loadFromFirebase();
+  }, 1200);
+}
+
+// ═══════════════════════════════════════════════════════
+// FILTERS
+// ═══════════════════════════════════════════════════════
+function applyFilters() {
+  const fromVal = document.getElementById('filter-from').value;
+  const toVal   = document.getElementById('filter-to').value;
+  const src     = document.getElementById('filter-source').value;
+  const vendor  = document.getElementById('filter-vendor').value;
+  const sup     = document.getElementById('filter-super').value;
+
+  allData = rawData.filter(r => {
+    if (fromVal && r.TRANS_DATE < fromVal) return false;
+    if (toVal   && r.TRANS_DATE > toVal)   return false;
+    if (src    && r.TRANS_SOURCE !== src)   return false;
+    if (vendor && String(r.VENDOR_ID).split('.')[0] !== vendor) return false;
+    if (sup    && r.SUPERVISOR !== sup)     return false;
+    return true;
+  });
+
+  renderAll();
+}
+
+function populateSupervisorFilter() {
+  const sups = [...new Set(rawData.map(r=>r.SUPERVISOR).filter(Boolean))].sort();
+  const sel = document.getElementById('filter-super');
+  sel.innerHTML = '<option value="">All</option>' + sups.map(s=>`<option value="${s}">${s}</option>`).join('');
+}
+
+function populateUserSelect() {
+  const users = [...new Set(rawData.map(r=>r.USER_ID).filter(Boolean))].sort();
+  const sel = document.getElementById('user-select');
+  sel.innerHTML = '<option value="">— Select Associate —</option>' +
+    users.map(u => {
+      const name = rawData.find(r=>r.USER_ID===u)?.USER_NAME || '';
+      return `<option value="${u}">${u} – ${name}</option>`;
+    }).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// RENDER ALL
+// ═══════════════════════════════════════════════════════
+function renderAll() {
+  if (!allData.length) {
+    showEmptyState();
+    return;
+  }
+  updateKPIs();
+  renderSourceChart();
+  renderVendorChart();
+  renderHourChart();
+  renderUserHourChart();
+  renderLeaderboard();
+  renderLocationTable();
+  renderSourceTable();
+}
+
+function fmt(n) { return Number(n).toLocaleString(); }
+
+function updateKPIs() {
+  const total = allData.length;
+  const units = allData.reduce((s,r)=>s+r.TRANS_QTY,0);
+  const picks = allData.filter(r=>r.TRANS_SOURCE==='K');
+  const moves = allData.filter(r=>r.TRANS_SOURCE==='M');
+  const recv  = allData.filter(r=>r.TRANS_SOURCE==='R');
+  const users = new Set(allData.map(r=>r.USER_ID).filter(Boolean)).size;
+  const dates = [...new Set(allData.map(r=>r.TRANS_DATE).filter(Boolean))].sort();
+
+  document.getElementById('kpi-lines').textContent = fmt(total);
+  document.getElementById('kpi-units').textContent = fmt(units);
+  document.getElementById('kpi-pick-lines').textContent = fmt(picks.length);
+  document.getElementById('kpi-pick-units').textContent = fmt(picks.reduce((s,r)=>s+r.TRANS_QTY,0)) + ' units';
+  document.getElementById('kpi-move-lines').textContent = fmt(moves.length);
+  document.getElementById('kpi-move-units').textContent = fmt(moves.reduce((s,r)=>s+r.TRANS_QTY,0)) + ' units';
+  document.getElementById('kpi-recv-lines').textContent = fmt(recv.length);
+  document.getElementById('kpi-recv-units').textContent = fmt(recv.reduce((s,r)=>s+r.TRANS_QTY,0)) + ' units';
+  document.getElementById('kpi-users').textContent = fmt(users);
+  if (dates.length) {
+    const d0 = dates[0].slice(5), d1 = dates[dates.length-1].slice(5);
+    document.getElementById('kpi-dates').textContent = d0 === d1 ? d0 : `${d0} – ${d1}`;
+    document.getElementById('kpi-days').textContent = dates.length + ' day' + (dates.length>1?'s':'');
+  }
+}
+
+// ── Trans Source Chart ──
+function renderSourceChart() {
+  const labels = [], linesArr = [], unitsArr = [];
+  const order = ['K','M','R','E','P','A','U','X'];
+  for (const src of order) {
+    const rows = allData.filter(r=>r.TRANS_SOURCE===src);
+    if (!rows.length) continue;
+    labels.push(SOURCE_MAP[src]||src);
+    linesArr.push(rows.length);
+    unitsArr.push(rows.reduce((s,r)=>s+r.TRANS_QTY,0));
+  }
+  buildBarChart('chart-source', labels, [
+    {label:'Lines',data:linesArr,backgroundColor:'rgba(0,48,87,.75)',borderColor:'#003057',yAxisID:'y'},
+    {label:'Units',data:unitsArr,backgroundColor:'rgba(200,16,46,.65)',borderColor:'#C8102E',yAxisID:'y1'},
+  ], true);
+}
+
+// ── Vendor Chart ──
+function renderVendorChart() {
+  const labels = [], linesArr = [], unitsArr = [];
+  const byVendor = {};
+  for (const r of allData) {
+    const vid = String(r.VENDOR_ID||'').split('.')[0];
+    if (!byVendor[vid]) byVendor[vid] = {lines:0,units:0};
+    byVendor[vid].lines++;
+    byVendor[vid].units += r.TRANS_QTY;
+  }
+  for (const [vid,d] of Object.entries(byVendor).sort((a,b)=>b[1].lines-a[1].lines)) {
+    labels.push(VENDOR_MAP[+vid] || vid);
+    linesArr.push(d.lines);
+    unitsArr.push(d.units);
+  }
+  buildBarChart('chart-vendor', labels, [
+    {label:'Lines',data:linesArr,backgroundColor:'rgba(0,48,87,.75)',borderColor:'#003057',yAxisID:'y'},
+    {label:'Units',data:unitsArr,backgroundColor:'rgba(200,16,46,.65)',borderColor:'#C8102E',yAxisID:'y1'},
+  ], true);
+}
+
+// ── Hourly Chart ──
+function renderHourChart() {
+  const metric = document.getElementById('hour-metric').value;
+  const byHour = {};
+  for (let h=0;h<24;h++) byHour[h]={lines:0,units:0};
+  for (const r of allData) {
+    const h = parseInt((r.TRANS_TIME||'').substring(0,2));
+    if (!isNaN(h)) { byHour[h].lines++; byHour[h].units+=r.TRANS_QTY; }
+  }
+  const labels = Array.from({length:24},(_,i)=>`${String(i).padStart(2,'0')}:00`);
+  const data = labels.map((_,i)=>byHour[i][metric]);
+  buildLineChart('chart-hour', labels, [{label:metric==='lines'?'Lines':'Units',data,borderColor:'#C8102E',backgroundColor:'rgba(200,16,46,.12)',fill:true,tension:.3,pointRadius:3}]);
+}
+
+// ── User Hour Chart ──
+function renderUserHourChart() {
+  const userId = document.getElementById('user-select').value;
+  const metric = document.getElementById('user-hour-metric').value;
+  if (!userId) {
+    if (charts['chart-user-hour']) { charts['chart-user-hour'].destroy(); delete charts['chart-user-hour']; }
+    return;
+  }
+  const byHour = {};
+  for (let h=0;h<24;h++) byHour[h]={lines:0,units:0};
+  for (const r of allData.filter(r=>r.USER_ID===userId)) {
+    const h = parseInt((r.TRANS_TIME||'').substring(0,2));
+    if (!isNaN(h)) { byHour[h].lines++; byHour[h].units+=r.TRANS_QTY; }
+  }
+  const labels = Array.from({length:24},(_,i)=>`${String(i).padStart(2,'0')}:00`);
+  const data = labels.map((_,i)=>byHour[i][metric]);
+  buildLineChart('chart-user-hour', labels, [{label:metric==='lines'?'Lines':'Units',data,borderColor:'#003057',backgroundColor:'rgba(0,48,87,.1)',fill:true,tension:.3,pointRadius:3}]);
+}
+
+// ── Associate Leaderboard ──
+function renderLeaderboard() {
+  const sortBy = document.getElementById('lb-sort').value;
+  const byUser = {};
+  for (const r of allData) {
+    const u = r.USER_ID||'UNKNOWN';
+    if (!byUser[u]) byUser[u] = {name:r.USER_NAME||'',sup:r.SUPERVISOR||'',lines:0,units:0,picks:0,moves:0,other:0};
+    byUser[u].lines++;
+    byUser[u].units += r.TRANS_QTY;
+    if (r.TRANS_SOURCE==='K') byUser[u].picks++;
+    else if (r.TRANS_SOURCE==='M') byUser[u].moves++;
+    else byUser[u].other++;
+  }
+  const sorted = Object.entries(byUser).sort((a,b)=>b[1][sortBy]-a[1][sortBy]);
+  const tbody = document.getElementById('lb-body');
+  tbody.innerHTML = sorted.map(([uid,d],i) => `
+    <tr>
+      <td style="color:var(--text3);font-size:11px">${i+1}</td>
+      <td style="font-weight:600;color:var(--navy)">${uid}</td>
+      <td>${d.name}</td>
+      <td style="color:var(--text3);font-size:11px">${d.sup}</td>
+      <td class="num">${fmt(d.lines)}</td>
+      <td class="num">${fmt(d.units)}</td>
+      <td class="num" style="color:#1d4ed8">${fmt(d.picks)}</td>
+      <td class="num" style="color:#6d28d9">${fmt(d.moves)}</td>
+      <td class="num" style="color:var(--text3)">${fmt(d.other)}</td>
+    </tr>`).join('');
+}
+
+// ── Location Table ──
+function renderLocationTable() {
+  const byLoc = {};
+  for (const r of allData) {
+    const l = r.LOCATION_ID||'UNKNOWN';
+    if (!byLoc[l]) byLoc[l] = {lines:0,units:0,picks:0,puts:0,moves:0,src:{}};
+    byLoc[l].lines++;
+    byLoc[l].units += r.TRANS_QTY;
+    if (r.TRANS_SOURCE==='K') byLoc[l].picks++;
+    if (r.TRANS_SOURCE==='P') byLoc[l].puts++;
+    if (r.TRANS_SOURCE==='M') byLoc[l].moves++;
+    byLoc[l].src[r.TRANS_SOURCE] = (byLoc[l].src[r.TRANS_SOURCE]||0)+1;
+  }
+  const sorted = Object.entries(byLoc).sort((a,b)=>b[1].lines-a[1].lines).slice(0,50);
+  document.getElementById('loc-count').textContent = `Top 50 of ${Object.keys(byLoc).length.toLocaleString()} locations`;
+  document.getElementById('loc-body').innerHTML = sorted.map(([loc,d],i) => {
+    const topSrc = Object.entries(d.src).sort((a,b)=>b[1]-a[1])[0];
+    const badge = topSrc ? `<span class="badge ${SOURCE_BADGE[topSrc[0]]||''}">${SOURCE_MAP[topSrc[0]]||topSrc[0]}</span>` : '';
+    return `<tr>
+      <td style="color:var(--text3);font-size:11px">${i+1}</td>
+      <td style="font-weight:600;font-family:'Courier New',monospace;font-size:11px">${loc}</td>
+      <td class="num">${fmt(d.lines)}</td>
+      <td class="num">${fmt(d.units)}</td>
+      <td class="num" style="color:#1d4ed8">${fmt(d.picks)}</td>
+      <td class="num" style="color:#9d174d">${fmt(d.puts)}</td>
+      <td class="num" style="color:#6d28d9">${fmt(d.moves)}</td>
+      <td>${badge}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Source Summary Table ──
+function renderSourceTable() {
+  const total = allData.length;
+  const bySrc = {};
+  for (const r of allData) {
+    const s = r.TRANS_SOURCE||'?';
+    if (!bySrc[s]) bySrc[s] = {lines:0,units:0};
+    bySrc[s].lines++;
+    bySrc[s].units += r.TRANS_QTY;
+  }
+  const sorted = Object.entries(bySrc).sort((a,b)=>b[1].lines-a[1].lines);
+  document.getElementById('src-body').innerHTML = sorted.map(([src,d]) => `
+    <tr>
+      <td><span class="badge ${SOURCE_BADGE[src]||''}">${src}</span></td>
+      <td>${SOURCE_MAP[src]||src}</td>
+      <td class="num">${fmt(d.lines)}</td>
+      <td class="num">${fmt(d.units)}</td>
+      <td class="num">${total ? (d.lines/total*100).toFixed(1)+'%' : '—'}</td>
+      <td class="num">${d.lines ? (d.units/d.lines).toFixed(1) : '—'}</td>
+    </tr>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// CHART HELPERS
+// ═══════════════════════════════════════════════════════
+function buildBarChart(id, labels, datasets, dualAxis=false) {
+  if (charts[id]) charts[id].destroy();
+  const ctx = document.getElementById(id);
+  const scales = dualAxis ? {
+    y: {position:'left',ticks:{font:{size:10},callback:v=>v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?(v/1e3).toFixed(0)+'K':v},grid:{color:'rgba(0,0,0,.06)'}},
+    y1:{position:'right',ticks:{font:{size:10},callback:v=>v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?(v/1e3).toFixed(0)+'K':v},grid:{drawOnChartArea:false}}
+  } : {y:{ticks:{font:{size:10}},grid:{color:'rgba(0,0,0,.06)'}}};
+  charts[id] = new Chart(ctx, {
+    type:'bar',
+    data:{labels,datasets:datasets.map(d=>({...d,borderWidth:1,borderRadius:3}))},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{font:{size:10},boxWidth:10}}},
+      scales
+    }
+  });
+}
+
+function buildLineChart(id, labels, datasets) {
+  if (charts[id]) charts[id].destroy();
+  const ctx = document.getElementById(id);
+  charts[id] = new Chart(ctx, {
+    type:'line',
+    data:{labels,datasets},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{font:{size:10},boxWidth:10}}},
+      scales:{
+        y:{ticks:{font:{size:10},callback:v=>v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?(v/1e3).toFixed(0)+'K':v},grid:{color:'rgba(0,0,0,.06)'}},
+        x:{ticks:{font:{size:9}}}
+      }
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════════════════════════
+function setLoading(msg) {
+  const ov = document.getElementById('loading-overlay');
+  if (msg) { document.getElementById('loading-msg').textContent = msg; ov.classList.remove('hidden'); }
+  else ov.classList.add('hidden');
+}
+
+function setDbStatus(ok) {
+  document.getElementById('db-dot').className = 'dot' + (ok?'':' offline');
+  document.getElementById('db-label').textContent = ok ? 'Firebase Connected' : 'Firebase Error';
+}
+
+function showEmptyState() {
+  // Charts stay empty, tables show nothing
+}
+
+// ═══════════════════════════════════════════════════════
+// EVENT LISTENERS
+// ═══════════════════════════════════════════════════════
+document.getElementById('apply-filter-btn').addEventListener('click', applyFilters);
+document.getElementById('reset-filter-btn').addEventListener('click', () => {
+  ['filter-from','filter-to','filter-source','filter-vendor','filter-super'].forEach(id=>{
+    document.getElementById(id).value='';
+  });
+  applyFilters();
+});
+
+document.getElementById('hour-metric').addEventListener('change', renderHourChart);
+document.getElementById('user-select').addEventListener('change', renderUserHourChart);
+document.getElementById('user-hour-metric').addEventListener('change', renderUserHourChart);
+document.getElementById('lb-sort').addEventListener('change', renderLeaderboard);
+
+// Import panel
+document.getElementById('import-btn').addEventListener('click', () => {
+  document.getElementById('import-log').textContent = 'Select a file to begin…\n';
+  document.getElementById('import-bar').style.width = '0';
+  document.getElementById('import-panel').classList.remove('hidden');
+});
+document.getElementById('import-cancel-btn').addEventListener('click', () => {
+  document.getElementById('import-panel').classList.add('hidden');
+});
+document.getElementById('import-go-btn').addEventListener('click', async () => {
+  const f = document.getElementById('import-file-input').files[0];
+  if (!f) { alert('Please select a file first.'); return; }
+  document.getElementById('import-go-btn').disabled = true;
+  try { await importExcel(f); } catch(e) {
+    document.getElementById('import-log').textContent += '\nERROR: ' + e.message;
+  }
+  document.getElementById('import-go-btn').disabled = false;
+});
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', loadFromFirebase);
+</script>
+</body>
+</html>
