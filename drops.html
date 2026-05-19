@@ -1,435 +1,724 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Demand Dashboard - Order Drops by Day</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <style>
-        /* Exact style matches for the Audit Dashboard light UI */
-        body {
-            font-family: 'Segoe UI', Inter, system-ui, -apple-system, sans-serif;
-            background-color: #f1f5f9; /* Soft light gray background */
-            color: #1e293b;
-        }
-        
-        .navbar {
-            background-color: #0f172a; /* Deep corporate navy/slate header */
-            color: #ffffff;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orders Dropped — CEVA Logistics</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --navy:       #003057;
+    --navy-mid:   #004080;
+    --navy-light: #ccd9e8;
+    --navy-pale:  #eef3f8;
+    --red:        #C8102E;
+    --red-light:  #f5c6ce;
+    --red-dim:    #fdf0f2;
+    --white:      #ffffff;
+    --gray-50:    #f8f9fa;
+    --gray-100:   #f1f3f5;
+    --gray-200:   #e9ecef;
+    --gray-300:   #dee2e6;
+    --gray-500:   #adb5bd;
+    --gray-700:   #495057;
+    --gray-900:   #212529;
+    --font:       'Segoe UI', system-ui, -apple-system, sans-serif;
+    --radius:     6px;
+    --shadow:     0 1px 4px rgba(0,0,0,0.10);
+    --shadow-md:  0 2px 10px rgba(0,0,0,0.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font); background: var(--gray-100); color: var(--gray-900); min-height: 100vh; font-size: 14px; }
 
-        .card {
-            background-color: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 0.375rem;
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
-        }
+  header {
+    background: var(--navy); color: var(--white);
+    padding: 0 24px; height: 58px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    position: sticky; top: 0; z-index: 200;
+  }
+  .header-left { display: flex; align-items: center; gap: 14px; }
+  .logo-block {
+    background: var(--red); color: var(--white);
+    font-weight: 800; font-size: 15px; letter-spacing: 0.04em;
+    padding: 5px 11px; border-radius: 4px; line-height: 1;
+  }
+  .header-title { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
+  .header-sub   { font-size: 11px; color: var(--navy-light); margin-top: 2px; }
+  .header-right { display: flex; align-items: center; gap: 8px; }
 
-        /* Styling for the custom multi-select date dropdown */
-        .dropdown-menu {
-            background-color: #ffffff;
-            border: 1px solid #cbd5e1;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        }
+  .hbtn {
+    padding: 6px 14px; border-radius: var(--radius);
+    font-size: 12.5px; font-weight: 600; cursor: pointer;
+    border: 1.5px solid rgba(255,255,255,0.35);
+    background: transparent; color: var(--white);
+    transition: background 0.15s, border-color 0.15s;
+    font-family: var(--font);
+  }
+  .hbtn:hover { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.6); }
+  .hbtn.primary { background: var(--red); border-color: var(--red); }
+  .hbtn.primary:hover { background: #a50d25; border-color: #a50d25; }
 
-        .btn-primary {
-            background-color: #2563eb;
-            color: #ffffff;
-            transition: background-color 0.2s;
-        }
-        .btn-primary:hover {
-            background-color: #1d4ed8;
-        }
+  .file-wrap { position: relative; overflow: hidden; display: inline-block; }
+  .file-wrap input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; font-size: 100px; }
 
-        /* Modal backdrop blurring */
-        .modal-backdrop {
-            background-color: rgba(15, 23, 42, 0.3);
-            backdrop-filter: blur(4px);
-        }
-    </style>
+  .filter-bar {
+    background: var(--white); border-bottom: 1px solid var(--gray-200);
+    padding: 10px 24px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  }
+  .filter-bar label { font-size: 12px; font-weight: 600; color: var(--navy); }
+  .filter-bar select,
+  .filter-bar input[type=date] {
+    font-family: var(--font); font-size: 12.5px; color: var(--gray-900);
+    background: var(--white); border: 1.5px solid var(--gray-300);
+    border-radius: var(--radius); padding: 5px 9px; outline: none; transition: border-color 0.15s;
+  }
+  .filter-bar select:focus,
+  .filter-bar input[type=date]:focus { border-color: var(--navy-mid); }
+
+  .fbtn {
+    padding: 5px 13px; border-radius: var(--radius);
+    font-size: 12.5px; font-weight: 600; cursor: pointer;
+    font-family: var(--font); transition: background 0.15s;
+    border: 1.5px solid var(--gray-300); background: var(--gray-50); color: var(--gray-700);
+  }
+  .fbtn:hover { background: var(--gray-200); }
+  .fbtn.navy { background: var(--navy); color: var(--white); border-color: var(--navy); }
+  .fbtn.navy:hover { background: var(--navy-mid); }
+  .filter-sep { width: 1px; height: 24px; background: var(--gray-200); }
+
+  main { padding: 20px 24px; }
+
+  .empty-state {
+    background: var(--white); border: 1.5px dashed var(--gray-300);
+    border-radius: 10px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 72px 24px; text-align: center; gap: 14px;
+  }
+  .empty-icon { font-size: 40px; line-height: 1; }
+  .empty-state h2 { font-size: 18px; font-weight: 700; color: var(--navy); }
+  .empty-state p  { font-size: 13px; color: var(--gray-700); max-width: 380px; line-height: 1.6; }
+  .empty-actions  { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 6px; }
+
+  .alert {
+    padding: 10px 16px; border-radius: var(--radius);
+    font-size: 13px; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px; border-left: 4px solid;
+  }
+  .alert.error   { background: var(--red-dim);  border-color: var(--red);   color: #7a0a1a; }
+  .alert.success { background: #edf7ee;          border-color: #2d8a3c;      color: #1b5e25; }
+  .alert.info    { background: var(--navy-pale); border-color: var(--navy);  color: var(--navy); }
+
+  .kpi-row {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 14px; margin-bottom: 20px;
+  }
+  .kpi-card {
+    background: var(--white); border: 1px solid var(--gray-200);
+    border-top: 3px solid var(--navy); border-radius: var(--radius);
+    padding: 16px 18px; box-shadow: var(--shadow);
+  }
+  .kpi-card.accent { border-top-color: var(--red); }
+  .kpi-label {
+    font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.07em; color: var(--gray-700); margin-bottom: 8px;
+  }
+  .kpi-value {
+    font-size: 30px; font-weight: 800; letter-spacing: -0.04em;
+    color: var(--navy); line-height: 1;
+  }
+  .kpi-card.accent .kpi-value { color: var(--red); }
+  .kpi-sub { font-size: 11px; color: var(--gray-500); margin-top: 5px; }
+
+  .charts-row {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 14px; margin-bottom: 20px;
+  }
+  .chart-card {
+    background: var(--white); border: 1px solid var(--gray-200);
+    border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden;
+  }
+  .chart-card-header { padding: 12px 18px 0; }
+  .chart-card-title {
+    font-size: 12px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.07em; color: var(--navy);
+  }
+  .chart-card-body { padding: 14px 16px 16px; }
+
+  .detail-panel {
+    background: var(--white); border: 1.5px solid var(--navy);
+    border-radius: var(--radius); box-shadow: var(--shadow-md);
+    margin-bottom: 20px; overflow: hidden;
+  }
+  .detail-header {
+    background: var(--navy); color: var(--white);
+    padding: 12px 18px; display: flex; align-items: center; justify-content: space-between;
+  }
+  .detail-title { font-size: 14px; font-weight: 700; }
+  .detail-sub   { font-size: 11px; color: var(--navy-light); margin-top: 2px; }
+  .close-btn {
+    background: rgba(255,255,255,0.15); border: none; color: var(--white);
+    font-size: 14px; width: 26px; height: 26px; border-radius: 4px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s; font-family: var(--font);
+  }
+  .close-btn:hover { background: rgba(255,255,255,0.28); }
+  .detail-body { padding: 20px 20px 18px; }
+
+  .section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--navy); }
+  .section-line  { flex: 1; height: 1px; background: var(--gray-200); }
+
+  .customer-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+    gap: 12px; margin-bottom: 20px;
+  }
+  .customer-card {
+    background: var(--white); border: 1px solid var(--gray-200);
+    border-left: 4px solid var(--navy-light); border-radius: var(--radius);
+    padding: 14px 16px; cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s, transform 0.12s;
+    box-shadow: var(--shadow);
+  }
+  .customer-card:hover {
+    border-left-color: var(--navy); box-shadow: var(--shadow-md); transform: translateY(-1px);
+  }
+  .customer-card.active {
+    border-left-color: var(--red); border-color: var(--navy);
+    box-shadow: 0 0 0 2px var(--navy-light), var(--shadow-md);
+  }
+  .cust-top {
+    display: flex; align-items: flex-start;
+    justify-content: space-between; margin-bottom: 12px; gap: 8px;
+  }
+  .cust-name { font-size: 13.5px; font-weight: 700; color: var(--navy); line-height: 1.3; }
+  .cust-code { font-size: 11px; color: var(--gray-500); margin-top: 2px; }
+  .rank-badge {
+    background: var(--navy-pale); color: var(--navy);
+    font-size: 11px; font-weight: 700; padding: 3px 8px;
+    border-radius: 12px; white-space: nowrap; flex-shrink: 0;
+    border: 1px solid var(--navy-light);
+  }
+  .cust-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .cust-stat {
+    background: var(--gray-50); border: 1px solid var(--gray-200);
+    border-radius: 4px; padding: 8px 10px;
+  }
+  .cust-stat-lbl {
+    font-size: 9.5px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--gray-500); margin-bottom: 3px;
+  }
+  .cust-stat-val { font-size: 20px; font-weight: 800; letter-spacing: -0.03em; color: var(--navy); }
+  .cust-stat-val.red { color: var(--red); }
+  .cust-footer { margin-top: 10px; font-size: 10.5px; color: var(--gray-500); }
+  .click-hint {
+    margin-top: 8px; font-size: 10px; color: var(--navy-mid);
+    font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+    opacity: 0; transition: opacity 0.15s;
+  }
+  .customer-card:hover .click-hint { opacity: 1; }
+  .customer-card.active .click-hint { opacity: 1; color: var(--red); }
+
+  .table-card {
+    background: var(--white); border: 1px solid var(--gray-200);
+    border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 24px;
+  }
+  .table-card-header {
+    background: var(--navy-pale); border-bottom: 1px solid var(--navy-light);
+    padding: 10px 18px; display: flex; align-items: center; justify-content: space-between;
+  }
+  .table-card-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--navy); }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    text-align: left; font-size: 10.5px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.06em; color: var(--gray-700);
+    padding: 9px 14px; background: var(--gray-50);
+    border-bottom: 1px solid var(--gray-200); white-space: nowrap;
+  }
+  tbody td { padding: 9px 14px; border-bottom: 1px solid var(--gray-100); color: var(--gray-700); }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: var(--navy-pale); }
+  tbody td:first-child { font-weight: 600; color: var(--navy); }
+  .no-data { text-align: center; color: var(--gray-500); font-size: 13px; padding: 36px; }
+
+  .loading {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px; color: var(--navy); font-weight: 500; padding: 14px 0;
+  }
+  .spinner {
+    width: 16px; height: 16px;
+    border: 2px solid var(--navy-light); border-top-color: var(--navy);
+    border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 900px) {
+    .kpi-row    { grid-template-columns: repeat(2, 1fr); }
+    .charts-row { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 580px) {
+    main { padding: 14px; }
+    .filter-bar { padding: 10px 14px; }
+    header { padding: 0 14px; }
+  }
+</style>
 </head>
-<body class="min-h-screen flex flex-col">
+<body>
 
-    <header class="navbar px-6 py-3 flex items-center justify-between shadow-md sticky top-0 z-50">
-        <div class="flex items-center gap-3">
-            <div class="h-7 w-7 bg-blue-600 rounded flex items-center justify-center font-bold text-white text-sm">C</div>
-            <h1 class="text-lg font-semibold tracking-tight">Millington Operations <span class="text-xs text-slate-400 font-normal">| Order Drops by Day Dashboard</span></h1>
-        </div>
-        
-        <div class="flex items-center gap-3">
-            <label for="excel-file" class="btn-primary text-xs font-medium py-2 px-4 rounded cursor-pointer shadow-sm">
-                Import Drop Data
-            </label>
-            <input type="file" id="excel-file" accept=".xlsx, .xls, .csv" class="hidden" />
+<header>
+  <div class="header-left">
+    <div class="logo-block">CEVA</div>
+    <div>
+      <div class="header-title">Orders Dropped Dashboard</div>
+      <div class="header-sub">Millington Facility</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="file-wrap">
+      <button class="hbtn">&#128194; Import Excel</button>
+      <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
+    </div>
+    <button class="hbtn primary" id="fetchBtn">&#8635; Fetch from Sheets</button>
+  </div>
+</header>
 
-            <div class="relative">
-                <button id="dateFilterBtn" class="bg-white text-slate-800 text-xs font-medium py-2 px-4 border border-slate-300 rounded flex items-center gap-2 shadow-sm hover:bg-slate-50">
-                    <span id="filterBtnText">Select Dates (All)</span>
-                    <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                </button>
-                
-                <div id="dateDropdownContainer" class="hidden absolute right-0 mt-1 w-60 dropdown-menu rounded-md p-3 z-50 max-h-64 overflow-y-auto">
-                    <div class="flex items-center justify-between border-b border-slate-200 pb-2 mb-2 text-[11px] font-semibold">
-                        <button onclick="toggleAllDates(true)" class="text-blue-600 hover:underline">Select All</button>
-                        <button onclick="toggleAllDates(false)" class="text-slate-500 hover:underline">Clear All</button>
-                    </div>
-                    <div id="dateCheckboxes" class="flex flex-col gap-1.5 text-xs text-slate-700">
-                        </div>
-                </div>
-            </div>
-        </div>
-    </header>
+<div class="filter-bar" id="filterBar" style="display:none;">
+  <label>Date:</label>
+  <input type="date" id="filterStart">
+  <span style="color:var(--gray-500);font-size:12px;">&#8594;</span>
+  <input type="date" id="filterEnd">
+  <div class="filter-sep"></div>
+  <label>Customer:</label>
+  <select id="filterCustomer" style="min-width:200px;"><option value="">All Customers</option></select>
+  <button class="fbtn navy" onclick="applyFilters()">Apply</button>
+  <button class="fbtn" onclick="resetFilters()">Reset</button>
+  <span id="rowCount" style="font-size:11px;color:var(--gray-500);margin-left:4px;"></span>
+</div>
 
-    <section class="px-6 pt-6 max-w-[1600px] w-full mx-auto grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div class="card p-4 flex flex-col justify-between">
-            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Units Sampled</span>
-            <span id="stat-total-units" class="text-2xl font-bold text-blue-600 mt-1">0</span>
-        </div>
-        <div class="card p-4 flex flex-col justify-between">
-            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Orders Dropped</span>
-            <span id="stat-total-orders" class="text-2xl font-bold text-amber-500 mt-1">0</span>
-        </div>
-        <div class="card p-4 flex flex-col justify-between">
-            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Monitored Customers</span>
-            <span id="stat-total-customers" class="text-2xl font-bold text-slate-700 mt-1">0</span>
-        </div>
-    </section>
+<main>
+  <div id="statusMsg"></div>
 
-    <main class="flex-1 p-6 max-w-[1600px] w-full mx-auto">
-        <div id="customer-grid" class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            </div>
-    </main>
+  <div id="emptyState" class="empty-state">
+    <div class="empty-icon">📦</div>
+    <h2>No Data Loaded</h2>
+    <p>Import an Excel file from the Demand Summary report, or fetch directly from the connected Google Sheet.</p>
+    <div class="empty-actions">
+      <div class="file-wrap">
+        <button class="fbtn navy">&#128194; Import Excel</button>
+        <input type="file" id="fileInput2" accept=".xlsx,.xls,.csv">
+      </div>
+      <button class="fbtn navy" onclick="fetchFromSheets()">&#8635; Fetch from Sheets</button>
+    </div>
+  </div>
 
-    <div id="drilldownModal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center p-4 z-50">
-        <div class="bg-white w-full max-w-4xl rounded-lg shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[85vh]">
-            <div class="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-                <div>
-                    <h2 id="modalCustomerName" class="text-base font-bold text-slate-900">Customer Analysis</h2>
-                    <p id="modalCustomerSub" class="text-xs text-slate-500"></p>
-                </div>
-                <button onclick="closeDrilldown()" class="text-slate-400 hover:text-slate-600 text-2xl font-light p-1 line-none">&times;</button>
-            </div>
-            <div class="p-6 flex-1 overflow-y-auto">
-                <div class="h-96 w-full">
-                    <canvas id="drilldownChart"></canvas>
-                </div>
-            </div>
-        </div>
+  <div id="dashboard" style="display:none;">
+
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <div class="kpi-label">Total Orders Dropped</div>
+        <div class="kpi-value" id="kpiOrders">—</div>
+        <div class="kpi-sub"  id="kpiOrdersSub"></div>
+      </div>
+      <div class="kpi-card accent">
+        <div class="kpi-label">Total Units Dropped</div>
+        <div class="kpi-value" id="kpiUnits">—</div>
+        <div class="kpi-sub"  id="kpiUnitsSub"></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Active Customers</div>
+        <div class="kpi-value" id="kpiCustomers">—</div>
+        <div class="kpi-sub"  id="kpiCustSub"></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Avg Units / Order</div>
+        <div class="kpi-value" id="kpiAvg">—</div>
+        <div class="kpi-sub">across all orders in range</div>
+      </div>
     </div>
 
-    <script>
-        // Connecting your live Google Sheet Backend Macros Script App URL
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz-akv_D7f_qLfyIjsB3ht1Pz2-gSrV_vOyk97F7GmUS9oDxOphb5A6yH_uLkY4ZvxhQw/exec";
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div class="chart-card-title">Orders Dropped by Day</div>
+        </div>
+        <div class="chart-card-body">
+          <div style="position:relative;height:220px;">
+            <canvas id="chartOrders" role="img" aria-label="Orders dropped by day"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div class="chart-card-title">Units Dropped by Day</div>
+        </div>
+        <div class="chart-card-body">
+          <div style="position:relative;height:220px;">
+            <canvas id="chartUnits" role="img" aria-label="Units dropped by day"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
 
-        let masterDataset = [];
-        let uniqueDates = [];
-        let selectedDates = [];
-        let chartInstances = {};
-        let modalChartInstance = null;
+    <div id="detailPanel" class="detail-panel" style="display:none;">
+      <div class="detail-header">
+        <div>
+          <div class="detail-title" id="detailName"></div>
+          <div class="detail-sub"  id="detailSub"></div>
+        </div>
+        <button class="close-btn" onclick="closeDetail()">&#10005;</button>
+      </div>
+      <div class="detail-body">
+        <div style="position:relative;height:200px;">
+          <canvas id="chartHourly" role="img" aria-label="Orders by hour for selected customer"></canvas>
+        </div>
+      </div>
+    </div>
 
-        // UI Event Binding Hooks
-        document.getElementById('excel-file').addEventListener('change', handleFileImport);
-        document.getElementById('dateFilterBtn').addEventListener('click', (e) => {
-            e.stopPropagation();
-            document.getElementById('dateDropdownContainer').classList.toggle('hidden');
-        });
+    <div class="section-header">
+      <div class="section-label">Customer Breakdown</div>
+      <div class="section-line"></div>
+      <div style="font-size:11px;color:var(--gray-500);">Click a card to view hourly drop pattern</div>
+    </div>
+    <div class="customer-grid" id="customerGrid"></div>
 
-        // Close multi-select dropdown when clicking outside
-        document.addEventListener('click', (e) => {
-            const container = document.getElementById('dateDropdownContainer');
-            const btn = document.getElementById('dateFilterBtn');
-            if (!container.contains(e.target) && !btn.contains(e.target)) {
-                container.add('hidden');
-            }
-        });
+    <div class="table-card">
+      <div class="table-card-header">
+        <div class="table-card-title">Daily Summary</div>
+        <button class="fbtn" style="font-size:11px;padding:4px 10px;" onclick="exportCSV()">&#11015; Export CSV</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Orders Dropped</th>
+              <th>Units Dropped</th>
+              <th>Customers</th>
+              <th>Avg Units / Order</th>
+            </tr>
+          </thead>
+          <tbody id="dailyBody"></tbody>
+        </table>
+      </div>
+    </div>
 
-        // Pull saved historical cloud logs immediately upon loading dashboard
-        window.addEventListener('DOMContentLoaded', fetchExistingData);
+  </div>
+</main>
 
-        async function fetchExistingData() {
-            try {
-                const res = await fetch(GOOGLE_SCRIPT_URL);
-                const data = await res.json();
-                masterDataset = data;
-                processAndRender();
-            } catch(e) {
-                console.error("Error connecting to live Google App Script deployment engine: ", e);
-            }
-        }
+<script>
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycbz-akv_D7f_qLfyIjsB3ht1Pz2-gSrV_vOyk97F7GmUS9oDxOphb5A6yH_uLkY4ZvxhQw/exec';
 
-        function handleFileImport(e) {
-            const file = e.target.files[0];
-            if (!file) return;
+// ── NAME NORMALIZATION ─────────────────────────────────────────────────────────
+// Strips extra whitespace and standardizes punctuation variants so that
+// "BEDJET  LLC", "BEDJET, LLC" → "BEDJET, LLC"
+// "AIRTHINGS AMERICA  INC", "AIRTHINGS AMERICA, INC" → "AIRTHINGS AMERICA, INC."
+// etc.
+function normalizeName(raw) {
+  if (!raw) return '';
+  let s = raw.trim().replace(/\s{2,}/g, ' ').toUpperCase();
+  s = s.replace(/[\s,]+INC\.?\s*$/,  ', INC.');
+  s = s.replace(/[\s,]+LLC\.?\s*$/,  ', LLC');
+  s = s.replace(/[\s,]+CORP\.?\s*$/, ' CORP');
+  s = s.replace(/[\s,]+LTD\.?\s*$/,  ' LTD.');
+  return s;
+}
 
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                const data = new Uint8Array(evt.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
-                const firstSheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[firstSheetName];
-                const rawJson = XLSX.utils.sheet_to_json(worksheet);
+let rawData = [], filteredData = [], charts = {}, activeCustomer = null;
+const $ = id => document.getElementById(id);
+const fmt = n => Number(n).toLocaleString();
 
-                // Clean columns dictionary structure
-                const cleanedImport = rawJson.map(row => ({
-                    customer: row.vendor_name ? String(row.vendor_name).trim() : 'Unknown Customer',
-                    customerId: row.vendor_code ? String(row.vendor_code).trim() : 'N/A',
-                    releaseDate: row.release_date ? String(row.release_date).split('T')[0] : '',
-                    hourDrop: row.hour_drop ? String(row.hour_drop).padStart(2, '0') : '00',
-                    qty: parseInt(row.qty_ordered) || 0,
-                    lines: 1 
-                }));
+function showStatus(msg, type = '') {
+  const el = $('statusMsg');
+  if (!msg) { el.innerHTML = ''; return; }
+  el.innerHTML = `<div class="alert ${type}">${msg}</div>`;
+  if (type === 'success') setTimeout(() => el.innerHTML = '', 3500);
+}
 
-                syncWithGoogleSheets(cleanedImport);
-            };
-            reader.readAsArrayBuffer(file);
-        }
+function parseDate(v) {
+  if (!v) return null;
+  if (typeof v === 'number') {
+    const d = new Date((v - 25569) * 86400 * 1000);
+    return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
+  }
+  const s = String(v).trim().replace(/^'/, '');
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+  const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+  if (m) { let y = parseInt(m[3]); if (y < 100) y += 2000; return `${y}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`; }
+  return s.slice(0, 10);
+}
 
-        async function syncWithGoogleSheets(newRows) {
-            try {
-                const response = await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    mode: 'cors',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify(newRows)
-                });
-                const updatedData = await response.json();
-                masterDataset = updatedData;
-                processAndRender();
-            } catch (err) {
-                console.error("Cloud storage sync pipeline failure: ", err);
-                masterDataset = [...masterDataset, ...newRows];
-                processAndRender();
-            }
-        }
+function normalizeRow(row) {
+  const lc = {};
+  Object.entries(row).forEach(([k, v]) => lc[k.trim().toLowerCase()] = v);
+  const name = normalizeName(String(lc['vendor_name'] || lc['customer'] || ''));
+  const code  = String(lc['vendor_code'] || '').trim().replace(/^'/, '');
+  const date  = parseDate(lc['release_date'] || lc['date'] || '');
+  const hour  = parseInt(String(lc['hour_drop'] || lc['hour'] || '0').replace(/^'/, '')) || 0;
+  const qty   = parseFloat(lc['qty_ordered'] || lc['quantity'] || 0) || 0;
+  return { name, code, date, hour, qty };
+}
 
-        function processAndRender() {
-            const dateSet = new Set(masterDataset.map(d => d.releaseDate).filter(Boolean));
-            uniqueDates = Array.from(dateSet).sort();
-            
-            if (selectedDates.length === 0) {
-                selectedDates = [...uniqueDates];
-            }
+function loadData(rows) {
+  rawData = rows.map(normalizeRow).filter(r => r.name && r.date);
+  if (!rawData.length) {
+    showStatus('No valid rows found. Check column names: vendor_name, vendor_code, release_date, hour_drop, qty_ordered.', 'error');
+    return;
+  }
+  populateFilters();
+  filteredData = [...rawData];
+  renderAll();
+  $('emptyState').style.display  = 'none';
+  $('dashboard').style.display   = 'block';
+  $('filterBar').style.display   = 'flex';
+  const custCount = [...new Set(rawData.map(r => r.name))].length;
+  showStatus(`&#10003; Loaded ${fmt(rawData.length)} rows across ${custCount} customers`, 'success');
+}
 
-            renderDateFilters();
-            renderDashboardVisuals();
-        }
+function populateFilters() {
+  const dates = rawData.map(r => r.date).filter(Boolean).sort();
+  $('filterStart').value = dates[0] || '';
+  $('filterEnd').value   = dates[dates.length - 1] || '';
+  const custs = [...new Set(rawData.map(r => r.name))].sort();
+  const sel   = $('filterCustomer');
+  sel.innerHTML = '<option value="">All Customers</option>' + custs.map(c => `<option>${c}</option>`).join('');
+}
 
-        function renderDateFilters() {
-            const container = document.getElementById('dateCheckboxes');
-            container.innerHTML = '';
-            
-            uniqueDates.forEach(date => {
-                const isChecked = selectedDates.includes(date);
-                const wrapper = document.createElement('label');
-                wrapper.className = "flex items-center gap-2 cursor-pointer p-1 rounded hover:bg-slate-50";
-                wrapper.innerHTML = `
-                    <input type="checkbox" value="${date}" ${isChecked ? 'checked' : ''} class="rounded text-blue-600 focus:ring-0 border-slate-300">
-                    <span class="text-slate-700 font-medium">${date}</span>
-                `;
-                wrapper.querySelector('input').addEventListener('change', handleDateSelectionChange);
-                container.appendChild(wrapper);
-            });
-            
-            updateFilterButtonText();
-        }
+function applyFilters() {
+  const start = $('filterStart').value, end = $('filterEnd').value, cust = $('filterCustomer').value;
+  filteredData = rawData.filter(r => {
+    if (start && r.date < start) return false;
+    if (end   && r.date > end)   return false;
+    if (cust  && r.name !== cust) return false;
+    return true;
+  });
+  closeDetail();
+  renderAll();
+}
 
-        function handleDateSelectionChange() {
-            const checkboxes = document.querySelectorAll('#dateCheckboxes input');
-            selectedDates = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
-            updateFilterButtonText();
-            renderDashboardVisuals();
-        }
+function resetFilters() {
+  populateFilters();
+  $('filterCustomer').value = '';
+  filteredData = [...rawData];
+  closeDetail();
+  renderAll();
+}
 
-        function toggleAllDates(selectTrue) {
-            const checkboxes = document.querySelectorAll('#dateCheckboxes input');
-            checkboxes.forEach(cb => cb.checked = selectTrue);
-            selectedDates = selectTrue ? [...uniqueDates] : [];
-            updateFilterButtonText();
-            renderDashboardVisuals();
-        }
+function renderAll() {
+  const totalOrders = filteredData.length;
+  const totalUnits  = filteredData.reduce((s, r) => s + r.qty, 0);
+  const custs       = [...new Set(filteredData.map(r => r.name))];
+  const dates       = [...new Set(filteredData.map(r => r.date))];
 
-        function updateFilterButtonText() {
-            const textSpan = document.getElementById('filterBtnText');
-            if (selectedDates.length === uniqueDates.length) textSpan.textContent = "Filter Dates (All)";
-            else if (selectedDates.length === 0) textSpan.textContent = "Filter Dates (None)";
-            else textSpan.textContent = `Filtered (${selectedDates.length} Days)`;
-        }
+  $('kpiOrders').textContent    = fmt(totalOrders);
+  $('kpiOrdersSub').textContent = `across ${dates.length} day(s)`;
+  $('kpiUnits').textContent     = fmt(Math.round(totalUnits));
+  $('kpiUnitsSub').textContent  = `in selected date range`;
+  $('kpiCustomers').textContent = custs.length;
+  $('kpiCustSub').textContent   = `with orders in range`;
+  $('kpiAvg').textContent       = totalOrders ? (totalUnits / totalOrders).toFixed(1) : '0';
+  $('rowCount').textContent     = `${fmt(filteredData.length)} rows`;
 
-        function renderDashboardVisuals() {
-            const filteredData = masterDataset.filter(d => selectedDates.includes(d.releaseDate));
+  renderByDayCharts();
+  renderCustomerCards();
+  renderDailyTable();
+}
 
-            let globalUnits = 0;
-            let globalOrders = 0;
-            const uniqueCusts = new Set();
-            const groupings = {};
+function groupByDate(data, valFn) {
+  const map = {};
+  data.forEach(r => { map[r.date] = (map[r.date] || 0) + valFn(r); });
+  const keys = Object.keys(map).sort();
+  return { labels: keys, values: keys.map(k => map[k]) };
+}
 
-            filteredData.forEach(row => {
-                globalUnits += row.qty;
-                globalOrders += row.lines;
-                uniqueCusts.add(row.customer);
+function destroyChart(key) {
+  if (charts[key]) { charts[key].destroy(); delete charts[key]; }
+}
 
-                if (!groupings[row.customer]) {
-                    groupings[row.customer] = { id: row.customerId, dates: {} };
-                }
-                if (!groupings[row.customer].dates[row.releaseDate]) {
-                    groupings[row.customer].dates[row.releaseDate] = { qty: 0, orders: 0 };
-                }
-                groupings[row.customer].dates[row.releaseDate].qty += row.qty;
-                groupings[row.customer].dates[row.releaseDate].orders += row.lines;
-            });
+const TT = {
+  backgroundColor: '#003057', titleColor: '#fff',
+  bodyColor: '#ccd9e8', borderColor: 'rgba(255,255,255,0.15)',
+  borderWidth: 1, cornerRadius: 5, padding: 10
+};
+const SCALES = {
+  x: { ticks: { color: '#6c757d', font: { size: 10 }, maxRotation: 45, autoSkip: true, maxTicksLimit: 14 }, grid: { color: 'rgba(0,0,0,0.05)' } },
+  y: { ticks: { color: '#6c757d', font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.06)' }, beginAtZero: true }
+};
 
-            document.getElementById('stat-total-units').textContent = globalUnits.toLocaleString();
-            document.getElementById('stat-total-orders').textContent = globalOrders.toLocaleString();
-            document.getElementById('stat-total-customers').textContent = uniqueCusts.size;
+function renderByDayCharts() {
+  const o = groupByDate(filteredData, () => 1);
+  const u = groupByDate(filteredData, r => r.qty);
+  destroyChart('orders'); destroyChart('units');
 
-            const gridContainer = document.getElementById('customer-grid');
-            Object.keys(chartInstances).forEach(k => chartInstances[k].destroy());
-            chartInstances = {};
-            gridContainer.innerHTML = '';
+  charts['orders'] = new Chart($('chartOrders'), {
+    type: 'bar',
+    data: { labels: o.labels, datasets: [{ data: o.values, backgroundColor: 'rgba(0,48,87,0.78)', borderColor: '#003057', borderWidth: 1, borderRadius: 3 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: TT }, scales: SCALES }
+  });
 
-            Object.keys(groupings).sort().forEach((customerName, index) => {
-                const customerData = groupings[customerName];
-                
-                const card = document.createElement('div');
-                card.className = "card p-4 flex flex-col bg-white";
-                card.style.cursor = "pointer";
-                card.setAttribute('onclick', `openDrilldown('${customerName.replace(/'/g, "\\'")}')`);
-                
-                card.innerHTML = `
-                    <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-100">
-                        <div>
-                            <h2 class="text-sm font-bold text-slate-800 tracking-tight">${customerName}</h2>
-                            <p class="text-[11px] text-slate-400">Account ID: ${customerData.id}</p>
-                        </div>
-                        <span class="text-[11px] font-semibold text-blue-600 hover:text-blue-800">Hourly Analysis &rarr;</span>
-                    </div>
-                    <div class="h-52 w-full">
-                        <canvas id="chart-cust-${index}"></canvas>
-                    </div>
-                `;
-                gridContainer.appendChild(card);
+  charts['units'] = new Chart($('chartUnits'), {
+    type: 'bar',
+    data: { labels: u.labels, datasets: [{ data: u.values, backgroundColor: 'rgba(200,16,46,0.78)', borderColor: '#C8102E', borderWidth: 1, borderRadius: 3 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: TT }, scales: SCALES }
+  });
+}
 
-                const labels = [...selectedDates].sort();
-                const unitDataArray = labels.map(lbl => customerData.dates[lbl]?.qty || 0);
-                const orderDataArray = labels.map(lbl => customerData.dates[lbl]?.orders || 0);
+function renderCustomerCards() {
+  const map = {};
+  filteredData.forEach(r => {
+    if (!map[r.name]) map[r.name] = { name: r.name, code: r.code, orders: 0, units: 0, dates: new Set(), hours: {} };
+    map[r.name].orders++;
+    map[r.name].units += r.qty;
+    map[r.name].dates.add(r.date);
+    map[r.name].hours[r.hour] = (map[r.name].hours[r.hour] || 0) + 1;
+  });
 
-                const ctx = document.getElementById(`chart-cust-${index}`).getContext('2d');
-                
-                chartInstances[customerName] = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [
-                            {
-                                label: 'Units Ordered',
-                                data: unitDataArray,
-                                backgroundColor: '#2563eb', // Royal corporate blue
-                                hoverBackgroundColor: '#1d4ed8',
-                                yAxisID: 'yUnits',
-                                order: 2,
-                                barThickness: 24
-                            },
-                            {
-                                label: 'Orders Dropped',
-                                data: orderDataArray,
-                                type: 'line',
-                                borderColor: '#f59e0b', // Distinct high-contrast orange line tracking
-                                borderWidth: 2.5,
-                                pointBackgroundColor: '#f59e0b',
-                                pointRadius: 3,
-                                fill: false,
-                                yAxisID: 'yOrders',
-                                order: 1
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { 
-                            legend: { 
-                                display: true, 
-                                position: 'top',
-                                labels: { boxWidth: 12, font: { size: 10, weight: 'bold' }, color: '#64748b' }
-                            } 
-                        },
-                        scales: {
-                            x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 10 } } },
-                            yUnits: { position: 'left', title: { display: true, text: 'Units Volume', color: '#475569', font: { size: 10, weight: 'bold' } }, ticks: { color: '#64748b' }, grid: { color: '#f1f5f9' } },
-                            yOrders: { position: 'right', title: { display: true, text: 'Order Count', color: '#475569', font: { size: 10, weight: 'bold' } }, ticks: { color: '#64748b' }, grid: { display: false } }
-                        }
-                    }
-                });
-            });
-        }
+  const sorted = Object.values(map).sort((a, b) => b.orders - a.orders);
+  $('customerGrid').innerHTML = sorted.map((c, i) => `
+    <div class="customer-card ${activeCustomer === c.name ? 'active' : ''}"
+         onclick="showDetail('${c.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')">
+      <div class="cust-top">
+        <div>
+          <div class="cust-name">${c.name}</div>
+          <div class="cust-code">Vendor ID: ${c.code || '—'}</div>
+        </div>
+        <div class="rank-badge">#${i + 1}</div>
+      </div>
+      <div class="cust-stats">
+        <div class="cust-stat">
+          <div class="cust-stat-lbl">Orders</div>
+          <div class="cust-stat-val">${fmt(c.orders)}</div>
+        </div>
+        <div class="cust-stat">
+          <div class="cust-stat-lbl">Units</div>
+          <div class="cust-stat-val red">${fmt(Math.round(c.units))}</div>
+        </div>
+      </div>
+      <div class="cust-footer">
+        &#128197; ${c.dates.size} active day(s) &nbsp;&middot;&nbsp; ~${c.orders ? Math.round(c.units / c.orders) : 0} units/order
+      </div>
+      <div class="click-hint">&#9654; View hourly breakdown</div>
+    </div>
+  `).join('');
+}
 
-        function openDrilldown(customerName) {
-            const matchedRows = masterDataset.filter(d => d.customer === customerName && selectedDates.includes(d.releaseDate));
-            const customerMeta = masterDataset.find(d => d.customer === customerName) || { customerId: 'N/A' };
-            
-            document.getElementById('modalCustomerName').textContent = customerName;
-            document.getElementById('modalCustomerSub').textContent = `Customer ID: ${customerMeta.customerId} | Hourly Drop Distribution Summary Profile`;
-            document.getElementById('drilldownModal').classList.remove('hidden');
+function showDetail(custName) {
+  activeCustomer = custName;
+  renderCustomerCards();
 
-            const hourlyUnits = Array(24).fill(0);
-            const hourlyOrders = Array(24).fill(0);
+  const custData = filteredData.filter(r => r.name === custName);
+  const hourMap  = {};
+  custData.forEach(r => { hourMap[r.hour] = (hourMap[r.hour] || 0) + 1; });
 
-            matchedRows.forEach(row => {
-                const hourIndex = parseInt(row.hourDrop);
-                if (hourIndex >= 0 && hourIndex < 24) {
-                    hourlyUnits[hourIndex] += row.qty;
-                    hourlyOrders[hourIndex] += row.lines;
-                }
-            });
+  const hours  = Array.from({ length: 24 }, (_, i) => i);
+  const labels = hours.map(h => h === 0 ? '12am' : h < 12 ? `${h}am` : h === 12 ? '12pm' : `${h-12}pm`);
+  const vals   = hours.map(h => hourMap[h] || 0);
+  const maxVal = Math.max(...vals);
 
-            const hourlyLabels = Array.from({length: 24}, (_, i) => `${String(i).padStart(2, '0')}:00`);
+  $('detailName').textContent = custName;
+  $('detailSub').textContent  = `${fmt(custData.length)} orders · ${fmt(Math.round(custData.reduce((s,r) => s + r.qty, 0)))} units`;
+  $('detailPanel').style.display = 'block';
 
-            if (modalChartInstance) modalChartInstance.destroy();
+  destroyChart('hourly');
+  charts['hourly'] = new Chart($('chartHourly'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data: vals,
+        backgroundColor: vals.map(v => v === maxVal && maxVal > 0 ? 'rgba(200,16,46,0.85)' : 'rgba(0,48,87,0.72)'),
+        borderColor:     vals.map(v => v === maxVal && maxVal > 0 ? '#C8102E' : '#003057'),
+        borderWidth: 1, borderRadius: 3
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { ...TT, callbacks: { label: ctx => ` ${ctx.raw} order${ctx.raw !== 1 ? 's' : ''}` } } },
+      scales: {
+        x: { ticks: { color: '#6c757d', font: { size: 10 }, maxRotation: 45 }, grid: { color: 'rgba(0,0,0,0.05)' } },
+        y: { ticks: { color: '#6c757d', font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.06)' }, beginAtZero: true }
+      }
+    }
+  });
 
-            const ctx = document.getElementById('drilldownChart').getContext('2d');
-            modalChartInstance = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: hourlyLabels,
-                    datasets: [
-                        {
-                            label: 'Units Distributed',
-                            data: hourlyUnits,
-                            backgroundColor: 'rgba(37, 99, 235, 0.85)',
-                            borderColor: '#2563eb',
-                            yAxisID: 'yU',
-                            barThickness: 16
-                        },
-                        {
-                            label: 'Order Volume',
-                            data: hourlyOrders,
-                            type: 'line',
-                            borderColor: '#10b981', // Clean Emerald accents inside individual breakdown view
-                            borderWidth: 2.5,
-                            pointBackgroundColor: '#10b981',
-                            fill: false,
-                            yAxisID: 'yO'
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: 'top' } },
-                    scales: {
-                        x: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: '#f1f5f9' } },
-                        yU: { position: 'left', title: { display: true, text: 'Total Units Checked', color: '#475569' }, ticks: { color: '#64748b' } },
-                        yO: { position: 'right', title: { display: true, text: 'Total Drops Issued', color: '#475569' }, ticks: { color: '#64748b' }, grid: { display: false } }
-                    }
-                }
-            });
-        }
+  $('detailPanel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
 
-        function closeDrilldown() {
-            document.getElementById('drilldownModal').classList.add('hidden');
-        }
-    </script>
+function closeDetail() {
+  activeCustomer = null;
+  $('detailPanel').style.display = 'none';
+  destroyChart('hourly');
+  renderCustomerCards();
+}
+
+function renderDailyTable() {
+  const map = {};
+  filteredData.forEach(r => {
+    if (!map[r.date]) map[r.date] = { orders: 0, units: 0, custs: new Set() };
+    map[r.date].orders++;
+    map[r.date].units += r.qty;
+    map[r.date].custs.add(r.name);
+  });
+  const rows = Object.entries(map).sort((a, b) => a[0].localeCompare(b[0]));
+  $('dailyBody').innerHTML = rows.length
+    ? rows.map(([date, d]) => `
+        <tr>
+          <td>${date}</td>
+          <td>${fmt(d.orders)}</td>
+          <td>${fmt(Math.round(d.units))}</td>
+          <td>${d.custs.size}</td>
+          <td>${(d.units / d.orders).toFixed(1)}</td>
+        </tr>`).join('')
+    : '<tr><td colspan="5" class="no-data">No data in selected range.</td></tr>';
+}
+
+function exportCSV() {
+  const map = {};
+  filteredData.forEach(r => {
+    if (!map[r.date]) map[r.date] = { orders: 0, units: 0, custs: new Set() };
+    map[r.date].orders++;
+    map[r.date].units += r.qty;
+    map[r.date].custs.add(r.name);
+  });
+  const rows = [['Date','Orders Dropped','Units Dropped','Customers','Avg Units/Order'],
+    ...Object.entries(map).sort((a,b)=>a[0].localeCompare(b[0])).map(([d,v])=>[d,v.orders,Math.round(v.units),v.custs.size,(v.units/v.orders).toFixed(1)])];
+  const blob = new Blob([rows.map(r=>r.join(',')).join('\n')], { type: 'text/csv' });
+  const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: 'orders_dropped.csv' });
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
+async function fetchFromSheets() {
+  showStatus('<div class="loading"><div class="spinner"></div>Fetching from Google Sheets…</div>', 'info');
+  try {
+    const res  = await fetch(SHEET_URL + '?action=getAll');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    if (json.error) throw new Error(json.error);
+    const data = Array.isArray(json) ? json : (json.data || []);
+    if (!data.length) throw new Error('Sheet returned 0 rows');
+    loadData(data);
+  } catch (err) {
+    showStatus(`Error: ${err.message}`, 'error');
+  }
+}
+
+function handleFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb   = XLSX.read(e.target.result, { type: 'array', cellDates: false });
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
+      loadData(rows);
+    } catch (err) { showStatus('Failed to parse file: ' + err.message, 'error'); }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+$('fileInput').addEventListener('change',  e => handleFile(e.target.files[0]));
+$('fileInput2').addEventListener('change', e => handleFile(e.target.files[0]));
+$('fetchBtn').addEventListener('click', fetchFromSheets);
+</script>
 </body>
 </html>
