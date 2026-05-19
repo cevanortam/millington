@@ -8,93 +8,111 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
-        /* Custom styles matching your audit dashboard theme overrides */
+        /* Exact style matches for the Audit Dashboard light UI */
         body {
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: #0f172a; /* Slate 900 dark mode base */
-            color: #f8fafc;
+            font-family: 'Segoe UI', Inter, system-ui, -apple-system, sans-serif;
+            background-color: #f1f5f9; /* Soft light gray background */
+            color: #1e293b;
         }
+        
+        .navbar {
+            background-color: #0f172a; /* Deep corporate navy/slate header */
+            color: #ffffff;
+        }
+
         .card {
-            background-color: #1e293b; /* Slate 800 card background */
-            border: 1px solid #334155;
-            border-radius: 0.5rem;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.375rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
         }
-        .card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+
+        /* Styling for the custom multi-select date dropdown */
+        .dropdown-menu {
+            background-color: #ffffff;
+            border: 1px solid #cbd5e1;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         }
-        .custom-dropdown {
-            background-color: #1e293b;
-            border: 1px solid #475569;
+
+        .btn-primary {
+            background-color: #2563eb;
+            color: #ffffff;
+            transition: background-color 0.2s;
+        }
+        .btn-primary:hover {
+            background-color: #1d4ed8;
+        }
+
+        /* Modal backdrop blurring */
+        .modal-backdrop {
+            background-color: rgba(15, 23, 42, 0.3);
+            backdrop-filter: blur(4px);
         }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
 
-    <header class="border-b border-slate-700 bg-slate-900/80 backdrop-blur px-6 py-4 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-50">
+    <header class="navbar px-6 py-3 flex items-center justify-between shadow-md sticky top-0 z-50">
         <div class="flex items-center gap-3">
-            <div class="h-8 w-8 bg-blue-600 rounded flex items-center justify-center font-bold text-white">D</div>
-            <h1 class="text-xl font-semibold tracking-tight">Demand Dashboard <span class="text-sm text-slate-400 font-normal">| Order Drops by Day</span></h1>
+            <div class="h-7 w-7 bg-blue-600 rounded flex items-center justify-center font-bold text-white text-sm">C</div>
+            <h1 class="text-lg font-semibold tracking-tight">Millington Operations <span class="text-xs text-slate-400 font-normal">| Order Drops by Day Dashboard</span></h1>
         </div>
         
-        <div class="flex items-center gap-4 ml-auto">
-            <div class="flex items-center gap-2">
-                <label for="excel-file" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-4 rounded cursor-pointer transition">
-                    Import Excel
-                </label>
-                <input type="file" id="excel-file" accept=".xlsx, .xls, .csv" class="hidden" />
-            </div>
+        <div class="flex items-center gap-3">
+            <label for="excel-file" class="btn-primary text-xs font-medium py-2 px-4 rounded cursor-pointer shadow-sm">
+                Import Drop Data
+            </label>
+            <input type="file" id="excel-file" accept=".xlsx, .xls, .csv" class="hidden" />
 
             <div class="relative">
-                <button id="dateFilterBtn" class="custom-dropdown text-sm py-2 px-4 rounded flex items-center gap-2 hover:bg-slate-700 text-slate-200">
-                    <span>Filter Dates (All)</span>
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                <button id="dateFilterBtn" class="bg-white text-slate-800 text-xs font-medium py-2 px-4 border border-slate-300 rounded flex items-center gap-2 shadow-sm hover:bg-slate-50">
+                    <span id="filterBtnText">Select Dates (All)</span>
+                    <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                 </button>
-                <div id="dateDropdownContainer" class="hidden absolute right-0 mt-2 w-64 custom-dropdown rounded shadow-xl p-3 z-50 max-h-60 overflow-y-auto">
-                    <div class="flex items-center justify-between border-b border-slate-700 pb-2 mb-2 text-xs">
-                        <button onclick="toggleAllDates(true)" class="text-blue-400 hover:underline">Select All</button>
-                        <button onclick="toggleAllDates(false)" class="text-slate-400 hover:underline">Clear</button>
+                
+                <div id="dateDropdownContainer" class="hidden absolute right-0 mt-1 w-60 dropdown-menu rounded-md p-3 z-50 max-h-64 overflow-y-auto">
+                    <div class="flex items-center justify-between border-b border-slate-200 pb-2 mb-2 text-[11px] font-semibold">
+                        <button onclick="toggleAllDates(true)" class="text-blue-600 hover:underline">Select All</button>
+                        <button onclick="toggleAllDates(false)" class="text-slate-500 hover:underline">Clear All</button>
                     </div>
-                    <div id="dateCheckboxes" class="flex flex-col gap-2 text-sm text-slate-300">
+                    <div id="dateCheckboxes" class="flex flex-col gap-1.5 text-xs text-slate-700">
                         </div>
                 </div>
             </div>
         </div>
     </header>
 
-    <main class="flex-1 p-6 max-w-[1600px] w-full mx-auto space-y-6">
-        
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="card p-4">
-                <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Units Volume</h3>
-                <p id="stat-total-units" class="text-2xl font-bold mt-1 text-blue-400">0</p>
-            </div>
-            <div class="card p-4">
-                <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Orders Handled</h3>
-                <p id="stat-total-orders" class="text-2xl font-bold mt-1 text-emerald-400">0</p>
-            </div>
-            <div class="card p-4">
-                <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Active Tracked Customers</h3>
-                <p id="stat-total-customers" class="text-2xl font-bold mt-1 text-purple-400">0</p>
-            </div>
+    <section class="px-6 pt-6 max-w-[1600px] w-full mx-auto grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="card p-4 flex flex-col justify-between">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Units Sampled</span>
+            <span id="stat-total-units" class="text-2xl font-bold text-blue-600 mt-1">0</span>
         </div>
+        <div class="card p-4 flex flex-col justify-between">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Orders Dropped</span>
+            <span id="stat-total-orders" class="text-2xl font-bold text-amber-500 mt-1">0</span>
+        </div>
+        <div class="card p-4 flex flex-col justify-between">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Monitored Customers</span>
+            <span id="stat-total-customers" class="text-2xl font-bold text-slate-700 mt-1">0</span>
+        </div>
+    </section>
 
+    <main class="flex-1 p-6 max-w-[1600px] w-full mx-auto">
         <div id="customer-grid" class="grid grid-cols-1 xl:grid-cols-2 gap-6">
             </div>
     </main>
 
-    <div id="drilldownModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-        <div class="bg-slate-800 border border-slate-700 w-full max-w-4xl rounded-lg shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
-            <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800/50">
+    <div id="drilldownModal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center p-4 z-50">
+        <div class="bg-white w-full max-w-4xl rounded-lg shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[85vh]">
+            <div class="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
                 <div>
-                    <h2 id="modalCustomerName" class="text-lg font-bold text-white">Customer Details</h2>
-                    <p id="modalCustomerSub" class="text-xs text-slate-400"></p>
+                    <h2 id="modalCustomerName" class="text-base font-bold text-slate-900">Customer Analysis</h2>
+                    <p id="modalCustomerSub" class="text-xs text-slate-500"></p>
                 </div>
-                <button onclick="closeDrilldown()" class="text-slate-400 hover:text-white text-xl p-1">&times;</button>
+                <button onclick="closeDrilldown()" class="text-slate-400 hover:text-slate-600 text-2xl font-light p-1 line-none">&times;</button>
             </div>
-            <div class="p-6 overflow-y-auto flex-1 bg-slate-900/50">
-                <div class="h-[400px] w-full">
+            <div class="p-6 flex-1 overflow-y-auto">
+                <div class="h-96 w-full">
                     <canvas id="drilldownChart"></canvas>
                 </div>
             </div>
@@ -102,7 +120,7 @@
     </div>
 
     <script>
-        // Endpoint Configuration for your Google App Script Sync Interface
+        // Connecting your live Google Sheet Backend Macros Script App URL
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz-akv_D7f_qLfyIjsB3ht1Pz2-gSrV_vOyk97F7GmUS9oDxOphb5A6yH_uLkY4ZvxhQw/exec";
 
         let masterDataset = [];
@@ -111,39 +129,34 @@
         let chartInstances = {};
         let modalChartInstance = null;
 
+        // UI Event Binding Hooks
         document.getElementById('excel-file').addEventListener('change', handleFileImport);
-        document.getElementById('dateFilterBtn').addEventListener('click', () => {
+        document.getElementById('dateFilterBtn').addEventListener('click', (e) => {
+            e.stopPropagation();
             document.getElementById('dateDropdownContainer').classList.toggle('hidden');
         });
 
-        // Initialize UI and pull cloud records on page startup
+        // Close multi-select dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            const container = document.getElementById('dateDropdownContainer');
+            const btn = document.getElementById('dateFilterBtn');
+            if (!container.contains(e.target) && !btn.contains(e.target)) {
+                container.add('hidden');
+            }
+        });
+
+        // Pull saved historical cloud logs immediately upon loading dashboard
         window.addEventListener('DOMContentLoaded', fetchExistingData);
 
         async function fetchExistingData() {
-            if (GOOGLE_SCRIPT_URL.includes("YOUR_GOOGLE")) {
-                console.warn("Google Apps Script URL is blank. Displaying local engine mode demo data.");
-                loadDemoData();
-                return;
-            }
             try {
                 const res = await fetch(GOOGLE_SCRIPT_URL);
                 const data = await res.json();
                 masterDataset = data;
                 processAndRender();
             } catch(e) {
-                console.error("Error connecting to Google sheet database: ", e);
+                console.error("Error connecting to live Google App Script deployment engine: ", e);
             }
-        }
-
-        function loadDemoData() {
-            // Placeholder dataset mimicking structural framework mapping
-            masterDataset = [
-                { customer: "ABLETON", customerId: "411372", releaseDate: "2026-05-18", hourDrop: "08", qty: 45, lines: 1 },
-                { customer: "ABLETON", customerId: "411372", releaseDate: "2026-05-19", hourDrop: "14", qty: 120, lines: 2 },
-                { customer: "LIBBEY INC.", customerId: "411379", releaseDate: "2026-05-18", hourDrop: "10", qty: 300, lines: 5 },
-                { customer: "LIBBEY INC.", customerId: "411379", releaseDate: "2026-05-19", hourDrop: "22", qty: 15, lines: 1 }
-            ];
-            processAndRender();
         }
 
         function handleFileImport(e) {
@@ -158,50 +171,41 @@
                 const worksheet = workbook.Sheets[firstSheetName];
                 const rawJson = XLSX.utils.sheet_to_json(worksheet);
 
-                // Map Excel data dictionary payload to internal key architecture
+                // Clean columns dictionary structure
                 const cleanedImport = rawJson.map(row => ({
-                    customer: row.vendor_name ? String(row.vendor_name).trim() : 'Unknown',
-                    customerId: row.vendor_code ? String(row.vendor_code).trim() : '',
+                    customer: row.vendor_name ? String(row.vendor_name).trim() : 'Unknown Customer',
+                    customerId: row.vendor_code ? String(row.vendor_code).trim() : 'N/A',
                     releaseDate: row.release_date ? String(row.release_date).split('T')[0] : '',
                     hourDrop: row.hour_drop ? String(row.hour_drop).padStart(2, '0') : '00',
                     qty: parseInt(row.qty_ordered) || 0,
-                    lines: 1 // Track individual row dropped count metrics
+                    lines: 1 
                 }));
 
-                // Push payload upstream via API to sync across warehouse workstations
                 syncWithGoogleSheets(cleanedImport);
             };
             reader.readAsArrayBuffer(file);
         }
 
         async function syncWithGoogleSheets(newRows) {
-            if (GOOGLE_SCRIPT_URL.includes("YOUR_GOOGLE")) {
-                masterDataset = [...masterDataset, ...newRows];
-                processAndRender();
-                return;
-            }
-
             try {
                 const response = await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
                     mode: 'cors',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify(newRows)
                 });
                 const updatedData = await response.json();
                 masterDataset = updatedData;
                 processAndRender();
             } catch (err) {
-                console.error("Cloud storage sync failure: ", err);
-                // Fallback graceful save local update if network is drops out
+                console.error("Cloud storage sync pipeline failure: ", err);
                 masterDataset = [...masterDataset, ...newRows];
                 processAndRender();
             }
         }
 
         function processAndRender() {
-            // Find unique dates for filter dropdown panel layout
-            const dateSet = new Set(masterDataset.map(d => d.releaseDate));
+            const dateSet = new Set(masterDataset.map(d => d.releaseDate).filter(Boolean));
             uniqueDates = Array.from(dateSet).sort();
             
             if (selectedDates.length === 0) {
@@ -219,10 +223,10 @@
             uniqueDates.forEach(date => {
                 const isChecked = selectedDates.includes(date);
                 const wrapper = document.createElement('label');
-                wrapper.className = "flex items-center gap-2 cursor-pointer hover:text-white";
+                wrapper.className = "flex items-center gap-2 cursor-pointer p-1 rounded hover:bg-slate-50";
                 wrapper.innerHTML = `
-                    <input type="checkbox" value="${date}" ${isChecked ? 'checked' : ''} class="rounded text-blue-600 focus:ring-0 bg-slate-700 border-slate-600">
-                    <span>${date}</span>
+                    <input type="checkbox" value="${date}" ${isChecked ? 'checked' : ''} class="rounded text-blue-600 focus:ring-0 border-slate-300">
+                    <span class="text-slate-700 font-medium">${date}</span>
                 `;
                 wrapper.querySelector('input').addEventListener('change', handleDateSelectionChange);
                 container.appendChild(wrapper);
@@ -247,22 +251,18 @@
         }
 
         function updateFilterButtonText() {
-            const btn = document.querySelector('#dateFilterBtn span');
-            if (selectedDates.length === uniqueDates.length) btn.textContent = "Filter Dates (All)";
-            else if (selectedDates.length === 0) btn.textContent = "Filter Dates (None)";
-            else btn.textContent = `Filtered (${selectedDates.length} Days)`;
+            const textSpan = document.getElementById('filterBtnText');
+            if (selectedDates.length === uniqueDates.length) textSpan.textContent = "Filter Dates (All)";
+            else if (selectedDates.length === 0) textSpan.textContent = "Filter Dates (None)";
+            else textSpan.textContent = `Filtered (${selectedDates.length} Days)`;
         }
 
         function renderDashboardVisuals() {
-            // Filter records down to target selection matrix bounds
             const filteredData = masterDataset.filter(d => selectedDates.includes(d.releaseDate));
 
-            // Compute global quick statistics metrics text cards
             let globalUnits = 0;
             let globalOrders = 0;
             const uniqueCusts = new Set();
-
-            // Group by Customer and Date records
             const groupings = {};
 
             filteredData.forEach(row => {
@@ -271,10 +271,7 @@
                 uniqueCusts.add(row.customer);
 
                 if (!groupings[row.customer]) {
-                    groupings[row.customer] = {
-                        id: row.customerId,
-                        dates: {}
-                    };
+                    groupings[row.customer] = { id: row.customerId, dates: {} };
                 }
                 if (!groupings[row.customer].dates[row.releaseDate]) {
                     groupings[row.customer].dates[row.releaseDate] = { qty: 0, orders: 0 };
@@ -288,43 +285,38 @@
             document.getElementById('stat-total-customers').textContent = uniqueCusts.size;
 
             const gridContainer = document.getElementById('customer-grid');
-            
-            // Clean dynamic structures safely before recreation loop
             Object.keys(chartInstances).forEach(k => chartInstances[k].destroy());
             chartInstances = {};
             gridContainer.innerHTML = '';
 
-            // Map and plot active elements inside system loops
             Object.keys(groupings).sort().forEach((customerName, index) => {
                 const customerData = groupings[customerName];
                 
-                // Build Card Dom Shell Element
                 const card = document.createElement('div');
-                card.className = "card p-4 flex flex-col cursor-pointer";
+                card.className = "card p-4 flex flex-col bg-white";
+                card.style.cursor = "pointer";
                 card.setAttribute('onclick', `openDrilldown('${customerName.replace(/'/g, "\\'")}')`);
                 
                 card.innerHTML = `
-                    <div class="flex justify-between items-start mb-2">
+                    <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-100">
                         <div>
-                            <h2 class="text-base font-bold tracking-tight text-white">${customerName}</h2>
-                            <p class="text-xs text-slate-400">Account ID: ${customerData.id}</p>
+                            <h2 class="text-sm font-bold text-slate-800 tracking-tight">${customerName}</h2>
+                            <p class="text-[11px] text-slate-400">Account ID: ${customerData.id}</p>
                         </div>
-                        <span class="text-xs text-blue-400 hover:underline">View Hourly Drops</span>
+                        <span class="text-[11px] font-semibold text-blue-600 hover:text-blue-800">Hourly Analysis &rarr;</span>
                     </div>
-                    <div class="h-48 w-full mt-auto">
+                    <div class="h-52 w-full">
                         <canvas id="chart-cust-${index}"></canvas>
                     </div>
                 `;
                 gridContainer.appendChild(card);
 
-                // Prepare chart structures sorting linear chronological axis coordinates
                 const labels = [...selectedDates].sort();
                 const unitDataArray = labels.map(lbl => customerData.dates[lbl]?.qty || 0);
                 const orderDataArray = labels.map(lbl => customerData.dates[lbl]?.orders || 0);
 
                 const ctx = document.getElementById(`chart-cust-${index}`).getContext('2d');
                 
-                // Instantiate clean dual axis graph visualization configuration arrays
                 chartInstances[customerName] = new Chart(ctx, {
                     type: 'bar',
                     data: {
@@ -333,18 +325,20 @@
                             {
                                 label: 'Units Ordered',
                                 data: unitDataArray,
-                                backgroundColor: 'rgba(59, 130, 246, 0.75)', // Light theme matching focus highlight
-                                borderColor: '#3b82f6',
+                                backgroundColor: '#2563eb', // Royal corporate blue
+                                hoverBackgroundColor: '#1d4ed8',
                                 yAxisID: 'yUnits',
-                                order: 2
+                                order: 2,
+                                barThickness: 24
                             },
                             {
                                 label: 'Orders Dropped',
                                 data: orderDataArray,
                                 type: 'line',
-                                borderColor: '#10b981', // Emerald tracking overlay metrics line accent
-                                borderWidth: 2,
-                                pointBackgroundColor: '#10b981',
+                                borderColor: '#f59e0b', // Distinct high-contrast orange line tracking
+                                borderWidth: 2.5,
+                                pointBackgroundColor: '#f59e0b',
+                                pointRadius: 3,
                                 fill: false,
                                 yAxisID: 'yOrders',
                                 order: 1
@@ -354,11 +348,17 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
+                        plugins: { 
+                            legend: { 
+                                display: true, 
+                                position: 'top',
+                                labels: { boxWidth: 12, font: { size: 10, weight: 'bold' }, color: '#64748b' }
+                            } 
+                        },
                         scales: {
-                            x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 10 } } },
-                            yUnits: { position: 'left', title: { display: true, text: 'Units', color: '#94a3b8', font: { size: 10 } }, ticks: { color: '#94a3b8' }, grid: { color: 'rgba(51, 65, 85, 0.5)' } },
-                            yOrders: { position: 'right', title: { display: true, text: 'Orders', color: '#94a3b8', font: { size: 10 } }, ticks: { color: '#94a3b8' }, grid: { display: false } }
+                            x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 10 } } },
+                            yUnits: { position: 'left', title: { display: true, text: 'Units Volume', color: '#475569', font: { size: 10, weight: 'bold' } }, ticks: { color: '#64748b' }, grid: { color: '#f1f5f9' } },
+                            yOrders: { position: 'right', title: { display: true, text: 'Order Count', color: '#475569', font: { size: 10, weight: 'bold' } }, ticks: { color: '#64748b' }, grid: { display: false } }
                         }
                     }
                 });
@@ -370,10 +370,9 @@
             const customerMeta = masterDataset.find(d => d.customer === customerName) || { customerId: 'N/A' };
             
             document.getElementById('modalCustomerName').textContent = customerName;
-            document.getElementById('modalCustomerSub').textContent = `Customer ID: ${customerMeta.customerId} | Hourly Drop Load Run Summary Profile`;
+            document.getElementById('modalCustomerSub').textContent = `Customer ID: ${customerMeta.customerId} | Hourly Drop Distribution Summary Profile`;
             document.getElementById('drilldownModal').classList.remove('hidden');
 
-            // Set up hourly 24 loop array container
             const hourlyUnits = Array(24).fill(0);
             const hourlyOrders = Array(24).fill(0);
 
@@ -398,16 +397,19 @@
                         {
                             label: 'Units Distributed',
                             data: hourlyUnits,
-                            backgroundColor: 'rgba(147, 51, 234, 0.7)', // Purple accent structure layout elements
-                            borderColor: '#a855f7',
-                            yAxisID: 'yU'
+                            backgroundColor: 'rgba(37, 99, 235, 0.85)',
+                            borderColor: '#2563eb',
+                            yAxisID: 'yU',
+                            barThickness: 16
                         },
                         {
-                            label: 'Volume Counts (Orders)',
+                            label: 'Order Volume',
                             data: hourlyOrders,
                             type: 'line',
-                            borderColor: '#f59e0b', // Amber line profiles overlay metric summary highlights
-                            borderWidth: 2,
+                            borderColor: '#10b981', // Clean Emerald accents inside individual breakdown view
+                            borderWidth: 2.5,
+                            pointBackgroundColor: '#10b981',
+                            fill: false,
                             yAxisID: 'yO'
                         }
                     ]
@@ -415,10 +417,11 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top' } },
                     scales: {
-                        x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(51, 65, 85, 0.4)' } },
-                        yU: { position: 'left', title: { display: true, text: 'Units Summary Metrics Count', color: '#94a3b8' }, ticks: { color: '#94a3b8' } },
-                        yO: { position: 'right', title: { display: true, text: 'Order Release Counts', color: '#94a3b8' }, ticks: { color: '#94a3b8' }, grid: { display: false } }
+                        x: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: '#f1f5f9' } },
+                        yU: { position: 'left', title: { display: true, text: 'Total Units Checked', color: '#475569' }, ticks: { color: '#64748b' } },
+                        yO: { position: 'right', title: { display: true, text: 'Total Drops Issued', color: '#475569' }, ticks: { color: '#64748b' }, grid: { display: false } }
                     }
                 }
             });
