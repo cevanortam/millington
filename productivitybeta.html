@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CEVA Logistics — Millington Productivity</title>
+<link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700;900&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+    --navy:      #003057;
+    --navy-dk:   #001e3a;
+    --navy-lt:   #004a7c;
+    --red:       #C8102E;
+    --red-dk:    #a00d24;
+    --white:     #ffffff;
+    --off-white: #f5f7fa;
+    --gray-lt:   #e8ecf1;
+    --gray:      #b0bac6;
+    --gray-dk:   #6b7a8d;
+    --text:      #1a2535;
+    --border:    #d0d8e2;
+    --gold:      #b8860b;
+    --silver:    #607080;
+    --bronze:    #a0522d;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: var(--off-white); color: var(--text); font-family: 'Open Sans', sans-serif; font-size: 14px; }
+
+/* ── LOAD SCREEN ── */
+#loadScreen {
+    position: fixed; inset: 0; z-index: 9999;
+    background: var(--navy-dk);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 18px;
+}
+.load-spinner {
+    width: 44px; height: 44px;
+    border: 4px solid rgba(255,255,255,0.15);
+    border-top-color: var(--red);
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+}
+.load-text { color: rgba(255,255,255,0.55); font-size: 14px; letter-spacing: .5px; }
+
+/* ── EXCLUSION MODAL ── */
+.modal-overlay {
+    display: none; position: fixed; inset: 0; z-index: 800;
+    background: rgba(0,0,0,0.55); backdrop-filter: blur(2px);
+    align-items: center; justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal { background: #fff; border-radius: 10px; width: 440px; max-width: 95vw; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden; }
+.modal-head { background: var(--navy); padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid var(--red); }
+.modal-head h2 { color: #fff; font-family: 'Titillium Web', sans-serif; font-size: 16px; font-weight: 700; }
+.modal-close { background: none; border: none; color: rgba(255,255,255,0.6); font-size: 18px; cursor: pointer; }
+.modal-close:hover { color: #fff; }
+.modal-body { padding: 20px; }
+.modal-section-label { font-size: 11px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--gray-dk); margin-bottom: 10px; }
+.excluded-list { display: flex; flex-wrap: wrap; gap: 8px; min-height: 28px; }
+.excl-chip { display: flex; align-items: center; gap: 6px; background: #fef2f2; border: 1px solid #fecaca; color: var(--red-dk); border-radius: 20px; padding: 4px 10px 4px 12px; font-size: 12px; font-weight: 600; }
+.excl-chip button { background: none; border: none; color: var(--red); cursor: pointer; font-size: 14px; line-height: 1; padding: 0 2px; }
+.add-row { display: flex; gap: 8px; margin-top: 4px; }
+.autocomplete-wrap { position: relative; flex: 1; }
+.add-input { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-family: 'Open Sans', sans-serif; font-size: 13px; }
+.add-input:focus { outline: none; border-color: var(--navy); }
+.autocomplete-list { display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #fff; border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 6px 20px rgba(0,0,0,0.12); z-index: 900; max-height: 180px; overflow-y: auto; }
+.autocomplete-list.open { display: block; }
+.ac-item { padding: 9px 14px; cursor: pointer; font-size: 13px; border-bottom: 1px solid var(--gray-lt); }
+.ac-item:last-child { border-bottom: none; }
+.ac-item:hover { background: var(--off-white); }
+.add-btn-modal { padding: 8px 16px; background: var(--navy); color: #fff; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.add-btn-modal:hover { background: var(--navy-lt); }
+.modal-footer { padding: 14px 20px; border-top: 1px solid var(--gray-lt); text-align: right; }
+.apply-btn { padding: 9px 22px; background: var(--red); color: #fff; border: none; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; }
+.apply-btn:hover { background: var(--red-dk); }
+
+/* ── PAGE ── */
+.page { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+/* ── HEADER ── */
+.header {
+    background: var(--navy); border-bottom: 4px solid var(--red);
+    padding: 0 28px; display: flex; align-items: center; justify-content: space-between;
+    height: 70px; box-shadow: 0 4px 16px rgba(0,0,0,0.2); flex-shrink: 0;
+}
+.header-left { display: flex; align-items: center; gap: 0; }
+.logo-img { height: 38px; width: auto; object-fit: contain; filter: brightness(0) invert(1); }
+.logo-divider { width: 1px; height: 40px; background: rgba(255,255,255,0.2); margin: 0 20px; }
+.header-title h1 { font-family: 'Titillium Web', sans-serif; font-size: 18px; font-weight: 700; color: #fff; line-height: 1.2; }
+.header-title p { font-size: 12px; color: rgba(255,255,255,0.55); margin-top: 2px; }
+.header-right { display: flex; align-items: center; gap: 14px; }
+.sync-badge { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 20px; padding: 5px 14px; }
+.sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gray); transition: background .4s; }
+.sync-dot.ok  { background: #22c55e; box-shadow: 0 0 6px #22c55e99; }
+.sync-dot.err { background: var(--red); }
+#lastUpdate { font-size: 12px; color: rgba(255,255,255,0.7); white-space: nowrap; }
+.countdown-ring { position: relative; width: 44px; height: 44px; cursor: default; }
+.countdown-ring svg { position: absolute; top: 0; left: 0; transform: rotate(-90deg); }
+.ring-bg   { fill: none; stroke: rgba(255,255,255,0.12); stroke-width: 3; }
+.ring-fill { fill: none; stroke: var(--red); stroke-width: 3; stroke-linecap: round; transition: stroke-dashoffset .9s linear; }
+.countdown-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: 'Titillium Web', sans-serif; font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.75); }
+.icon-btn { width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.8); font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .15s; }
+.icon-btn:hover { background: rgba(255,255,255,0.16); }
+
+/* ── UPLOAD DRAWER ── */
+.upload-drawer { background: var(--navy-dk); border-bottom: 1px solid rgba(255,255,255,0.07); overflow: hidden; max-height: 0; transition: max-height .3s ease, padding .3s ease; flex-shrink: 0; }
+.upload-drawer.open { max-height: 72px; padding: 10px 28px; }
+.upload-inner { display: flex; align-items: center; gap: 32px; flex-wrap: wrap; }
+.upload-group { display: flex; align-items: center; gap: 10px; }
+.upload-pip-label { font-family: 'Titillium Web', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(255,255,255,0.38); display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.upip { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.upip-pd  { background: #7eb8f7; }
+.upip-mtd { background: var(--red); }
+.upload-file-btn { display: flex; align-items: center; gap: 6px; padding: 6px 14px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.14); color: rgba(255,255,255,0.75); font-family: 'Open Sans', sans-serif; font-size: 12px; font-weight: 600; border-radius: 4px; cursor: pointer; white-space: nowrap; transition: background .15s; }
+.upload-file-btn:hover:not(:disabled) { background: rgba(255,255,255,0.13); }
+.upload-file-btn:disabled { opacity: .4; cursor: not-allowed; }
+.upload-file-btn.done { border-color: #4ade80; color: #4ade80; }
+input[type="file"] { display: none; }
+.upload-file-status { font-size: 11px; color: rgba(255,255,255,0.28); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.upload-file-status.ok  { color: #4ade80; font-weight: 600; }
+.upload-file-status.err { color: #f87171; font-weight: 600; }
+
+/* ── TABS ── */
+.tab-bar { background: var(--navy); padding: 0 28px; display: flex; border-bottom: 3px solid var(--border); flex-shrink: 0; }
+.tab-btn { font-family: 'Titillium Web', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; padding: 13px 26px; border: none; background: none; color: rgba(255,255,255,0.4); cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -3px; transition: color .2s, border-color .2s; }
+.tab-btn:hover:not(.active) { color: rgba(255,255,255,0.7); }
+.tab-btn.active { color: #fff; border-bottom-color: var(--red); }
+
+/* ── PANEL ── */
+.tab-panel { display: none; flex: 1; min-height: 0; padding: 20px 28px 28px; flex-direction: column; gap: 18px; overflow-y: auto; }
+.tab-panel.active { display: flex; }
+
+/* ── KPI ROW ── */
+.kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.kpi-card { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; display: flex; flex-direction: column; gap: 4px; box-shadow: 0 1px 4px rgba(0,48,87,0.07); position: relative; overflow: hidden; }
+.kpi-card::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: var(--navy); }
+.kpi-label { font-size: 11px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--gray-dk); }
+.kpi-value { font-family: 'Titillium Web', sans-serif; font-size: 38px; font-weight: 900; line-height: 1; color: var(--navy); }
+.kpi-sub { font-size: 12px; color: var(--gray-dk); }
+.kpi-icon { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); font-size: 28px; opacity: .08; }
+
+/* ── BODY GRID ── */
+.body-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; flex: 1; min-height: 0; align-items: stretch; }
+
+/* ── PANEL CARDS ── */
+.panel { background: #fff; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,48,87,0.07); display: flex; flex-direction: column; min-height: 0; }
+.panel-head { background: var(--navy); padding: 11px 18px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.panel-title { font-family: 'Titillium Web', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #fff; }
+.panel-meta { font-size: 11px; color: rgba(255,255,255,0.5); }
+
+/* ── CHART CONTROLS ── */
+.chart-controls { padding: 10px 18px; border-bottom: 1px solid var(--gray-lt); display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; flex-shrink: 0; }
+.sup-filter-wrap { display: flex; align-items: center; gap: 10px; }
+.sup-label { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--gray-dk); }
+.sup-select { padding: 6px 12px; border: 1px solid var(--border); border-radius: 5px; font-family: 'Open Sans', sans-serif; font-size: 13px; color: var(--text); background: #fff; cursor: pointer; }
+.sup-select:focus { outline: none; border-color: var(--navy); }
+.reset-btn { display: none; padding: 5px 12px; background: var(--off-white); border: 1px solid var(--border); border-radius: 5px; font-size: 12px; font-weight: 600; color: var(--gray-dk); cursor: pointer; }
+.reset-btn.visible { display: inline-flex; align-items: center; gap: 5px; }
+.reset-btn:hover { border-color: var(--navy); color: var(--navy); }
+.chart-sub-label { font-size: 12px; font-weight: 600; color: var(--gray-dk); }
+.chart-sub-label strong { color: var(--navy); }
+
+/* ── CHART ── */
+.chart-wrap { padding: 16px 18px 20px; position: relative; flex: 1; min-height: 0; }
+.chart-wrap canvas { width: 100% !important; height: 100% !important; }
+
+/* ── LEADERBOARD ── */
+.lb-body { flex: 1; overflow: hidden; display: flex; flex-direction: column; min-height: 0; }
+.lb-pinned { flex-shrink: 0; }
+.lb-scroll-zone { overflow: hidden; flex: 1; }
+.lb-row { display: grid; grid-template-columns: 40px 1fr auto; align-items: center; gap: 10px; padding: 9px 18px; border-bottom: 1px solid var(--gray-lt); cursor: pointer; transition: background .12s; }
+.lb-row:last-child { border-bottom: none; }
+.lb-row:hover { background: var(--off-white); }
+.lb-row.active-row { background: #eff6ff; border-left: 3px solid var(--navy); }
+.lb-rank { font-family: 'Titillium Web', sans-serif; font-size: 17px; font-weight: 900; text-align: center; color: var(--gray); }
+.lb-rank.gold   { color: var(--gold); }
+.lb-rank.silver { color: var(--silver); }
+.lb-rank.bronze { color: var(--bronze); }
+.lb-info { min-width: 0; }
+.lb-name { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lb-sup  { font-size: 11px; color: var(--gray-dk); margin-top: 1px; }
+.lb-total { font-family: 'Titillium Web', sans-serif; font-size: 20px; font-weight: 900; color: var(--navy); white-space: nowrap; }
+.lb-hint { padding: 8px 18px; font-size: 11px; color: var(--gray); text-align: center; border-bottom: 1px solid var(--gray-lt); font-style: italic; flex-shrink: 0; }
+.lb-divider { padding: 6px 18px; background: var(--off-white); border-bottom: 1px solid var(--border); font-size: 10px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--gray-dk); flex-shrink: 0; }
+
+/* ── EMPTY STATE ── */
+.empty-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 60px 20px; text-align: center; }
+.empty-icon { width: 64px; height: 64px; background: var(--off-white); border: 2px dashed var(--gray); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.empty-title { font-family: 'Titillium Web', sans-serif; font-size: 15px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--gray-dk); }
+.empty-sub { font-size: 13px; color: var(--gray-dk); max-width: 300px; line-height: 1.6; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes fadeSlide { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.fade-in { animation: fadeSlide .25s ease both; }
+
+@media (max-width: 1100px) {
+    .body-grid { grid-template-columns: 1fr; }
+    .kpi-row   { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<!-- LOAD SCREEN -->
+<div id="loadScreen">
+    <div class="load-spinner"></div>
+    <div class="load-text" id="loadText">Loading productivity data…</div>
+</div>
+
+<!-- EXCLUSION MODAL (shared across all tabs) -->
+<div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+        <div class="modal-head">
+            <h2>⚙ Exclusion Settings</h2>
+            <button class="modal-close" id="modalClose">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="modal-section-label">Currently excluded from leaderboard</div>
+            <div class="excluded-list" id="excludedList"></div>
+            <div class="modal-section-label" style="margin-top:16px">Add a name to exclude</div>
+            <div class="add-row">
+                <div class="autocomplete-wrap">
+                    <input type="text" class="add-input" id="addInput" placeholder="Start typing a name…" autocomplete="off">
+                    <div class="autocomplete-list" id="acList"></div>
+                </div>
+                <button class="add-btn-modal" id="addBtn">Exclude</button>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="apply-btn" id="applyBtn">Apply &amp; Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- PAGE -->
+<div class="page">
+
+    <!-- HEADER -->
+    <div class="header">
+        <div class="header-left">
+            <img class="logo-img"
+                 src="https://www.freelogovectors.net/wp-content/uploads/2022/07/ceva-logistics-logo-freelogovectors.net_.png"
+                 alt="CEVA Logistics" onerror="this.style.display='none'">
+            <div class="logo-divider"></div>
+            <div class="header-title">
+                <h1>Millington Warehouse — Productivity Dashboard</h1>
+                <p>Associate Confirmations · Current Day, Previous Day &amp; Month to Date</p>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="sync-badge">
+                <div class="sync-dot" id="syncDot"></div>
+                <span id="lastUpdate">Initializing…</span>
+            </div>
+            <!-- Countdown ring: active only on Current Day tab -->
+            <div class="countdown-ring" id="countdownRing" title="Next auto-refresh">
+                <svg width="44" height="44" viewBox="0 0 44 44">
+                    <circle class="ring-bg" cx="22" cy="22" r="18"/>
+                    <circle class="ring-fill" id="ringFill" cx="22" cy="22" r="18"
+                            stroke-dasharray="113.1" stroke-dashoffset="0"/>
+                </svg>
+                <div class="countdown-text" id="countdownText">—</div>
+            </div>
+            <button class="icon-btn" id="settingsBtn" title="Exclusion settings">⚙</button>
+            <button class="icon-btn" id="uploadToggleBtn" title="Update PD / MTD data" style="font-size:13px">⬆</button>
+        </div>
+    </div>
+
+    <!-- UPLOAD DRAWER (PD + MTD only) -->
+    <div class="upload-drawer" id="uploadDrawer">
+        <div class="upload-inner">
+            <div class="upload-group">
+                <span class="upload-pip-label"><span class="upip upip-pd"></span>Previous Day</span>
+                <button class="upload-file-btn" id="pd-pick" onclick="document.getElementById('pd-file').click()">⬆ Choose XLS</button>
+                <input type="file" id="pd-file" accept=".xls,.xlsx,.html,.htm" onchange="handleUpload('pd',this)">
+                <span class="upload-file-status" id="pd-file-status">No file selected</span>
+            </div>
+            <div class="upload-group">
+                <span class="upload-pip-label"><span class="upip upip-mtd"></span>Month to Date</span>
+                <button class="upload-file-btn" id="mtd-pick" onclick="document.getElementById('mtd-file').click()">⬆ Choose XLS</button>
+                <input type="file" id="mtd-file" accept=".xls,.xlsx,.html,.htm" onchange="handleUpload('mtd',this)">
+                <span class="upload-file-status" id="mtd-file-status">No file selected</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('cd')">Current Day</button>
+        <button class="tab-btn"        onclick="switchTab('pd')">Previous Day</button>
+        <button class="tab-btn"        onclick="switchTab('mtd')">Month to Date</button>
+    </div>
+
+    <!-- ══ CURRENT DAY PANEL ══ -->
+    <div class="tab-panel active" id="panel-cd">
+        <div class="kpi-row">
+            <div class="kpi-card"><div class="kpi-label">Active Associates</div><div class="kpi-value" id="cd-kpi-assoc">—</div><div class="kpi-sub" id="cd-kpi-assoc-sub">— supervisors on floor</div><div class="kpi-icon">👥</div></div>
+            <div class="kpi-card"><div class="kpi-label">Total Confirmations</div><div class="kpi-value" id="cd-kpi-total">—</div><div class="kpi-sub">combined output</div><div class="kpi-icon">✅</div></div>
+            <div class="kpi-card"><div class="kpi-label">Avg Confirmations / Associate</div><div class="kpi-value" id="cd-kpi-avg">—</div><div class="kpi-sub">per active associate</div><div class="kpi-icon">👤</div></div>
+            <div class="kpi-card"><div class="kpi-label">Avg Confirmations / Hour</div><div class="kpi-value" id="cd-kpi-hour">—</div><div class="kpi-sub" id="cd-kpi-hour-sub">across — active hours</div><div class="kpi-icon">⏱</div></div>
+        </div>
+        <div class="body-grid">
+            <div class="panel">
+                <div class="panel-head"><span class="panel-title">Hourly Confirmations</span></div>
+                <div class="chart-controls">
+                    <div class="sup-filter-wrap">
+                        <span class="sup-label">Supervisor:</span>
+                        <select class="sup-select" id="cd-sup-select" onchange="applyFilter('cd')">
+                            <option value="">All Supervisors</option>
+                        </select>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:10px">
+                        <span class="chart-sub-label" id="cd-chart-label">Showing: <strong>Overall Team</strong></span>
+                        <button class="reset-btn" id="cd-reset-btn" onclick="resetAssociate('cd')">✕ Reset to Team</button>
+                    </div>
+                </div>
+                <div class="chart-wrap"><canvas id="cd-chart"></canvas></div>
+            </div>
+            <div class="panel">
+                <div class="panel-head">
+                    <span class="panel-title">Associate Leaderboard</span>
+                    <span class="panel-meta">Click a name to view hourly chart</span>
+                </div>
+                <div class="lb-hint">Top 10 pinned · Remaining scroll every 5 sec</div>
+                <div class="lb-body" id="cd-lb-body"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ PREVIOUS DAY PANEL ══ -->
+    <div class="tab-panel" id="panel-pd">
+        <div id="pd-empty" class="empty-state">
+            <div class="empty-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#b0bac6" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+            <div class="empty-title">No Previous Day Data</div>
+            <div class="empty-sub">Click the ⬆ button in the header to upload your Previous Day XLS export.</div>
+        </div>
+        <div id="pd-data" style="display:none;flex-direction:column;gap:18px;flex:1;min-height:0">
+            <div class="kpi-row" id="pd-kpis"></div>
+            <div class="body-grid">
+                <div class="panel">
+                    <div class="panel-head"><span class="panel-title">Hourly Confirmations</span></div>
+                    <div class="chart-controls">
+                        <div class="sup-filter-wrap">
+                            <span class="sup-label">Supervisor:</span>
+                            <select class="sup-select" id="pd-sup-select" onchange="applyFilter('pd')"><option value="">All Supervisors</option></select>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:10px">
+                            <span class="chart-sub-label" id="pd-chart-label">Showing: <strong>Overall Team</strong></span>
+                            <button class="reset-btn" id="pd-reset-btn" onclick="resetAssociate('pd')">✕ Reset to Team</button>
+                        </div>
+                    </div>
+                    <div class="chart-wrap"><canvas id="pd-chart"></canvas></div>
+                </div>
+                <div class="panel">
+                    <div class="panel-head">
+                        <span class="panel-title">Associate Leaderboard</span>
+                        <span class="panel-meta">Click a name to view hourly chart</span>
+                    </div>
+                    <div class="lb-hint">Top 10 pinned · Remaining scroll every 5 sec</div>
+                    <div class="lb-body" id="pd-lb-body"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ MONTH TO DATE PANEL ══ -->
+    <div class="tab-panel" id="panel-mtd">
+        <div id="mtd-empty" class="empty-state">
+            <div class="empty-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#b0bac6" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+            <div class="empty-title">No Month-to-Date Data</div>
+            <div class="empty-sub">Click the ⬆ button in the header to upload your Month to Date XLS export.</div>
+        </div>
+        <div id="mtd-data" style="display:none;flex-direction:column;gap:18px;flex:1;min-height:0">
+            <div class="kpi-row" id="mtd-kpis"></div>
+            <div class="body-grid">
+                <div class="panel">
+                    <div class="panel-head"><span class="panel-title">Hourly Confirmations</span></div>
+                    <div class="chart-controls">
+                        <div class="sup-filter-wrap">
+                            <span class="sup-label">Supervisor:</span>
+                            <select class="sup-select" id="mtd-sup-select" onchange="applyFilter('mtd')"><option value="">All Supervisors</option></select>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:10px">
+                            <span class="chart-sub-label" id="mtd-chart-label">Showing: <strong>Overall Team</strong></span>
+                            <button class="reset-btn" id="mtd-reset-btn" onclick="resetAssociate('mtd')">✕ Reset to Team</button>
+                        </div>
+                    </div>
+                    <div class="chart-wrap"><canvas id="mtd-chart"></canvas></div>
+                </div>
+                <div class="panel">
+                    <div class="panel-head">
+                        <span class="panel-title">Associate Leaderboard</span>
+                        <span class="panel-meta">Click a name to view hourly chart</span>
+                    </div>
+                    <div class="lb-hint">Top 10 pinned · Remaining scroll every 5 sec</div>
+                    <div class="lb-body" id="mtd-lb-body"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div><!-- end .page -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+<script>
+// ════════════════════════════════════════════════════════════════
+//  CONFIG
+// ════════════════════════════════════════════════════════════════
+
+// Current Day — Google Sheets CSV (same URL as productivity.html)
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQSCLwK71k52Yc_Sfnz3qzycsuHKn23n7ywFNEWzowh2jYCpfS23jpwz0po4E3b_OdLt6fkNAN-JEVU/pub?gid=0&single=true&output=csv';
+const REFRESH_MS = 5 * 60 * 1000;  // 5-minute auto-refresh
+const CIRCUMFERENCE = 2 * Math.PI * 18; // ring circumference
+
+// PD + MTD — Google Apps Script (single Sheet, two tabs)
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKmOjt1_xfJUR9HUUGnktmVH3RX9BMm3vGxb2p6kS5RCjpfI9rm9-hhkAdlykYO_A/exec';
+
+// Current Day column indices (CSV, 0-based, data from row 3)
+const CD_COL_NAME    = 1;
+const CD_COL_SUP     = 3;
+const CD_COL_H_START = 4;
+const CD_COL_TOTAL   = 28;
+
+// Shared hour labels (4am-anchored shift)
+const HOUR_LABELS = ['4am','5am','6am','7am','8am','9am','10am','11am',
+                     '12pm','1pm','2pm','3pm','4pm','5pm','6pm','7pm',
+                     '8pm','9pm','10pm','11pm','12am','1am','2am','3am'];
+const HOUR_COLS_XLS = ['H04','H05','H06','H07','H08','H09','H10','H11',
+                        'H12','H13','H14','H15','H16','H17','H18','H19',
+                        'H20','H21','H22','H23','H00','H01','H02','H03'];
+
+const DEFAULT_EXCLUDED = ['Vernester Shipp RF'];
+const TOP_PIN          = 10;
+const SCROLL_MS        = 5000;
+const SCROLL_PAGE      = 8;
+
+// ════════════════════════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════════════════════════
+let excluded     = JSON.parse(localStorage.getItem('prod_excluded') || 'null') || [...DEFAULT_EXCLUDED];
+let activeTab    = localStorage.getItem('prod_active_tab') || 'cd';
+
+// Per-tab state
+const state = {
+    cd:  { raw: [], filtered: [], focusAssoc: null, chart: null, scrollIdx: 0, scrollTimer: null },
+    pd:  { raw: [], filtered: [], focusAssoc: null, chart: null, scrollIdx: 0, scrollTimer: null },
+    mtd: { raw: [], filtered: [], focusAssoc: null, chart: null, scrollIdx: 0, scrollTimer: null },
+};
+
+// Current Day specific
+let cdRawRows    = [];  // CSV rows before processing
+let allNames     = [];  // all names across all tabs for autocomplete
+let countdownSec = REFRESH_MS / 1000;
+let countdownInterval, refreshTimer;
+let uploadOpen   = false;
+let lastUploaded = { pd: null, mtd: null };
+
+// ════════════════════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+    initModal();
+    initUploadToggle();
+
+    // Restore last tab
+    if (activeTab !== 'cd') switchTab(activeTab, true);
+
+    // Boot all data fetches in parallel
+    document.getElementById('loadText').textContent = 'Loading productivity data…';
+    Promise.all([fetchCurrentDay(), fetchHistorical('pd'), fetchHistorical('mtd')])
+        .finally(() => { document.getElementById('loadScreen').style.display = 'none'; });
+});
+
+// ════════════════════════════════════════════════════════════════
+//  TAB SWITCHING
+// ════════════════════════════════════════════════════════════════
+function switchTab(t, silent) {
+    activeTab = t;
+    if (!silent) localStorage.setItem('prod_active_tab', t);
+
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('panel-' + t).classList.add('active');
+    document.querySelectorAll('.tab-btn')[['cd','pd','mtd'].indexOf(t)].classList.add('active');
+
+    // Ring: animate for CD, show last-upload date for PD/MTD
+    updateHeaderForTab(t);
+
+    // Re-size chart after tab paint
+    requestAnimationFrame(() => {
+        if (state[t].chart) state[t].chart.resize();
+    });
+}
+
+function updateHeaderForTab(t) {
+    const ring  = document.getElementById('countdownRing');
+    const text  = document.getElementById('countdownText');
+    if (t === 'cd') {
+        ring.title = 'Next auto-refresh';
+        tickRing(); // restore countdown display
+    } else {
+        const ts = lastUploaded[t];
+        text.textContent = ts ? ts.split(',')[0] : '—';
+        document.getElementById('ringFill').style.strokeDashoffset = '0';
+        ring.title = ts ? `Last updated: ${ts}` : 'No data uploaded yet';
+    }
+}
+
+// ════════════════════════════════════════════════════════════════
+//  COUNTDOWN RING  (Current Day only)
+// ════════════════════════════════════════════════════════════════
+function startCountdown() {
+    clearInterval(countdownInterval);
+    countdownSec = REFRESH_MS / 1000;
+    tickRing();
+    countdownInterval = setInterval(() => {
+        countdownSec = Math.max(0, countdownSec - 1);
+        if (activeTab === 'cd') tickRing();
+    }, 1000);
+}
+
+function tickRing() {
+    const pct = countdownSec / (REFRESH_MS / 1000);
+    document.getElementById('ringFill').style.strokeDashoffset = CIRCUMFERENCE * (1 - pct);
+    const m = Math.floor(countdownSec / 60);
+    const s = String(countdownSec % 60).padStart(2, '0');
+    document.getElementById('countdownText').textContent = `${m}:${s}`;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  CURRENT DAY  — CSV auto-refresh
+// ════════════════════════════════════════════════════════════════
+function fetchCurrentDay() {
+    return new Promise(resolve => {
+        fetch(CSV_URL + '&t=' + Date.now(), { mode: 'cors' })
+            .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+            .then(csv => {
+                Papa.parse(csv, {
+                    header: false, skipEmptyLines: true,
+                    complete: res => {
+                        // Row 0 = sheet metadata (skip), Row 1 = headers (skip), Row 2+ = data
+                        const rows = res.data.slice(2);
+                        cdRawRows = rows;
+                        processCDRows(rows);
+                        setSyncUI('ok', new Date().toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit'}));
+                        startCountdown();
+                        clearTimeout(refreshTimer);
+                        refreshTimer = setTimeout(() => fetchCurrentDay(), REFRESH_MS);
+                        resolve();
+                    }
+                });
+            })
+            .catch(e => {
+                console.error('CD fetch failed', e);
+                setSyncUI('err', 'Fetch failed');
+                resolve();
+            });
+    });
+}
+
+function processCDRows(rows) {
+    const cutoff = getHourCutoff();
+    state.cd.raw = rows
+        .filter(r => {
+            const name = (r[CD_COL_NAME] || '').trim();
+            return name && !excluded.includes(name);
+        })
+        .map(r => {
+            const hours = [];
+            for (let i = 0; i < 24; i++) {
+                hours.push(parseInt(r[CD_COL_H_START + i]) || 0);
+            }
+            return {
+                USER_NAME:       (r[CD_COL_NAME] || '').trim(),
+                SUPERVISOR_NAME: (r[CD_COL_SUP]  || '').trim(),
+                hours,
+                _total: parseInt(r[CD_COL_TOTAL]) || 0,
+            };
+        });
+
+    allNames = [...new Set([
+        ...state.cd.raw.map(r => r.USER_NAME),
+        ...state.pd.raw.map(r => r.USER_NAME),
+        ...state.mtd.raw.map(r => r.USER_NAME),
+    ].filter(Boolean))];
+
+    populateSupervisors('cd');
+    applyFilter('cd');
+}
+
+// Dynamic hour cutoff — only show hours up to now
+function getHourCutoff() {
+    const now  = new Date();
+    const hour = now.getHours();
+    // Shift anchored at 4am: index 0 = 4am, index 20 = 12am, etc.
+    const shiftHours = [4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,0,1,2,3];
+    const idx = shiftHours.indexOf(hour);
+    return idx === -1 ? 24 : idx + 1;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  HISTORICAL  — Apps Script fetch (PD + MTD)
+// ════════════════════════════════════════════════════════════════
+async function fetchHistorical(type) {
+    try {
+        const res  = await fetch(`${APPS_SCRIPT_URL}?action=getData&sheet=${type}`);
+        const json = await res.json();
+        if (json.status !== 'ok') throw new Error(json.message);
+
+        lastUploaded[type] = json.lastUpdated || null;
+        state[type].raw = json.rows.filter(r => r.USER_NAME && !excluded.includes(r.USER_NAME));
+
+        // Compute _total from HTOTAL
+        state[type].raw.forEach(r => { r._total = Number(r.HTOTAL) || 0; });
+
+        allNames = [...new Set([...allNames, ...state[type].raw.map(r => r.USER_NAME)].filter(Boolean))];
+
+        if (state[type].raw.length) {
+            populateSupervisors(type);
+            applyFilter(type);
+            showHistoricalData(type);
+        } else {
+            showEmpty(type);
+        }
+        if (activeTab === type) updateHeaderForTab(type);
+    } catch(e) {
+        console.error(type, e);
+        showEmpty(type);
+    }
+}
+
+// ════════════════════════════════════════════════════════════════
+//  FILE UPLOAD  (PD + MTD)
+// ════════════════════════════════════════════════════════════════
+function initUploadToggle() {
+    document.getElementById('uploadToggleBtn').addEventListener('click', () => {
+        uploadOpen = !uploadOpen;
+        document.getElementById('uploadDrawer').classList.toggle('open', uploadOpen);
+        document.getElementById('uploadToggleBtn').textContent = uploadOpen ? '✕' : '⬆';
+    });
+}
+
+async function handleUpload(type, input) {
+    const file    = input.files[0];
+    if (!file) return;
+    const pickBtn = document.getElementById(type + '-pick');
+    const status  = document.getElementById(type + '-file-status');
+    pickBtn.disabled = true;
+    status.className = 'upload-file-status';
+    status.textContent = 'Parsing…';
+
+    const reader = new FileReader();
+    reader.onload = async e => {
+        try {
+            const { headers, rows } = parseXLS(e.target.result);
+            if (!rows.length) throw new Error('No data rows found.');
+            status.textContent = `Uploading ${rows.length} rows…`;
+            const ts = await pushToSheet(type, headers, rows);
+            status.className = 'upload-file-status ok';
+            status.textContent = `✓ ${file.name}`;
+            pickBtn.classList.add('done');
+            lastUploaded[type] = ts;
+            await fetchHistorical(type);
+        } catch(err) {
+            status.className = 'upload-file-status err';
+            status.textContent = '✗ ' + err.message;
+        } finally {
+            pickBtn.disabled = false;
+            input.value = '';
+        }
+    };
+    reader.readAsText(file);
+}
+
+function parseXLS(html) {
+    const doc   = new DOMParser().parseFromString(html, 'text/html');
+    const table = doc.querySelector('table');
+    if (!table) throw new Error('No HTML table found in file.');
+    const trs     = Array.from(table.querySelectorAll('tr'));
+    const headers = Array.from(trs[0].querySelectorAll('td,th')).map(c => c.textContent.trim());
+    const hourSet = new Set(HOUR_COLS_XLS);
+    const rows = trs.slice(1).map(tr => {
+        const cells = Array.from(tr.querySelectorAll('td,th')).map(c => c.textContent.trim());
+        return headers.map((h, i) => {
+            const v = cells[i] || '';
+            return (hourSet.has(h) || h === 'HTOTAL') ? (parseInt(v) || 0) : v;
+        });
+    }).filter(row => row[0] && String(row[0]).trim());
+    return { headers, rows };
+}
+
+async function pushToSheet(type, headers, rows) {
+    const ts = new Date().toLocaleString('en-US', { timeZone: 'America/Chicago', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const body = JSON.stringify({ action: 'replaceData', sheet: type, headers, rows, uploadedAt: ts });
+    const res  = await fetch(APPS_SCRIPT_URL, { method: 'POST', body, headers: { 'Content-Type': 'text/plain' } });
+    const json = await res.json();
+    if (json.status !== 'ok') throw new Error(json.message || 'Upload failed');
+    return json.updatedAt || ts;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  FILTER  (shared for all three tabs)
+// ════════════════════════════════════════════════════════════════
+function populateSupervisors(type) {
+    const sel  = document.getElementById(type + '-sup-select');
+    const curr = sel.value;
+    const sups = [...new Set(state[type].raw.map(r => r.SUPERVISOR_NAME).filter(Boolean))].sort();
+    sel.innerHTML = '<option value="">All Supervisors</option>';
+    sups.forEach(s => {
+        const o = document.createElement('option');
+        o.value = s; o.textContent = s;
+        if (s === curr) o.selected = true;
+        sel.appendChild(o);
+    });
+}
+
+function applyFilter(type) {
+    const sup = document.getElementById(type + '-sup-select').value;
+    state[type].filtered = state[type].raw.filter(r => !excluded.includes(r.USER_NAME) && (!sup || r.SUPERVISOR_NAME === sup));
+    state[type].focusAssoc = null;
+    document.getElementById(type + '-reset-btn').classList.remove('visible');
+    document.getElementById(type + '-chart-label').innerHTML = 'Showing: <strong>Overall Team</strong>';
+    renderKPIs(type);
+    renderChart(type, null);
+    renderLeaderboard(type);
+}
+
+// ════════════════════════════════════════════════════════════════
+//  KPIs
+// ════════════════════════════════════════════════════════════════
+function renderKPIs(type) {
+    const recs   = state[type].filtered;
+    const total  = recs.reduce((s, r) => s + r._total, 0);
+    const active = recs.filter(r => r._total > 0);
+    const avg    = active.length ? Math.round(total / active.length) : 0;
+    const sups   = [...new Set(active.map(r => r.SUPERVISOR_NAME))].length;
+
+    // Hour totals (different structure for CD vs hist)
+    const hourTotals = HOUR_LABELS.map((_, i) => {
+        return recs.reduce((s, r) => {
+            const v = type === 'cd' ? (r.hours[i] || 0) : (r[HOUR_COLS_XLS[i]] || 0);
+            return s + v;
+        }, 0);
+    });
+    const cutoff     = type === 'cd' ? getHourCutoff() : 24;
+    const activeHrs  = hourTotals.slice(0, cutoff).filter(v => v > 0);
+    const totalConf  = hourTotals.slice(0, cutoff).reduce((a,b) => a+b, 0);
+    const avgHr      = activeHrs.length ? Math.round(totalConf / activeHrs.length) : 0;
+
+    if (type === 'cd') {
+        document.getElementById('cd-kpi-assoc').textContent     = active.length;
+        document.getElementById('cd-kpi-assoc-sub').textContent = `${sups} supervisor${sups !== 1 ? 's' : ''} on floor`;
+        document.getElementById('cd-kpi-total').textContent     = total.toLocaleString();
+        document.getElementById('cd-kpi-avg').textContent       = avg.toLocaleString();
+        document.getElementById('cd-kpi-hour').textContent      = avgHr.toLocaleString();
+        document.getElementById('cd-kpi-hour-sub').textContent  = `across ${activeHrs.length} active hour${activeHrs.length !== 1 ? 's' : ''}`;
+    } else {
+        document.getElementById(type + '-kpis').innerHTML = `
+            <div class="kpi-card fade-in"><div class="kpi-label">Active Associates</div><div class="kpi-value">${active.length}</div><div class="kpi-sub">${sups} supervisor${sups !== 1 ? 's' : ''} on floor</div><div class="kpi-icon">👥</div></div>
+            <div class="kpi-card fade-in"><div class="kpi-label">Total Confirmations</div><div class="kpi-value">${total.toLocaleString()}</div><div class="kpi-sub">combined output</div><div class="kpi-icon">✅</div></div>
+            <div class="kpi-card fade-in"><div class="kpi-label">Avg Confirmations / Associate</div><div class="kpi-value">${avg.toLocaleString()}</div><div class="kpi-sub">per active associate</div><div class="kpi-icon">👤</div></div>
+            <div class="kpi-card fade-in"><div class="kpi-label">Avg Confirmations / Hour</div><div class="kpi-value">${avgHr.toLocaleString()}</div><div class="kpi-sub">across ${activeHrs.length} active hour${activeHrs.length !== 1 ? 's' : ''}</div><div class="kpi-icon">⏱</div></div>`;
+    }
+}
+
+// ════════════════════════════════════════════════════════════════
+//  CHART
+// ════════════════════════════════════════════════════════════════
+function renderChart(type, assocRecord) {
+    const cutoff = type === 'cd' ? getHourCutoff() : 24;
+    const labels = HOUR_LABELS.slice(0, cutoff);
+    let bars, lineData, showLine;
+
+    if (assocRecord) {
+        bars = labels.map((_, i) => type === 'cd' ? (assocRecord.hours[i] || 0) : (assocRecord[HOUR_COLS_XLS[i]] || 0));
+        showLine = false;
+    } else {
+        bars = labels.map((_, i) => state[type].filtered.reduce((s, r) => {
+            return s + (type === 'cd' ? (r.hours[i] || 0) : (r[HOUR_COLS_XLS[i]] || 0));
+        }, 0));
+        let cum = 0;
+        lineData = bars.map(v => { cum += v; return cum; });
+        showLine = true;
+    }
+
+    const datasets = [{
+        type: 'bar', label: 'Confirmations', data: bars,
+        backgroundColor: 'rgba(0,48,87,0.12)', borderColor: '#003057',
+        borderWidth: 1.5, borderRadius: 3, yAxisID: 'y',
+    }];
+    if (showLine) {
+        datasets.push({
+            type: 'line', label: 'Cumulative', data: lineData,
+            borderColor: '#C8102E', borderWidth: 2, pointRadius: 2,
+            tension: 0.3, yAxisID: 'y2', fill: false,
+        });
+    }
+
+    if (state[type].chart) state[type].chart.destroy();
+    state[type].chart = new Chart(document.getElementById(type + '-chart'), {
+        data: { labels, datasets },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            layout: { padding: { bottom: 8 } },
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { display: showLine, position: 'top', labels: { font: { family: 'Open Sans', size: 11 }, boxWidth: 12, padding: 10 } },
+                tooltip: { backgroundColor: '#fff', borderColor: '#d0d8e2', borderWidth: 1, titleColor: '#1a2535', bodyColor: '#6b7a8d',
+                    callbacks: { label: ctx => ` ${ctx.raw.toLocaleString()} ${ctx.dataset.label === 'Cumulative' ? '(cumul.)' : 'confirmations'}` }
+                }
+            },
+            scales: {
+                x: { grid: { color: '#eef1f6' }, ticks: { color: '#6b7a8d', font: { size: 10, family: 'Open Sans' }, maxRotation: 45, minRotation: 0 } },
+                y: { grid: { color: '#eef1f6' }, ticks: { color: '#6b7a8d', font: { size: 11, family: 'Open Sans' } }, position: 'left' },
+                ...(showLine ? { y2: { position: 'right', grid: { drawOnChartArea: false }, ticks: { color: '#C8102E', font: { size: 10 } } } } : {})
+            }
+        }
+    });
+}
+
+// ════════════════════════════════════════════════════════════════
+//  LEADERBOARD
+// ════════════════════════════════════════════════════════════════
+function renderLeaderboard(type) {
+    if (state[type].scrollTimer) clearInterval(state[type].scrollTimer);
+    state[type].scrollIdx = 0;
+
+    const sorted = [...state[type].filtered].sort((a,b) => b._total - a._total);
+    const pinned = sorted.slice(0, TOP_PIN);
+    const rest   = sorted.slice(TOP_PIN);
+    const body   = document.getElementById(type + '-lb-body');
+    body.innerHTML = '';
+
+    const pinnedWrap = document.createElement('div');
+    pinnedWrap.className = 'lb-pinned';
+    pinned.forEach((r, i) => pinnedWrap.appendChild(makeLBRow(r, i, type)));
+    body.appendChild(pinnedWrap);
+
+    if (!rest.length) return;
+
+    const div = document.createElement('div');
+    div.className = 'lb-divider'; div.textContent = 'Remaining Associates';
+    body.appendChild(div);
+
+    const zone = document.createElement('div');
+    zone.className = 'lb-scroll-zone';
+    body.appendChild(zone);
+
+    function showPage() {
+        zone.innerHTML = '';
+        rest.slice(state[type].scrollIdx, state[type].scrollIdx + SCROLL_PAGE).forEach((r, i) => {
+            const row = makeLBRow(r, TOP_PIN + state[type].scrollIdx + i, type);
+            row.classList.add('fade-in');
+            zone.appendChild(row);
+        });
+        state[type].scrollIdx += SCROLL_PAGE;
+        if (state[type].scrollIdx >= rest.length) state[type].scrollIdx = 0;
+    }
+    showPage();
+    state[type].scrollTimer = setInterval(showPage, SCROLL_MS);
+}
+
+function makeLBRow(record, globalIdx, type) {
+    const row = document.createElement('div');
+    row.className = 'lb-row';
+    if (state[type].focusAssoc === record.USER_NAME) row.classList.add('active-row');
+    const rankClass = globalIdx === 0 ? 'gold' : globalIdx === 1 ? 'silver' : globalIdx === 2 ? 'bronze' : '';
+    row.innerHTML = `
+        <div class="lb-rank ${rankClass}">${globalIdx + 1}</div>
+        <div class="lb-info">
+            <div class="lb-name">${record.USER_NAME}</div>
+            <div class="lb-sup">${record.SUPERVISOR_NAME}</div>
+        </div>
+        <div class="lb-total">${record._total.toLocaleString()}</div>`;
+    row.addEventListener('click', () => focusOnAssociate(type, record));
+    return row;
+}
+
+function focusOnAssociate(type, record) {
+    state[type].focusAssoc = record.USER_NAME;
+    document.getElementById(type + '-chart-label').innerHTML = `Showing: <strong>${record.USER_NAME}</strong>`;
+    document.getElementById(type + '-reset-btn').classList.add('visible');
+    renderChart(type, record);
+    renderLeaderboard(type);
+}
+
+function resetAssociate(type) {
+    state[type].focusAssoc = null;
+    document.getElementById(type + '-reset-btn').classList.remove('visible');
+    document.getElementById(type + '-chart-label').innerHTML = 'Showing: <strong>Overall Team</strong>';
+    renderChart(type, null);
+    renderLeaderboard(type);
+}
+
+// ════════════════════════════════════════════════════════════════
+//  SHOW / HIDE HISTORICAL DATA
+// ════════════════════════════════════════════════════════════════
+function showHistoricalData(type) {
+    document.getElementById(type + '-empty').style.display = 'none';
+    const el = document.getElementById(type + '-data');
+    el.style.display = 'flex';
+    requestAnimationFrame(() => { if (state[type].chart) state[type].chart.resize(); });
+}
+
+function showEmpty(type) {
+    document.getElementById(type + '-empty').style.display = 'flex';
+    document.getElementById(type + '-data').style.display  = 'none';
+}
+
+// ════════════════════════════════════════════════════════════════
+//  SYNC UI
+// ════════════════════════════════════════════════════════════════
+function setSyncUI(status, text) {
+    document.getElementById('syncDot').className   = 'sync-dot ' + (status === 'ok' ? 'ok' : 'err');
+    document.getElementById('lastUpdate').textContent = status === 'ok' ? `Updated: ${text}` : text;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  EXCLUSION MODAL  (shared — affects all three tabs)
+// ════════════════════════════════════════════════════════════════
+function initModal() {
+    document.getElementById('settingsBtn').addEventListener('click', openModal);
+    document.getElementById('modalClose').addEventListener('click', closeModal);
+    document.getElementById('applyBtn').addEventListener('click', () => { saveExclusions(); closeModal(); });
+    document.getElementById('addBtn').addEventListener('click', addExclusion);
+    document.getElementById('modalOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
+    const inp = document.getElementById('addInput');
+    inp.addEventListener('input', updateAutocomplete);
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') addExclusion(); });
+    document.addEventListener('click', e => { if (!e.target.closest('.autocomplete-wrap')) closeAutocomplete(); });
+}
+
+function openModal() { renderExcludedList(); document.getElementById('modalOverlay').classList.add('open'); }
+function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); document.getElementById('addInput').value = ''; closeAutocomplete(); }
+
+function renderExcludedList() {
+    const el = document.getElementById('excludedList');
+    el.innerHTML = excluded.length
+        ? excluded.map(n => `<div class="excl-chip">${n}<button onclick="removeExclusion('${n.replace(/'/g,"\\'")}')">✕</button></div>`).join('')
+        : '<span style="color:#b0bac6;font-size:12px">None currently excluded</span>';
+}
+
+function addExclusion() {
+    const val = document.getElementById('addInput').value.trim();
+    if (val && !excluded.includes(val)) { excluded.push(val); renderExcludedList(); document.getElementById('addInput').value = ''; closeAutocomplete(); }
+}
+
+function removeExclusion(name) { excluded = excluded.filter(n => n !== name); renderExcludedList(); }
+
+function saveExclusions() {
+    localStorage.setItem('prod_excluded', JSON.stringify(excluded));
+    // Re-apply filter on all tabs that have data
+    ['cd','pd','mtd'].forEach(t => {
+        if (state[t].raw.length) {
+            // Re-filter raw (exclusions may have changed)
+            state[t].raw = state[t].raw.filter(r => !excluded.includes(r.USER_NAME));
+            if (t === 'cd') processCDRows(cdRawRows); // re-process from source
+            else applyFilter(t);
+        }
+    });
+}
+
+function updateAutocomplete() {
+    const val  = document.getElementById('addInput').value.trim().toLowerCase();
+    const list = document.getElementById('acList');
+    if (!val) { closeAutocomplete(); return; }
+    const matches = allNames.filter(n => n.toLowerCase().includes(val) && !excluded.includes(n));
+    if (!matches.length) { closeAutocomplete(); return; }
+    list.innerHTML = matches.slice(0, 8).map(n => `<div class="ac-item" onclick="selectAC('${n.replace(/'/g,"\\'")}')">${n}</div>`).join('');
+    list.classList.add('open');
+}
+
+function selectAC(name) { document.getElementById('addInput').value = name; closeAutocomplete(); }
+function closeAutocomplete() { document.getElementById('acList').classList.remove('open'); }
+</script>
+</body>
+</html>
