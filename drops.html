@@ -40,13 +40,7 @@
   }
   .header-left { display: flex; align-items: center; gap: 14px; }
   .logo-block {
-    display: flex; align-items: center; height: 36px;
-  }
-  .logo-block img { height: 28px; width: auto; display: block; }
-  .logo-block .logo-fallback {
-    background: var(--red); color: var(--white);
-    font-weight: 800; font-size: 15px; letter-spacing: 0.04em;
-    padding: 5px 11px; border-radius: 4px; line-height: 1; display: none;
+    display: flex; align-items: center; height: 36px; flex-shrink: 0;
   }
   .header-title { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
   .header-sub   { font-size: 11px; color: var(--navy-light); margin-top: 2px; }
@@ -274,11 +268,21 @@
 <header>
   <div class="header-left">
     <div class="logo-block">
-      <!-- CEVA white wordmark SVG -->
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 40" height="30" aria-label="CEVA Logistics">
-        <rect width="120" height="40" rx="4" fill="#C8102E"/>
-        <text x="60" y="28" text-anchor="middle" font-family="Arial Black, Arial, sans-serif"
-              font-weight="900" font-size="22" letter-spacing="2" fill="#ffffff">CEVA</text>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 32" height="32" role="img" aria-label="CEVA Logistics">
+        <!-- Red background pill -->
+        <rect width="90" height="32" rx="3" fill="#C8102E"/>
+        <!-- C -->
+        <path d="M10 10 Q7 10 7 16 Q7 22 10 22 L14 22 L14 20 L10.5 20 Q9 20 9 16 Q9 12 10.5 12 L14 12 L14 10 Z" fill="#fff"/>
+        <!-- E -->
+        <rect x="16" y="10" width="2" height="12" fill="#fff"/>
+        <rect x="16" y="10" width="7" height="2" fill="#fff"/>
+        <rect x="16" y="15" width="6" height="2" fill="#fff"/>
+        <rect x="16" y="20" width="7" height="2" fill="#fff"/>
+        <!-- V -->
+        <polygon points="25,10 27,10 30,19 33,10 35,10 31,22 29,22" fill="#fff"/>
+        <!-- A -->
+        <polygon points="37,22 40,10 42,10 45,22 43,22 41,14.5 39,22" fill="#fff"/>
+        <rect x="38.5" y="17" width="5" height="2" fill="#fff"/>
       </svg>
     </div>
     <div>
@@ -291,7 +295,6 @@
       <button class="hbtn">&#128194; Import Excel</button>
       <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
     </div>
-    <button class="hbtn primary" id="fetchBtn">&#8635; Fetch from Sheets</button>
   </div>
 </header>
 
@@ -314,13 +317,12 @@
   <div id="emptyState" class="empty-state">
     <div class="empty-icon">📦</div>
     <h2>No Data Loaded</h2>
-    <p>Import an Excel file from the Demand Summary report, or fetch directly from the connected Google Sheet.</p>
+    <p>Import an Excel file from the Demand Summary report to view the Orders Dropped dashboard.</p>
     <div class="empty-actions">
       <div class="file-wrap">
         <button class="fbtn navy">&#128194; Import Excel</button>
         <input type="file" id="fileInput2" accept=".xlsx,.xls,.csv">
       </div>
-      <button class="fbtn navy" onclick="fetchFromSheets()">&#8635; Fetch from Sheets</button>
     </div>
   </div>
 
@@ -419,8 +421,6 @@
 </main>
 
 <script>
-const SHEET_URL = 'https://script.google.com/macros/s/AKfycbz-akv_D7f_qLfyIjsB3ht1Pz2-gSrV_vOyk97F7GmUS9oDxOphb5A6yH_uLkY4ZvxhQw/exec';
-
 // ── NAME NORMALIZATION ─────────────────────────────────────────────────────────
 // Strips extra whitespace and standardizes punctuation variants so that
 // "BEDJET  LLC", "BEDJET, LLC" → "BEDJET, LLC"
@@ -471,7 +471,7 @@ function normalizeRow(row) {
   return { name, code, date, hour, qty };
 }
 
-function loadData(rows, skipPush) {
+function loadData(rows) {
   rawData = rows.map(normalizeRow).filter(r => r.name && r.date);
   if (!rawData.length) {
     showStatus('No valid rows found. Check column names: vendor_name, vendor_code, release_date, hour_drop, qty_ordered.', 'error');
@@ -484,47 +484,7 @@ function loadData(rows, skipPush) {
   $('dashboard').style.display   = 'block';
   $('filterBar').style.display   = 'flex';
   const custCount = [...new Set(rawData.map(r => r.name))].length;
-  if (!skipPush) {
-    showStatus(`&#10003; Loaded ${fmt(rawData.length)} rows across ${custCount} customers`, 'success');
-  }
-}
-
-// Push newly imported rows to Google Sheets, then reload the full dataset from Sheets
-async function pushToSheets(newRows) {
-  showStatus('<div class="loading"><div class="spinner"></div>Saving to Google Sheets and merging with existing data…</div>', 'info');
-  try {
-    const payload = {
-      action: 'appendNewRows',
-      rows: newRows.map(r => ({
-        vendor_name:  r.name,
-        vendor_code:  r.code,
-        release_date: r.date,
-        hour_drop:    r.hour,
-        qty_ordered:  r.qty
-      }))
-    };
-
-    const res = await fetch(SHEET_URL, {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const json = await res.json();
-    if (json.error) throw new Error(json.error);
-
-    const inserted = json.inserted || 0;
-    const purged   = json.purged   || 0;
-    const dupes    = json.duplicates || 0;
-
-    // Now reload the full merged dataset from Sheets
-    await fetchFromSheets(
-      `&#10003; Import complete — ${fmt(inserted)} new rows added, ${fmt(dupes)} duplicates skipped` +
-      (purged ? `, ${fmt(purged)} rows older than 6 months purged` : '')
-    );
-
-  } catch (err) {
-    showStatus(`Failed to save to Sheets: ${err.message}. Data is still visible locally.`, 'error');
-  }
+  showStatus(`&#10003; Loaded ${fmt(rawData.length)} rows across ${custCount} customers`, 'success');
 }
 
 function populateFilters() {
@@ -739,22 +699,6 @@ function exportCSV() {
   a.click(); URL.revokeObjectURL(a.href);
 }
 
-async function fetchFromSheets(successMsg) {
-  if (!successMsg) showStatus('<div class="loading"><div class="spinner"></div>Fetching from Google Sheets…</div>', 'info');
-  try {
-    const res  = await fetch(SHEET_URL + '?action=getAll');
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const json = await res.json();
-    if (json.error) throw new Error(json.error);
-    const data = Array.isArray(json) ? json : (json.data || []);
-    if (!data.length) throw new Error('Sheet returned 0 rows');
-    loadData(data, true);
-    showStatus(successMsg || `&#10003; Loaded ${fmt(data.length)} rows from Google Sheets`, 'success');
-  } catch (err) {
-    showStatus(`Error: ${err.message}`, 'error');
-  }
-}
-
 function handleFile(file) {
   if (!file) return;
   const reader = new FileReader();
@@ -762,11 +706,7 @@ function handleFile(file) {
     try {
       const wb   = XLSX.read(e.target.result, { type: 'array', cellDates: false });
       const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
-      const normalized = rows.map(normalizeRow).filter(r => r.name && r.date);
-      if (!normalized.length) { showStatus('No valid rows found in file.', 'error'); return; }
-      // Show local preview immediately, then push to Sheets
-      loadData(rows, true);
-      pushToSheets(normalized);
+      loadData(rows);
     } catch (err) { showStatus('Failed to parse file: ' + err.message, 'error'); }
   };
   reader.readAsArrayBuffer(file);
@@ -774,10 +714,6 @@ function handleFile(file) {
 
 $('fileInput').addEventListener('change',  e => handleFile(e.target.files[0]));
 $('fileInput2').addEventListener('change', e => handleFile(e.target.files[0]));
-$('fetchBtn').addEventListener('click', () => fetchFromSheets());
-
-// Auto-load from Google Sheets on page open
-fetchFromSheets();
 </script>
 </body>
 </html>
