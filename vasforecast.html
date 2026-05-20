@@ -836,6 +836,12 @@ function updateKPIs(data) {
 function renderTrendChart(data) {
   const { keys, shippedByKey, forecastByKey } = data;
   if(trendChart) { trendChart.destroy(); trendChart=null; }
+
+  // Recreate the canvas so it has no inherited pixel dimensions from the
+  // previous render — this lets Chart.js measure the parent width fresh
+  // on every redraw, which is what makes the chart actually resize.
+  const wrap = document.getElementById('trendChart').parentNode;
+  wrap.innerHTML = '<canvas id="trendChart"></canvas>';
   const ctx = document.getElementById('trendChart').getContext('2d');
   trendChart = new Chart(ctx, {
     type: 'bar',
@@ -1116,14 +1122,17 @@ document.getElementById('modal').addEventListener('click', e => {
 // parent container itself resizes. We force a chart.resize() call
 // on every window resize to guarantee all charts update correctly.
 function resizeAllCharts() {
-  if(trendChart) trendChart.resize();
-  Object.values(custCharts).forEach(c => { try { c.resize(); } catch(e){} });
+  // For the trend chart, the canvas is recreated on each render() call,
+  // so we just re-render it directly on resize.
+  // For customer mini-charts, .resize() is sufficient since their canvases
+  // are also recreated when custChartsRow is rebuilt.
+  render();
 }
 
 let resizeTimer;
 window.addEventListener('resize', () => {
   clearTimeout(resizeTimer);
-  resizeTimer = setTimeout(resizeAllCharts, 100);
+  resizeTimer = setTimeout(resizeAllCharts, 150);
 });
 
 // Initial load
