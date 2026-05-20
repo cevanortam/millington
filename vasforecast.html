@@ -581,7 +581,12 @@ function getDateRange() {
 }
 function getCustomer() { return document.getElementById('fCustomer').value; }
 
-function getVASAccts() { return forecastData.map(r => r.account_id); }
+function getVASAccts() {
+  // All accounts that appear in either the forecast OR shipped data
+  const forecastAccts = forecastData.map(r => r.account_id);
+  const shippedAccts  = [...new Set(shippedData.map(r => r.account))];
+  return [...new Set([...forecastAccts, ...shippedAccts])];
+}
 
 function getActiveAccts() {
   const c = getCustomer();
@@ -670,6 +675,7 @@ function initFilters() {
   if(shippedData.length) {
     const dates = shippedData.map(r => r.bill_date).sort();
     const vasAccts = getVASAccts();
+    // Use shipped dates across all VAS accounts (including shipped-only accounts)
     const vasDates = shippedData.filter(r=>vasAccts.includes(r.account)).map(r=>r.bill_date).sort();
     const minDate = vasDates.length ? vasDates[0] : dates[0];
     const maxDate = vasDates.length ? vasDates[vasDates.length-1] : dates[dates.length-1];
@@ -677,13 +683,15 @@ function initFilters() {
     if(!document.getElementById('fTo').value)   document.getElementById('fTo').value   = maxDate;
   }
 
-  // Customer dropdown
+  // Customer dropdown — include all accounts (forecast + shipped-only)
   const sel = document.getElementById('fCustomer');
   sel.innerHTML = '<option value="ALL">All Customers</option>';
-  forecastData.forEach(r => {
-    const opt = document.createElement('option');
-    opt.value = r.account_id;
-    opt.textContent = (r.account_name || r.account_id) + ' (' + r.account_id + ')';
+  getVASAccts().forEach(id => {
+    const fRow = forecastData.find(r => r.account_id === id);
+    const name = fRow ? (fRow.account_name || id) : id;
+    const opt  = document.createElement('option');
+    opt.value  = id;
+    opt.textContent = name + ' (' + id + ')';
     sel.appendChild(opt);
   });
 }
@@ -711,7 +719,7 @@ function computeMain() {
   const { from, to } = getDateRange();
   if(!from || !to) return null;
 
-  const activeAccts = getActiveAccts().filter(a => forecastData.some(f=>f.account_id===a));
+  const activeAccts = getActiveAccts();
 
   // Workdays in range
   const workdays = [];
@@ -742,9 +750,10 @@ function computeMain() {
   const pct  = totalForecast>0 ? (totalShipped/totalForecast)*100 : null;
   const varN = totalShipped - totalForecast;
 
-  // Per-customer
+  // Per-customer — include accounts with no forecast (shipped-only)
   const perCust = activeAccts.map(a => {
-    const name = (forecastData.find(f=>f.account_id===a)||{}).account_name || a;
+    const fRow = forecastData.find(f=>f.account_id===a);
+    const name = fRow ? (fRow.account_name || a) : a;
     const shipped  = filteredShipped.filter(r=>r.account===a).reduce((s,r)=>s+r.units,0);
     const forecast = workdays.reduce((s,d)=>s+dailyForecast(a,d),0);
     return { acct:a, name, shipped, forecast, variance:shipped-forecast, pct: forecast>0?(shipped/forecast)*100:null };
