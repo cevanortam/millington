@@ -582,10 +582,10 @@ function getDateRange() {
 function getCustomer() { return document.getElementById('fCustomer').value; }
 
 function getVASAccts() {
-  // All accounts that appear in either the forecast OR shipped data
+  // Forecast accounts + Nordstrom Direct (500128) which has no forecast row
+  const EXTRA_ACCTS = ['500128'];
   const forecastAccts = forecastData.map(r => r.account_id);
-  const shippedAccts  = [...new Set(shippedData.map(r => r.account))];
-  return [...new Set([...forecastAccts, ...shippedAccts])];
+  return [...new Set([...forecastAccts, ...EXTRA_ACCTS])];
 }
 
 function getActiveAccts() {
@@ -683,12 +683,13 @@ function initFilters() {
     if(!document.getElementById('fTo').value)   document.getElementById('fTo').value   = maxDate;
   }
 
-  // Customer dropdown — include all accounts (forecast + shipped-only)
+  // Customer dropdown — forecast accounts + known shipped-only VAS accounts
+  const KNOWN_NAMES = { '500128': 'Nordstrom Direct' };
   const sel = document.getElementById('fCustomer');
   sel.innerHTML = '<option value="ALL">All Customers</option>';
   getVASAccts().forEach(id => {
     const fRow = forecastData.find(r => r.account_id === id);
-    const name = fRow ? (fRow.account_name || id) : id;
+    const name = fRow ? (fRow.account_name || id) : (KNOWN_NAMES[id] || id);
     const opt  = document.createElement('option');
     opt.value  = id;
     opt.textContent = name + ' (' + id + ')';
@@ -750,10 +751,11 @@ function computeMain() {
   const pct  = totalForecast>0 ? (totalShipped/totalForecast)*100 : null;
   const varN = totalShipped - totalForecast;
 
-  // Per-customer — include accounts with no forecast (shipped-only)
+  // Per-customer — forecast accounts + known shipped-only VAS accounts
+  const KNOWN_NAMES = { '500128': 'Nordstrom Direct' };
   const perCust = activeAccts.map(a => {
     const fRow = forecastData.find(f=>f.account_id===a);
-    const name = fRow ? (fRow.account_name || a) : a;
+    const name = fRow ? (fRow.account_name || a) : (KNOWN_NAMES[a] || a);
     const shipped  = filteredShipped.filter(r=>r.account===a).reduce((s,r)=>s+r.units,0);
     const forecast = workdays.reduce((s,d)=>s+dailyForecast(a,d),0);
     return { acct:a, name, shipped, forecast, variance:shipped-forecast, pct: forecast>0?(shipped/forecast)*100:null };
