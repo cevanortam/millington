@@ -420,11 +420,11 @@ td.norm-val { color: var(--text2); }
     </div>
     <div class="top-kpi">
       <div class="top-kpi-val" id="hdr-total">—</div>
-      <div class="top-kpi-label">Avg Total (hrs)</div>
+      <div class="top-kpi-label">Avg Total (hh:mm)</div>
     </div>
     <div class="top-kpi">
       <div class="top-kpi-val red" id="hdr-pick">—</div>
-      <div class="top-kpi-label">Avg Order→Pick</div>
+      <div class="top-kpi-label">Avg Order→Pick (hh:mm)</div>
     </div>
   </div>
 </div>
@@ -463,25 +463,25 @@ td.norm-val { color: var(--text2); }
   <div class="kpi-card">
     <div class="kpi-card-label">Avg Total Turnaround</div>
     <div class="kpi-card-val red" id="kpi-total">—</div>
-    <div class="kpi-card-sub">hours · Order Create → Bill</div>
+    <div class="kpi-card-sub">hh:mm · Order Create → Bill</div>
     <div class="kpi-bar total"></div>
   </div>
   <div class="kpi-card">
     <div class="kpi-card-label">Avg Order → Pick</div>
     <div class="kpi-card-val pick" id="kpi-pick">—</div>
-    <div class="kpi-card-sub">hours</div>
+    <div class="kpi-card-sub">hh:mm</div>
     <div class="kpi-bar pick"></div>
   </div>
   <div class="kpi-card">
     <div class="kpi-card-label">Avg Pick → VAP</div>
     <div class="kpi-card-val vap" id="kpi-vap">—</div>
-    <div class="kpi-card-sub">hours</div>
+    <div class="kpi-card-sub">hh:mm</div>
     <div class="kpi-bar vap"></div>
   </div>
   <div class="kpi-card">
     <div class="kpi-card-label">Avg VAP → Bill</div>
     <div class="kpi-card-val bill" id="kpi-bill">—</div>
-    <div class="kpi-card-sub">hours</div>
+    <div class="kpi-card-sub">hh:mm</div>
     <div class="kpi-bar bill"></div>
   </div>
 </div>
@@ -526,10 +526,10 @@ td.norm-val { color: var(--text2); }
           <th onclick="sortTable('period')" style="width:130px">Period <span class="sort-arrow">↕</span></th>
           <th onclick="sortTable('orders')" class="num">Orders <span class="sort-arrow">↕</span></th>
           <th onclick="sortTable('lines')"  class="num">Lines  <span class="sort-arrow">↕</span></th>
-          <th onclick="sortTable('avg_order_to_pick')" class="num">Order–Pick (Hrs) <span class="sort-arrow">↕</span></th>
-          <th onclick="sortTable('avg_pick_to_vap')"   class="num">Pick–VAP (Hrs)   <span class="sort-arrow">↕</span></th>
-          <th onclick="sortTable('avg_vap_to_bill')"   class="num">VAP–Bill (Hrs)   <span class="sort-arrow">↕</span></th>
-          <th onclick="sortTable('avg_total')"         class="num">Total (Hrs)      <span class="sort-arrow">↕</span></th>
+          <th onclick="sortTable('avg_order_to_pick')" class="num">Order–Pick (hh:mm) <span class="sort-arrow">↕</span></th>
+          <th onclick="sortTable('avg_pick_to_vap')"   class="num">Pick–VAP (hh:mm)   <span class="sort-arrow">↕</span></th>
+          <th onclick="sortTable('avg_vap_to_bill')"   class="num">VAP–Bill (hh:mm)   <span class="sort-arrow">↕</span></th>
+          <th onclick="sortTable('avg_total')"         class="num">Total (hh:mm)      <span class="sort-arrow">↕</span></th>
           <th>Status</th>
         </tr>
       </thead>
@@ -647,14 +647,14 @@ function render() {
   document.getElementById('kpi-row').style.display = '';
   document.getElementById('hdr-orders').textContent = kpis.orders.toLocaleString();
   document.getElementById('hdr-lines').textContent  = kpis.lines.toLocaleString();
-  document.getElementById('hdr-total').textContent  = kpis.total.toFixed(1);
-  document.getElementById('hdr-pick').textContent   = kpis.pick.toFixed(1);
+  document.getElementById('hdr-total').textContent  = hhmm(kpis.total);
+  document.getElementById('hdr-pick').textContent   = hhmm(kpis.pick);
   document.getElementById('kpi-orders').textContent = kpis.orders.toLocaleString();
   document.getElementById('kpi-lines-sub').textContent = kpis.lines.toLocaleString() + ' line items';
-  document.getElementById('kpi-total').textContent  = kpis.total.toFixed(1);
-  document.getElementById('kpi-pick').textContent   = kpis.pick.toFixed(1);
-  document.getElementById('kpi-vap').textContent    = kpis.vap.toFixed(1);
-  document.getElementById('kpi-bill').textContent   = kpis.bill.toFixed(2);
+  document.getElementById('kpi-total').textContent  = hhmm(kpis.total);
+  document.getElementById('kpi-pick').textContent   = hhmm(kpis.pick);
+  document.getElementById('kpi-vap').textContent    = hhmm(kpis.vap);
+  document.getElementById('kpi-bill').textContent   = hhmm(kpis.bill);
 
   document.getElementById('charts-section').style.display = '';
   document.getElementById('table-section').style.display  = '';
@@ -679,7 +679,7 @@ const CHART_OPTS = {
       borderWidth: 1,
       titleColor: '#fff',
       bodyColor: '#9aa3b8',
-      callbacks: { label: c => ` ${c.dataset.label}: ${c.parsed.y?.toFixed?.(2) ?? c.parsed.y}` }
+      callbacks: { label: c => ` ${c.dataset.label}: ${hhmm(c.parsed.y ?? 0)}` }
     }
   },
   scales: {
@@ -701,7 +701,7 @@ function buildCharts(labels, data) {
       { label:'Pick→VAP',   data:data.map(r=>r.avg_pick_to_vap),   borderColor:'#0e9e7e', backgroundColor:'rgba(14,158,126,.04)', tension:.3, borderWidth:1.5, pointRadius:2, fill:false },
       { label:'VAP→Bill',   data:data.map(r=>r.avg_vap_to_bill),   borderColor:'#c07a00', backgroundColor:'rgba(192,122,0,.04)', tension:.3, borderWidth:1.5, pointRadius:2, fill:false },
     ]},
-    options:{ ...CHART_OPTS, scales:{ ...CHART_OPTS.scales, y:{ ...CHART_OPTS.scales.y, title:{display:true,text:'Hours',color:'#9aa3b8',font:{size:9}} } } }
+    options:{ ...CHART_OPTS, scales:{ ...CHART_OPTS.scales, y:{ ...CHART_OPTS.scales.y, title:{display:true,text:'hh:mm',color:'#9aa3b8',font:{size:9}} } } }
   });
 
   charts.stacked = new Chart(document.getElementById('stackedChart'), {
@@ -764,10 +764,10 @@ function buildTable(data, periodKey) {
       <td><div class="period-cell"><span class="expand-icon" id="icon-${i}">▶</span>${period}</div></td>
       <td class="num">${r.orders.toLocaleString()}</td>
       <td class="num">${r.lines.toLocaleString()}</td>
-      <td class="num">${r.avg_order_to_pick.toFixed(2)}</td>
-      <td class="num">${r.avg_pick_to_vap.toFixed(2)}</td>
-      <td class="num">${r.avg_vap_to_bill.toFixed(2)}</td>
-      <td class="num ${totalCls}">${total.toFixed(2)}</td>
+      <td class="num">${hhmm(r.avg_order_to_pick)}</td>
+      <td class="num">${hhmm(r.avg_pick_to_vap)}</td>
+      <td class="num">${hhmm(r.avg_vap_to_bill)}</td>
+      <td class="num ${totalCls}">${hhmm(total)}</td>
       <td><span class="pill ${pillCls}">${pillTxt}</span></td>
     `;
     tr.addEventListener('click', () => toggleDrill(period, i, periodKey));
@@ -880,10 +880,10 @@ function renderDrillTable(container, rows, period) {
             <th>Picked</th>
             <th>VAP Complete</th>
             <th>Billed</th>
-            <th class="num">Order→Pick (hrs)</th>
-            <th class="num">Pick→VAP (hrs)</th>
-            <th class="num">VAP→Bill (hrs)</th>
-            <th class="num">Total (hrs)</th>
+            <th class="num">Order→Pick (hh:mm)</th>
+            <th class="num">Pick→VAP (hh:mm)</th>
+            <th class="num">VAP→Bill (hh:mm)</th>
+            <th class="num">Total (hh:mm)</th>
             <th>Status</th>
           </tr>
         </thead>
@@ -906,10 +906,10 @@ function renderDrillTable(container, rows, period) {
               <td style="white-space:nowrap;color:var(--muted)">${r.pick_dt_fmt||'—'}</td>
               <td style="white-space:nowrap;color:var(--muted)">${r.vap_dt_fmt||'—'}</td>
               <td style="white-space:nowrap;color:var(--muted)">${r.bill_dt_fmt||'—'}</td>
-              <td class="num">${(r.o2p||0).toFixed(2)}</td>
-              <td class="num">${(r.p2v||0).toFixed(2)}</td>
-              <td class="num">${(r.v2b||0).toFixed(2)}</td>
-              <td class="num ${tCls}">${tot.toFixed(2)}</td>
+              <td class="num">${hhmm(r.o2p||0)}</td>
+              <td class="num">${hhmm(r.p2v||0)}</td>
+              <td class="num">${hhmm(r.v2b||0)}</td>
+              <td class="num ${tCls}">${hhmm(tot)}</td>
               <td><span class="pill ${pillCls}">${pillTxt}</span></td>
             </tr>`;
           }).join('')}
@@ -1090,6 +1090,15 @@ function fmtDt(dt) {
   const ampm = h >= 12 ? 'PM' : 'AM';
   h = h % 12 || 12;
   return `${mo}/${d}/${y} ${h}:${String(m).padStart(2,'0')} ${ampm}`;
+}
+
+function hhmm(decimalHours) {
+  // Convert decimal hours to hh:mm  e.g. 43.13 → "43:08", 0.36 → "0:22"
+  if (decimalHours == null || isNaN(decimalHours)) return '—';
+  const totalMins = Math.round(Math.abs(decimalHours) * 60);
+  const h = Math.floor(totalMins / 60);
+  const m = totalMins % 60;
+  return `${h}:${String(m).padStart(2,'0')}`;
 }
 
 function processRows(rows) {
