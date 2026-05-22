@@ -315,6 +315,8 @@ tr.drill-row td {
 .drill-table-wrap {
   padding: 8px 16px 12px 36px;
   overflow-x: auto;
+  max-height: 500px;
+  overflow-y: auto;
 }
 .drill-title {
   font-size: 9px;
@@ -329,7 +331,9 @@ table.drill-table { font-size: 11px; }
 table.drill-table thead th {
   font-size: 9px;
   background: var(--surface3);
-  position: static;
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 table.drill-table tbody tr { border-bottom: 1px solid var(--border); }
 table.drill-table tbody tr:hover { background: rgba(0,0,0,.02); }
@@ -863,60 +867,95 @@ function renderDrillTable(container, rows, period) {
 
   // sort by total descending
   const sorted = [...rows].sort((a,b) => (b.tot||0) - (a.tot||0));
+  const uniqueOrders = new Set(sorted.map(r=>r.order)).size;
+  const avg = rawData.kpis.avg_total;
 
-  container.innerHTML = `
-    <div class="drill-title">${period} — ${sorted.length.toLocaleString()} line items across ${new Set(sorted.map(r=>r.order)).size.toLocaleString()} orders</div>
-    <div class="drill-table-wrap">
-      <table class="drill-table">
-        <thead>
-          <tr>
-            <th>Order #</th>
-            <th>SKU</th>
-            <th>Description</th>
-            <th class="num">Qty</th>
-            <th>Pick User</th>
-            <th>VAS User</th>
-            <th>Order Created</th>
-            <th>Picked</th>
-            <th>VAP Complete</th>
-            <th>Billed</th>
-            <th class="num">Order→Pick (hh:mm)</th>
-            <th class="num">Pick→VAP (hh:mm)</th>
-            <th class="num">VAP→Bill (hh:mm)</th>
-            <th class="num">Total (hh:mm)</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${sorted.map(r => {
-            const tot = r.tot || 0;
-            const avg = rawData.kpis.avg_total;
-            const pct = tot / avg;
-            const pillCls = pct <= .85 ? 'pill-fast' : pct <= 1.15 ? 'pill-normal' : 'pill-slow';
-            const pillTxt = pct <= .85 ? 'Fast' : pct <= 1.15 ? 'Normal' : 'Slow';
-            const tCls = pct > 1.15 ? 'slow-val' : pct <= .85 ? 'fast-val' : 'norm-val';
-            return `<tr>
-              <td style="font-weight:700;color:var(--text)">${r.order||'—'}</td>
-              <td>${r.sku||'—'}</td>
-              <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis">${r.description||'—'}</td>
-              <td class="num">${r.qty||'—'}</td>
-              <td>${r.pick_user||'—'}</td>
-              <td>${r.vas_user||'—'}</td>
-              <td style="white-space:nowrap;color:var(--muted)">${r.order_dt_fmt||'—'}</td>
-              <td style="white-space:nowrap;color:var(--muted)">${r.pick_dt_fmt||'—'}</td>
-              <td style="white-space:nowrap;color:var(--muted)">${r.vap_dt_fmt||'—'}</td>
-              <td style="white-space:nowrap;color:var(--muted)">${r.bill_dt_fmt||'—'}</td>
-              <td class="num">${hhmm(r.o2p||0)}</td>
-              <td class="num">${hhmm(r.p2v||0)}</td>
-              <td class="num">${hhmm(r.v2b||0)}</td>
-              <td class="num ${tCls}">${hhmm(tot)}</td>
-              <td><span class="pill ${pillCls}">${pillTxt}</span></td>
-            </tr>`;
-          }).join('')}
-        </tbody>
-      </table>
-    </div>
-  `;
+  // Title
+  const titleDiv = document.createElement('div');
+  titleDiv.className = 'drill-title';
+  titleDiv.textContent = `${period} — ${sorted.length.toLocaleString()} line items across ${uniqueOrders.toLocaleString()} orders`;
+
+  // Table shell
+  const wrapDiv = document.createElement('div');
+  wrapDiv.className = 'drill-table-wrap';
+
+  const table = document.createElement('table');
+  table.className = 'drill-table';
+
+  // Header
+  const thead = document.createElement('thead');
+  thead.innerHTML = `<tr>
+    <th>Order #</th>
+    <th>SKU</th>
+    <th>Description</th>
+    <th class="num">Qty</th>
+    <th>Pick User</th>
+    <th>VAS User</th>
+    <th>Order Created</th>
+    <th>Picked</th>
+    <th>VAP Complete</th>
+    <th>Billed</th>
+    <th class="num">Order→Pick (hh:mm)</th>
+    <th class="num">Pick→VAP (hh:mm)</th>
+    <th class="num">VAP→Bill (hh:mm)</th>
+    <th class="num">Total (hh:mm)</th>
+    <th>Status</th>
+  </tr>`;
+  table.appendChild(thead);
+
+  // Body — built row by row via DOM to avoid innerHTML string truncation
+  const tbody = document.createElement('tbody');
+  for (const r of sorted) {
+    const tot = r.tot || 0;
+    const pct = tot / avg;
+    const pillCls = pct <= .85 ? 'pill-fast' : pct <= 1.15 ? 'pill-normal' : 'pill-slow';
+    const pillTxt = pct <= .85 ? 'Fast' : pct <= 1.15 ? 'Normal' : 'Slow';
+    const tCls    = pct > 1.15 ? 'slow-val' : pct <= .85 ? 'fast-val' : 'norm-val';
+
+    const tr = document.createElement('tr');
+
+    const cells = [
+      { text: r.order||'—',       style: 'font-weight:700;color:var(--text)' },
+      { text: r.sku||'—' },
+      { text: r.description||'—', style: 'max-width:180px;overflow:hidden;text-overflow:ellipsis' },
+      { text: r.qty||'—',         cls: 'num' },
+      { text: r.pick_user||'—' },
+      { text: r.vas_user||'—' },
+      { text: r.order_dt_fmt||'—', style: 'white-space:nowrap;color:var(--muted)' },
+      { text: r.pick_dt_fmt||'—',  style: 'white-space:nowrap;color:var(--muted)' },
+      { text: r.vap_dt_fmt||'—',   style: 'white-space:nowrap;color:var(--muted)' },
+      { text: r.bill_dt_fmt||'—',  style: 'white-space:nowrap;color:var(--muted)' },
+      { text: hhmm(r.o2p||0),     cls: 'num' },
+      { text: hhmm(r.p2v||0),     cls: 'num' },
+      { text: hhmm(r.v2b||0),     cls: 'num' },
+      { text: hhmm(tot),           cls: `num ${tCls}` },
+    ];
+
+    for (const c of cells) {
+      const td = document.createElement('td');
+      if (c.cls)   td.className = c.cls;
+      if (c.style) td.style.cssText = c.style;
+      td.textContent = c.text;
+      tr.appendChild(td);
+    }
+
+    // Status pill cell
+    const tdStatus = document.createElement('td');
+    const pill = document.createElement('span');
+    pill.className = `pill ${pillCls}`;
+    pill.textContent = pillTxt;
+    tdStatus.appendChild(pill);
+    tr.appendChild(tdStatus);
+
+    tbody.appendChild(tr);
+  }
+
+  table.appendChild(tbody);
+  wrapDiv.appendChild(table);
+
+  container.innerHTML = '';
+  container.appendChild(titleDiv);
+  container.appendChild(wrapDiv);
 }
 
 /* ============================================================
