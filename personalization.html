@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>VAS Personalization Turnaround — CEVA Logistics</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+/* ============================================================
+   CEVA COLOR SCHEME — matching VAS Forecast vs Shipped (light)
+   ============================================================ */
+:root {
+  --bg:        #f0f2f5;
+  --surface:   #ffffff;
+  --surface2:  #f7f8fa;
+  --surface3:  #edf0f4;
+  --border:    #d8dde6;
+  --border2:   #c4cbd8;
+  --nav-bg:    #1a1f2e;
+  --nav-border:#2a3145;
+  --red:       #cc1f2d;
+  --red-dim:   rgba(204,31,45,.12);
+  --text:      #1a1f2e;
+  --text2:     #3d4660;
+  --muted:     #6b7590;
+  --pick:      #1a6fc4;
+  --vap:       #0e9e7e;
+  --bill:      #c07a00;
+  --total:     #1a1f2e;
+  --fast:      #0e9e7e;
+  --normal:    #c07a00;
+  --slow:      #cc1f2d;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 13px;
+  min-height: 100vh;
+}
+
+/* ---- TOP HEADER BAR — dark navy so white logo is visible ---- */
+.top-bar {
+  background: var(--nav-bg);
+  border-bottom: 1px solid var(--nav-border);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  height: 48px;
+  gap: 14px;
+}
+.top-bar img { height: 28px; object-fit: contain; flex-shrink: 0; filter: brightness(0) invert(1); }
+.top-bar-divider { width: 1px; height: 28px; background: var(--nav-border); }
+.top-bar-title {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  color: #ffffff;
+}
+.top-bar-right {
+  margin-left: auto;
+  display: flex;
+  align-items: stretch;
+  height: 100%;
+}
+.top-kpi {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 0 18px;
+  border-left: 1px solid var(--nav-border);
+  min-width: 110px;
+}
+.top-kpi-val {
+  font-size: 16px;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1;
+}
+.top-kpi-val.red { color: #ff6b74; }
+.top-kpi-label {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .7px;
+  color: #6b7a99;
+  margin-top: 2px;
+}
+
+/* ---- ACTION BAR ---- */
+.action-bar {
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  height: 40px;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 12px;
+  height: 28px;
+  border-radius: 3px;
+  border: none;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  cursor: pointer;
+  transition: opacity .15s;
+  white-space: nowrap;
+}
+.btn:hover { opacity: .85; }
+.btn-red    { background: var(--red);    color: #fff; }
+.btn-ghost  { background: transparent;  color: var(--text2); border: 1px solid var(--border2); }
+.btn-dark   { background: var(--surface3); color: var(--text2); border: 1px solid var(--border); }
+.action-bar-info { font-size: 11px; color: var(--muted); }
+.action-bar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.action-label { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.action-bar input[type=date] {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border2);
+  border-radius: 3px;
+  padding: 3px 8px;
+  font-size: 11px;
+  height: 28px;
+}
+.action-bar input[type=date]:focus { outline: none; border-color: var(--red); }
+.view-toggle { display: flex; border: 1px solid var(--border2); border-radius: 3px; overflow: hidden; height: 28px; }
+.view-toggle button {
+  background: transparent; border: none; color: var(--muted);
+  padding: 0 12px; font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .4px; cursor: pointer; transition: background .15s, color .15s;
+}
+.view-toggle button.active { background: var(--red); color: #fff; }
+.view-toggle button + button { border-left: 1px solid var(--border2); }
+
+/* ---- KPI CARDS ROW ---- */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  border-bottom: 1px solid var(--border);
+}
+.kpi-card {
+  padding: 14px 20px;
+  border-right: 1px solid var(--border);
+  position: relative;
+}
+.kpi-card:last-child { border-right: none; }
+.kpi-card-label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  color: var(--muted);
+  margin-bottom: 5px;
+}
+.kpi-card-val {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--text);
+}
+.kpi-card-val.red   { color: var(--red); }
+.kpi-card-val.pick  { color: var(--pick); }
+.kpi-card-val.vap   { color: var(--vap); }
+.kpi-card-val.bill  { color: var(--bill); }
+.kpi-card-sub { font-size: 10px; color: var(--muted); margin-top: 4px; }
+.kpi-bar {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 2px;
+}
+.kpi-bar.total { background: var(--red); }
+.kpi-bar.pick  { background: var(--pick); }
+.kpi-bar.vap   { background: var(--vap); }
+.kpi-bar.bill  { background: var(--bill); }
+.kpi-bar.orders { background: linear-gradient(90deg, var(--pick), var(--vap)); }
+
+/* ---- CHART SECTION HEADER ---- */
+.section-header {
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.section-title {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  color: var(--text2);
+}
+.legend { display: flex; gap: 14px; align-items: center; }
+.legend-item { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .3px; }
+.legend-dot { width: 10px; height: 3px; border-radius: 1px; }
+
+/* ---- MAIN CHART ---- */
+.main-chart-wrap {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 16px;
+}
+.chart-canvas-wrap { position: relative; height: 220px; }
+
+/* ---- TWO COL CHARTS ---- */
+.chart-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-bottom: 1px solid var(--border);
+}
+.chart-panel {
+  background: var(--surface);
+  padding: 14px 16px;
+}
+.chart-panel + .chart-panel { border-left: 1px solid var(--border); }
+.chart-panel-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin-bottom: 10px; }
+.chart-canvas-sm { position: relative; height: 160px; width: 100%; }
+
+/* ---- BREAKDOWN TABLE ---- */
+.table-section { background: var(--surface); }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+thead th {
+  background: var(--surface2);
+  text-align: left;
+  padding: 7px 12px;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .7px;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+thead th:hover { color: var(--text2); }
+thead th .sort-arrow { opacity: .4; margin-left: 3px; }
+thead th.sorted .sort-arrow { opacity: 1; color: var(--red); }
+
+tbody tr.period-row {
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background .1s;
+}
+tbody tr.period-row:hover { background: rgba(204,31,45,.04); }
+tbody tr.period-row.expanded { background: rgba(204,31,45,.06); }
+tbody td { padding: 7px 12px; white-space: nowrap; color: var(--text); }
+td.period-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  color: var(--text);
+}
+.expand-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px; height: 16px;
+  border-radius: 2px;
+  background: var(--surface3);
+  border: 1px solid var(--border2);
+  font-size: 9px;
+  color: var(--muted);
+  flex-shrink: 0;
+  transition: transform .2s, background .1s, color .1s;
+}
+.expand-icon.open { transform: rotate(90deg); background: var(--red); color: #fff; border-color: var(--red); }
+
+.pill {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 2px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+}
+.pill-fast   { background: rgba(14,158,126,.12); color: var(--fast); }
+.pill-normal { background: rgba(192,122,0,.12);  color: var(--normal); }
+.pill-slow   { background: rgba(204,31,45,.12);  color: var(--slow); }
+
+/* ---- DRILL-DOWN ROWS ---- */
+tr.drill-row { display: none; }
+tr.drill-row.visible { display: table-row; }
+tr.drill-row td {
+  padding: 0;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+}
+.drill-inner {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height .25s ease;
+}
+.drill-inner.open { max-height: 9999px; }
+.drill-table-wrap {
+  padding: 8px 16px 12px 36px;
+  overflow-x: auto;
+}
+.drill-title {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  color: var(--muted);
+  padding: 8px 16px 4px 36px;
+  border-top: 1px solid var(--border);
+}
+table.drill-table { font-size: 11px; }
+table.drill-table thead th {
+  font-size: 9px;
+  background: var(--surface3);
+  position: static;
+}
+table.drill-table tbody tr { border-bottom: 1px solid var(--border); }
+table.drill-table tbody tr:hover { background: rgba(0,0,0,.02); }
+table.drill-table td { padding: 5px 10px; color: var(--text2); }
+.drill-loading { padding: 12px 36px; font-size: 11px; color: var(--muted); }
+
+/* ---- STATUS BAR ---- */
+#status-bar {
+  padding: 20px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+}
+.spinner {
+  display: inline-block;
+  width: 12px; height: 12px;
+  border: 2px solid var(--border2);
+  border-top-color: var(--red);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  vertical-align: middle;
+  margin-right: 5px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---- IMPORT MODAL ---- */
+.modal-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.4);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 4px;
+  padding: 24px 28px;
+  width: 440px;
+  max-width: 95vw;
+  box-shadow: 0 8px 32px rgba(0,0,0,.15);
+}
+.modal h2 { font-size: 15px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; color: var(--text); margin-bottom: 6px; }
+.modal p { font-size: 11px; color: var(--muted); margin-bottom: 18px; }
+.drop-zone {
+  border: 2px dashed var(--border2);
+  border-radius: 4px;
+  padding: 30px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .2s;
+  font-size: 12px;
+  color: var(--muted);
+}
+.drop-zone:hover, .drop-zone.dragging { border-color: var(--red); color: var(--text2); }
+.drop-zone .icon { font-size: 28px; margin-bottom: 8px; }
+.modal-footer { margin-top: 16px; display: flex; gap: 8px; justify-content: flex-end; }
+#import-progress { margin-top: 12px; font-size: 11px; color: var(--muted); min-height: 16px; }
+
+td.num { text-align: right; font-variant-numeric: tabular-nums; }
+td.slow-val { color: var(--slow); font-weight: 700; }
+td.fast-val { color: var(--fast); font-weight: 600; }
+td.norm-val { color: var(--text2); }
+
+@media(max-width:900px) {
+  .kpi-row { grid-template-columns: repeat(3,1fr); }
+  .chart-row { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- TOP HEADER -->
+<div class="top-bar">
+  <img src="https://www.freelogovectors.net/wp-content/uploads/2022/07/ceva-logistics-logo-freelogovectors.net_.png" alt="CEVA" />
+  <div class="top-bar-divider"></div>
+  <div class="top-bar-title">VAS Personalization Turnaround Time</div>
+  <div class="top-bar-right">
+    <div class="top-kpi">
+      <div class="top-kpi-val" id="hdr-orders">—</div>
+      <div class="top-kpi-label">Orders</div>
+    </div>
+    <div class="top-kpi">
+      <div class="top-kpi-val" id="hdr-lines">—</div>
+      <div class="top-kpi-label">Lines</div>
+    </div>
+    <div class="top-kpi">
+      <div class="top-kpi-val" id="hdr-total">—</div>
+      <div class="top-kpi-label">Avg Total (hrs)</div>
+    </div>
+    <div class="top-kpi">
+      <div class="top-kpi-val red" id="hdr-pick">—</div>
+      <div class="top-kpi-label">Avg Order→Pick</div>
+    </div>
+  </div>
+</div>
+
+<!-- ACTION BAR -->
+<div class="action-bar">
+  <button class="btn btn-red" onclick="openImport()">⬆ Import Data</button>
+  <button class="btn btn-dark" onclick="refreshData()">↻ Refresh Data</button>
+  <span class="action-bar-info" id="data-info">Loading…</span>
+  <div class="action-bar-right">
+    <span class="action-label">Date</span>
+    <input type="date" id="date-from" />
+    <span class="action-label">→</span>
+    <input type="date" id="date-to" />
+    <div class="view-toggle">
+      <button id="vt-day"   onclick="setView('day')">Day</button>
+      <button id="vt-week"  onclick="setView('week')" class="active">Week</button>
+      <button id="vt-month" onclick="setView('month')">Month</button>
+    </div>
+    <button class="btn btn-ghost" onclick="applyFilters()">Apply</button>
+    <button class="btn btn-ghost" onclick="clearFilters()">✕ Clear Filters</button>
+  </div>
+</div>
+
+<!-- STATUS -->
+<div id="status-bar"><span class="spinner"></span> Loading data from Firebase…</div>
+
+<!-- KPI CARDS -->
+<div class="kpi-row" id="kpi-row" style="display:none">
+  <div class="kpi-card">
+    <div class="kpi-card-label">Total Orders</div>
+    <div class="kpi-card-val" id="kpi-orders">—</div>
+    <div class="kpi-card-sub" id="kpi-lines-sub">— line items</div>
+    <div class="kpi-bar orders"></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-card-label">Avg Total Turnaround</div>
+    <div class="kpi-card-val red" id="kpi-total">—</div>
+    <div class="kpi-card-sub">hours · Order Create → Bill</div>
+    <div class="kpi-bar total"></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-card-label">Avg Order → Pick</div>
+    <div class="kpi-card-val pick" id="kpi-pick">—</div>
+    <div class="kpi-card-sub">hours</div>
+    <div class="kpi-bar pick"></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-card-label">Avg Pick → VAP</div>
+    <div class="kpi-card-val vap" id="kpi-vap">—</div>
+    <div class="kpi-card-sub">hours</div>
+    <div class="kpi-bar vap"></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-card-label">Avg VAP → Bill</div>
+    <div class="kpi-card-val bill" id="kpi-bill">—</div>
+    <div class="kpi-card-sub">hours</div>
+    <div class="kpi-bar bill"></div>
+  </div>
+</div>
+
+<!-- MAIN TREND CHART -->
+<div id="charts-section" style="display:none">
+  <div class="section-header">
+    <span class="section-title">Turnaround Time Trend</span>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#1a1f2e"></div>Total</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--pick)"></div>Order→Pick</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--vap)"></div>Pick→VAP</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--bill)"></div>VAP→Bill</div>
+    </div>
+  </div>
+  <div class="main-chart-wrap">
+    <div class="chart-canvas-wrap"><canvas id="trendChart"></canvas></div>
+  </div>
+
+  <div class="chart-row">
+    <div class="chart-panel">
+      <div class="chart-panel-title">Stage Breakdown (Stacked Avg Hours)</div>
+      <div class="chart-canvas-sm"><canvas id="stackedChart"></canvas></div>
+    </div>
+    <div class="chart-panel">
+      <div class="chart-panel-title">Order Volume (Billed)</div>
+      <div class="chart-canvas-sm"><canvas id="volumeChart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- BREAKDOWN TABLE -->
+<div class="table-section" id="table-section" style="display:none">
+  <div class="section-header">
+    <span class="section-title">Period Breakdown</span>
+    <span style="font-size:10px;color:var(--muted)">Click any row to expand orders for that period</span>
+  </div>
+  <div class="table-wrap">
+    <table id="breakdown-table">
+      <thead>
+        <tr>
+          <th onclick="sortTable('period')" style="width:130px">Period <span class="sort-arrow">↕</span></th>
+          <th onclick="sortTable('orders')" class="num">Orders <span class="sort-arrow">↕</span></th>
+          <th onclick="sortTable('lines')"  class="num">Lines  <span class="sort-arrow">↕</span></th>
+          <th onclick="sortTable('avg_order_to_pick')" class="num">Order–Pick (Hrs) <span class="sort-arrow">↕</span></th>
+          <th onclick="sortTable('avg_pick_to_vap')"   class="num">Pick–VAP (Hrs)   <span class="sort-arrow">↕</span></th>
+          <th onclick="sortTable('avg_vap_to_bill')"   class="num">VAP–Bill (Hrs)   <span class="sort-arrow">↕</span></th>
+          <th onclick="sortTable('avg_total')"         class="num">Total (Hrs)      <span class="sort-arrow">↕</span></th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="table-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- IMPORT MODAL -->
+<div class="modal-overlay" id="import-modal">
+  <div class="modal">
+    <h2>Import Completed Orders</h2>
+    <p>Upload a Jellycat Personalization Completed Orders .xlsx export. New records will be <strong>merged</strong> with existing Firebase data — duplicate orders are automatically skipped.</p>
+    <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+      <div class="icon">📂</div>
+      <strong>Click to browse</strong> or drag &amp; drop<br />
+      <span style="font-size:10px">Excel (.xlsx) accepted</span>
+    </div>
+    <input type="file" id="file-input" accept=".xlsx" style="display:none" onchange="handleFile(this.files[0])" />
+    <div id="import-progress"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeImport()">Cancel</button>
+      <button class="btn btn-red" id="import-btn" onclick="doImport()" disabled>Import</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   CONFIG
+   ============================================================ */
+const FB_URL  = 'https://vas-personalization-default-rtdb.firebaseio.com';
+const FB_AGG  = `${FB_URL}/turnaround`;       // aggregated daily/weekly/monthly/kpis
+const FB_ROWS = `${FB_URL}/order_rows`;       // per-order detail keyed by bill_day
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let rawData   = null;
+let view      = 'week';
+let dateFrom  = null;
+let dateTo    = null;
+let sortCol   = 'period';
+let sortAsc   = true;
+let charts    = {};
+let importFile = null;
+let drillCache = {};   // { "2026-01-05": [...] }
+
+/* ============================================================
+   FIREBASE
+   ============================================================ */
+async function fbGet(path) {
+  const r = await fetch(`${path}.json`);
+  if (!r.ok) throw new Error('Firebase error ' + r.status);
+  return r.json();
+}
+async function fbPut(path, data) {
+  const r = await fetch(`${path}.json`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
+  if (!r.ok) throw new Error('Firebase PUT error ' + r.status);
+  return r.json();
+}
+
+/* ============================================================
+   LOAD
+   ============================================================ */
+async function refreshData() {
+  setStatus('<span class="spinner"></span> Loading data…');
+  try {
+    const snap = await fbGet(FB_AGG);
+    if (!snap) { setStatus('No data. Use Import Data to upload.'); return; }
+    rawData = snap;
+    drillCache = {};
+    document.getElementById('data-info').textContent =
+      `Updated: ${snap.uploaded_at || '—'}`;
+    render();
+  } catch(e) {
+    setStatus('⚠ ' + e.message);
+  }
+}
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+function render() {
+  if (!rawData) return;
+  document.getElementById('status-bar').style.display = 'none';
+
+  const source = view === 'day' ? rawData.daily
+               : view === 'week' ? rawData.weekly
+               : rawData.monthly;
+
+  const periodKey = view === 'day' ? 'bill_day' : view === 'week' ? 'bill_week' : 'bill_month';
+
+  let filtered = (source || []).filter(r => {
+    const d = r[periodKey];
+    if (dateFrom && d < dateFrom) return false;
+    if (dateTo   && d > dateTo)   return false;
+    return true;
+  });
+
+  // weighted-average KPIs
+  const totLines  = filtered.reduce((s,r) => s+r.lines,  0);
+  const totOrders = filtered.reduce((s,r) => s+r.orders, 0);
+  const wAvg = k => totLines ? filtered.reduce((s,r) => s + r.lines*r[k], 0) / totLines : 0;
+  const kpis = {
+    orders: totOrders,
+    lines:  totLines,
+    pick:   wAvg('avg_order_to_pick'),
+    vap:    wAvg('avg_pick_to_vap'),
+    bill:   wAvg('avg_vap_to_bill'),
+    total:  wAvg('avg_total'),
+  };
+
+  // Header + KPI cards
+  document.getElementById('kpi-row').style.display = '';
+  document.getElementById('hdr-orders').textContent = kpis.orders.toLocaleString();
+  document.getElementById('hdr-lines').textContent  = kpis.lines.toLocaleString();
+  document.getElementById('hdr-total').textContent  = kpis.total.toFixed(1);
+  document.getElementById('hdr-pick').textContent   = kpis.pick.toFixed(1);
+  document.getElementById('kpi-orders').textContent = kpis.orders.toLocaleString();
+  document.getElementById('kpi-lines-sub').textContent = kpis.lines.toLocaleString() + ' line items';
+  document.getElementById('kpi-total').textContent  = kpis.total.toFixed(1);
+  document.getElementById('kpi-pick').textContent   = kpis.pick.toFixed(1);
+  document.getElementById('kpi-vap').textContent    = kpis.vap.toFixed(1);
+  document.getElementById('kpi-bill').textContent   = kpis.bill.toFixed(2);
+
+  document.getElementById('charts-section').style.display = '';
+  document.getElementById('table-section').style.display  = '';
+
+  const labels = filtered.map(r => r[periodKey]);
+  buildCharts(labels, filtered);
+  buildTable(filtered, periodKey);
+}
+
+/* ============================================================
+   CHARTS
+   ============================================================ */
+const CHART_OPTS = {
+  responsive: true,
+  maintainAspectRatio: false,
+  animation: false,
+  plugins: {
+    legend: { display: false },
+    tooltip: {
+      backgroundColor: '#1a1f2e',
+      borderColor: '#2a3145',
+      borderWidth: 1,
+      titleColor: '#fff',
+      bodyColor: '#9aa3b8',
+      callbacks: { label: c => ` ${c.dataset.label}: ${c.parsed.y?.toFixed?.(2) ?? c.parsed.y}` }
+    }
+  },
+  scales: {
+    x: { ticks: { color:'#9aa3b8', maxRotation:45, autoSkip:true, maxTicksLimit:24, font:{size:9} }, grid: { color:'rgba(0,0,0,.06)' } },
+    y: { ticks: { color:'#9aa3b8', font:{size:9} }, grid: { color:'rgba(0,0,0,.06)' } }
+  }
+};
+
+function dc(id) { if(charts[id]){charts[id].destroy();delete charts[id];} }
+
+function buildCharts(labels, data) {
+  dc('trend'); dc('stacked'); dc('volume');
+
+  charts.trend = new Chart(document.getElementById('trendChart'), {
+    type:'line',
+    data:{ labels, datasets:[
+      { label:'Total',      data:data.map(r=>r.avg_total),         borderColor:'#1a1f2e', backgroundColor:'rgba(26,31,46,.04)', tension:.3, borderWidth:2, pointRadius:2, fill:false },
+      { label:'Order→Pick', data:data.map(r=>r.avg_order_to_pick), borderColor:'#1a6fc4', backgroundColor:'rgba(26,111,196,.04)', tension:.3, borderWidth:1.5, pointRadius:2, fill:false },
+      { label:'Pick→VAP',   data:data.map(r=>r.avg_pick_to_vap),   borderColor:'#0e9e7e', backgroundColor:'rgba(14,158,126,.04)', tension:.3, borderWidth:1.5, pointRadius:2, fill:false },
+      { label:'VAP→Bill',   data:data.map(r=>r.avg_vap_to_bill),   borderColor:'#c07a00', backgroundColor:'rgba(192,122,0,.04)', tension:.3, borderWidth:1.5, pointRadius:2, fill:false },
+    ]},
+    options:{ ...CHART_OPTS, scales:{ ...CHART_OPTS.scales, y:{ ...CHART_OPTS.scales.y, title:{display:true,text:'Hours',color:'#9aa3b8',font:{size:9}} } } }
+  });
+
+  charts.stacked = new Chart(document.getElementById('stackedChart'), {
+    type:'bar',
+    data:{ labels, datasets:[
+      { label:'Order→Pick', data:data.map(r=>r.avg_order_to_pick), backgroundColor:'rgba(26,111,196,.75)',  stack:'a' },
+      { label:'Pick→VAP',   data:data.map(r=>r.avg_pick_to_vap),   backgroundColor:'rgba(14,158,126,.75)', stack:'a' },
+      { label:'VAP→Bill',   data:data.map(r=>r.avg_vap_to_bill),   backgroundColor:'rgba(192,122,0,.75)',  stack:'a' },
+    ]},
+    options:{
+      ...CHART_OPTS,
+      plugins:{ ...CHART_OPTS.plugins, legend:{ display:true, labels:{ color:'#6b7590', boxWidth:10, font:{size:9} } } },
+      scales:{ x:{...CHART_OPTS.scales.x, stacked:true}, y:{...CHART_OPTS.scales.y, stacked:true} }
+    }
+  });
+
+  charts.volume = new Chart(document.getElementById('volumeChart'), {
+    type:'bar',
+    data:{ labels, datasets:[{ label:'Orders', data:data.map(r=>r.orders), backgroundColor:'rgba(204,31,45,.7)', borderColor:'#cc1f2d', borderWidth:1 }] },
+    options:{ ...CHART_OPTS, plugins:{ ...CHART_OPTS.plugins, tooltip:{ ...CHART_OPTS.plugins.tooltip, callbacks:{ label:c=>` Orders: ${c.parsed.y.toLocaleString()}` } } } }
+  });
+}
+
+/* ============================================================
+   TABLE + DRILL-DOWN
+   ============================================================ */
+let currentPeriodKey = 'bill_day';
+
+function buildTable(data, periodKey) {
+  currentPeriodKey = periodKey;
+  const avgTotal = rawData.kpis.avg_total;
+
+  const sorted = [...data].sort((a,b) => {
+    const pk = a[periodKey] ? periodKey : 'bill_day';
+    let va = sortCol==='period' ? a[periodKey] : (a[sortCol] ?? 0);
+    let vb = sortCol==='period' ? b[periodKey] : (b[sortCol] ?? 0);
+    if (typeof va==='string') return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+    return sortAsc ? va-vb : vb-va;
+  });
+
+  // update sort arrows
+  document.querySelectorAll('thead th').forEach(th => th.classList.remove('sorted'));
+
+  const tbody = document.getElementById('table-body');
+  tbody.innerHTML = '';
+
+  sorted.forEach((r,i) => {
+    const period = r[periodKey];
+    const total  = r.avg_total;
+    const pct    = total / avgTotal;
+    const pillCls = pct <= .85 ? 'pill-fast' : pct <= 1.15 ? 'pill-normal' : 'pill-slow';
+    const pillTxt = pct <= .85 ? 'Fast' : pct <= 1.15 ? 'Normal' : 'Slow';
+    const totalCls = pct > 1.15 ? 'slow-val' : pct <= .85 ? 'fast-val' : 'norm-val';
+
+    const tr = document.createElement('tr');
+    tr.className = 'period-row';
+    tr.dataset.period = period;
+    tr.dataset.idx = i;
+    tr.innerHTML = `
+      <td><div class="period-cell"><span class="expand-icon" id="icon-${i}">▶</span>${period}</div></td>
+      <td class="num">${r.orders.toLocaleString()}</td>
+      <td class="num">${r.lines.toLocaleString()}</td>
+      <td class="num">${r.avg_order_to_pick.toFixed(2)}</td>
+      <td class="num">${r.avg_pick_to_vap.toFixed(2)}</td>
+      <td class="num">${r.avg_vap_to_bill.toFixed(2)}</td>
+      <td class="num ${totalCls}">${total.toFixed(2)}</td>
+      <td><span class="pill ${pillCls}">${pillTxt}</span></td>
+    `;
+    tr.addEventListener('click', () => toggleDrill(period, i, periodKey));
+    tbody.appendChild(tr);
+
+    // drill row (hidden initially)
+    const drillTr = document.createElement('tr');
+    drillTr.className = 'drill-row';
+    drillTr.id = `drill-${i}`;
+    drillTr.innerHTML = `<td colspan="8"><div class="drill-inner" id="drill-inner-${i}"></div></td>`;
+    tbody.appendChild(drillTr);
+  });
+}
+
+async function toggleDrill(period, idx, periodKey) {
+  const drillTr    = document.getElementById(`drill-${idx}`);
+  const drillInner = document.getElementById(`drill-inner-${idx}`);
+  const icon       = document.getElementById(`icon-${idx}`);
+  const periodRow  = drillTr.previousElementSibling;
+
+  const isOpen = drillTr.classList.contains('visible');
+
+  if (isOpen) {
+    drillInner.classList.remove('open');
+    drillTr.classList.remove('visible');
+    icon.classList.remove('open');
+    periodRow.classList.remove('expanded');
+    return;
+  }
+
+  drillTr.classList.add('visible');
+  icon.classList.add('open');
+  periodRow.classList.add('expanded');
+
+  // populate
+  if (!drillCache[period]) {
+    drillInner.innerHTML = '<div class="drill-loading"><span class="spinner"></span> Loading orders…</div>';
+    drillInner.classList.add('open');
+    try {
+      drillCache[period] = await loadDrillData(period, periodKey);
+    } catch(e) {
+      drillInner.innerHTML = `<div class="drill-loading" style="color:var(--slow)">⚠ ${e.message}</div>`;
+      return;
+    }
+  }
+
+  renderDrillTable(drillInner, drillCache[period], period);
+  drillInner.classList.add('open');
+}
+
+async function loadDrillData(period, periodKey) {
+  // For daily view: fetch from order_rows/{date}
+  // For weekly/monthly: fetch all daily keys that fall in range then merge
+  if (periodKey === 'bill_day') {
+    const snap = await fbGet(`${FB_ROWS}/${period.replace(/-/g,'_')}`);
+    return snap ? Object.values(snap) : [];
+  } else {
+    // determine date range for this period
+    const dates = (rawData.daily || [])
+      .filter(r => {
+        if (periodKey === 'bill_week') {
+          const d = r.bill_day;
+          const wStart = getWeekStart(d);
+          return wStart === period;
+        } else {
+          return r.bill_day.slice(0,7) === period;
+        }
+      })
+      .map(r => r.bill_day);
+
+    const allRows = [];
+    for (const d of dates) {
+      try {
+        const snap = await fbGet(`${FB_ROWS}/${d.replace(/-/g,'_')}`);
+        if (snap) allRows.push(...Object.values(snap));
+      } catch(e) { /* skip */ }
+    }
+    return allRows;
+  }
+}
+
+function getWeekStart(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00');
+  d.setDate(d.getDate() - d.getDay() + 1);
+  return d.toISOString().slice(0,10);
+}
+
+function renderDrillTable(container, rows, period) {
+  if (!rows || rows.length === 0) {
+    container.innerHTML = '<div class="drill-loading" style="color:var(--muted)">No order detail available for this period. Re-import data to enable drill-down.</div>';
+    return;
+  }
+
+  // sort by total descending
+  const sorted = [...rows].sort((a,b) => (b.tot||0) - (a.tot||0));
+
+  container.innerHTML = `
+    <div class="drill-title">${period} — ${sorted.length.toLocaleString()} line items across ${new Set(sorted.map(r=>r.order)).size.toLocaleString()} orders</div>
+    <div class="drill-table-wrap">
+      <table class="drill-table">
+        <thead>
+          <tr>
+            <th>Order #</th>
+            <th>SKU</th>
+            <th>Description</th>
+            <th class="num">Qty</th>
+            <th>Pick User</th>
+            <th>VAS User</th>
+            <th>Order Created</th>
+            <th>Picked</th>
+            <th>VAP Complete</th>
+            <th>Billed</th>
+            <th class="num">Order→Pick (hrs)</th>
+            <th class="num">Pick→VAP (hrs)</th>
+            <th class="num">VAP→Bill (hrs)</th>
+            <th class="num">Total (hrs)</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${sorted.map(r => {
+            const tot = r.tot || 0;
+            const avg = rawData.kpis.avg_total;
+            const pct = tot / avg;
+            const pillCls = pct <= .85 ? 'pill-fast' : pct <= 1.15 ? 'pill-normal' : 'pill-slow';
+            const pillTxt = pct <= .85 ? 'Fast' : pct <= 1.15 ? 'Normal' : 'Slow';
+            const tCls = pct > 1.15 ? 'slow-val' : pct <= .85 ? 'fast-val' : 'norm-val';
+            return `<tr>
+              <td style="font-weight:700;color:var(--text)">${r.order||'—'}</td>
+              <td>${r.sku||'—'}</td>
+              <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis">${r.description||'—'}</td>
+              <td class="num">${r.qty||'—'}</td>
+              <td>${r.pick_user||'—'}</td>
+              <td>${r.vas_user||'—'}</td>
+              <td style="white-space:nowrap;color:var(--muted)">${r.order_dt_fmt||'—'}</td>
+              <td style="white-space:nowrap;color:var(--muted)">${r.pick_dt_fmt||'—'}</td>
+              <td style="white-space:nowrap;color:var(--muted)">${r.vap_dt_fmt||'—'}</td>
+              <td style="white-space:nowrap;color:var(--muted)">${r.bill_dt_fmt||'—'}</td>
+              <td class="num">${(r.o2p||0).toFixed(2)}</td>
+              <td class="num">${(r.p2v||0).toFixed(2)}</td>
+              <td class="num">${(r.v2b||0).toFixed(2)}</td>
+              <td class="num ${tCls}">${tot.toFixed(2)}</td>
+              <td><span class="pill ${pillCls}">${pillTxt}</span></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+/* ============================================================
+   TABLE SORT
+   ============================================================ */
+function sortTable(col) {
+  if (sortCol === col) sortAsc = !sortAsc;
+  else { sortCol = col; sortAsc = true; }
+  if (rawData) render();
+}
+
+/* ============================================================
+   FILTERS / VIEW
+   ============================================================ */
+function setView(v) {
+  view = v;
+  ['day','week','month'].forEach(x => document.getElementById('vt-'+x).classList.toggle('active', x===v));
+  if (rawData) render();
+}
+function applyFilters() {
+  dateFrom = document.getElementById('date-from').value || null;
+  dateTo   = document.getElementById('date-to').value   || null;
+  if (rawData) render();
+}
+function clearFilters() {
+  dateFrom = dateTo = null;
+  document.getElementById('date-from').value = '';
+  document.getElementById('date-to').value   = '';
+  if (rawData) render();
+}
+
+/* ============================================================
+   IMPORT
+   ============================================================ */
+function openImport()  { document.getElementById('import-modal').classList.add('open'); }
+function closeImport() {
+  document.getElementById('import-modal').classList.remove('open');
+  document.getElementById('import-progress').textContent = '';
+  document.getElementById('import-btn').disabled = true;
+  importFile = null;
+}
+const dropZone = document.getElementById('drop-zone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragging'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragging'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragging'); if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
+
+function handleFile(f) {
+  importFile = f;
+  setProgress('✓ ' + f.name);
+  document.getElementById('import-btn').disabled = false;
+}
+function setProgress(msg) { document.getElementById('import-progress').innerHTML = msg; }
+
+async function doImport() {
+  if (!importFile) return;
+  document.getElementById('import-btn').disabled = true;
+  setProgress('<span class="spinner"></span> Reading Excel…');
+  try {
+    const rows = await readXlsx(importFile);
+    setProgress('<span class="spinner"></span> Processing ' + rows.length.toLocaleString() + ' rows from file…');
+    await new Promise(r => setTimeout(r, 30));
+    const { agg: newAgg, byDay: newByDay, cleanRows: newClean } = processRows(rows);
+
+    // ---- Fetch existing data to merge ----
+    setProgress('<span class="spinner"></span> Fetching existing Firebase data to merge…');
+    let existingAgg = null;
+    try { existingAgg = await fbGet(FB_AGG); } catch(e) { /* no existing data */ }
+
+    let mergedClean = newClean;
+    let skipped = 0;
+
+    if (existingAgg) {
+      // Build a dedup key set from existing per-day rows
+      setProgress('<span class="spinner"></span> Loading existing order keys for deduplication…');
+      const existingKeys = new Set();
+      const existingDays = (existingAgg.daily || []).map(r => r.bill_day);
+      for (let i = 0; i < existingDays.length; i++) {
+        if (i % 20 === 0) setProgress(`<span class="spinner"></span> Reading existing data… ${i}/${existingDays.length} days`);
+        try {
+          const snap = await fbGet(`${FB_ROWS}/${existingDays[i].replace(/-/g,'_')}`);
+          if (snap) Object.values(snap).forEach(r => existingKeys.add(r.order + '|' + r.sku + '|' + r.bill_day));
+        } catch(e) { /* skip */ }
+      }
+
+      // Filter new rows — only keep ones not already in Firebase
+      const before = mergedClean.length;
+      mergedClean = mergedClean.filter(r => !existingKeys.has(r.order + '|' + r.sku + '|' + r.bill_day));
+      skipped = before - mergedClean.length;
+      setProgress(`<span class="spinner"></span> ${mergedClean.length.toLocaleString()} new records (${skipped.toLocaleString()} duplicates skipped). Re-aggregating…`);
+      await new Promise(r => setTimeout(r, 30));
+
+      if (mergedClean.length === 0) {
+        setProgress(`✅ No new records found — all ${skipped.toLocaleString()} rows already exist in Firebase.`);
+        document.getElementById('import-btn').disabled = false;
+        return;
+      }
+
+      // Merge new clean rows with existing raw rows to re-aggregate fully
+      // We'll rebuild agg from scratch using combined dataset
+      // Pull all existing rows into memory for re-aggregation
+      setProgress('<span class="spinner"></span> Loading full existing dataset for re-aggregation…');
+      const allExistingRows = [];
+      for (let i = 0; i < existingDays.length; i++) {
+        try {
+          const snap = await fbGet(`${FB_ROWS}/${existingDays[i].replace(/-/g,'_')}`);
+          if (snap) allExistingRows.push(...Object.values(snap));
+        } catch(e) { /* skip */ }
+      }
+      mergedClean = [...allExistingRows, ...mergedClean];
+    }
+
+    setProgress('<span class="spinner"></span> Building aggregates from merged dataset…');
+    await new Promise(r => setTimeout(r, 30));
+    const { agg: finalAgg, byDay: finalByDay } = buildAggAndByDay(mergedClean);
+    finalAgg.uploaded_at = new Date().toLocaleString();
+
+    // Push aggregates
+    setProgress('<span class="spinner"></span> Uploading aggregates…');
+    await fbPut(FB_AGG, finalAgg);
+
+    // Push only the NEW days' rows (existing days are already in Firebase)
+    const newDayKeys = Object.keys(newByDay);
+    setProgress(`<span class="spinner"></span> Uploading ${newDayKeys.length} day(s) of new order detail…`);
+    for (let i = 0; i < newDayKeys.length; i++) {
+      const d = newDayKeys[i];
+      const dayKey = d.replace(/-/g,'_');
+      // For days that already exist, merge with existing rather than overwrite
+      let existingDaySnap = null;
+      try { existingDaySnap = await fbGet(`${FB_ROWS}/${dayKey}`); } catch(e) {}
+      const merged = { ...(existingDaySnap || {}), ...newByDay[d] };
+      await fbPut(`${FB_ROWS}/${dayKey}`, merged);
+      if ((i+1) % 10 === 0 || (i+1) === newDayKeys.length)
+        setProgress(`<span class="spinner"></span> Uploading detail… ${i+1}/${newDayKeys.length} days`);
+    }
+
+    rawData = finalAgg;
+    drillCache = {};
+    document.getElementById('data-info').textContent = 'Updated: ' + finalAgg.uploaded_at;
+    const newMsg = skipped > 0
+      ? `✅ Done! Added ${newClean.length.toLocaleString()} new records (${skipped.toLocaleString()} duplicates skipped). Total: ${finalAgg.kpis.total_lines.toLocaleString()} lines.`
+      : `✅ Done! ${finalAgg.kpis.total_lines.toLocaleString()} total records.`;
+    setProgress(newMsg);
+    render();
+    setTimeout(closeImport, 3500);
+  } catch(e) {
+    setProgress('❌ ' + e.message);
+    document.getElementById('import-btn').disabled = false;
+  }
+}
+
+function readXlsx(file) {
+  return new Promise((res,rej) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const wb = XLSX.read(e.target.result, { type:'array', cellDates:true });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        res(XLSX.utils.sheet_to_json(ws, { raw:false, dateNF:'yyyy-mm-dd' }));
+      } catch(err) { rej(err); }
+    };
+    reader.onerror = rej;
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+function fmtDt(dt) {
+  // Format: M/D/YYYY h:mmAM/PM  e.g. "5/11/2026 6:42 PM"
+  if (!dt || isNaN(dt.getTime())) return '—';
+  const mo = dt.getMonth()+1, d = dt.getDate(), y = dt.getFullYear();
+  let h = dt.getHours(), m = dt.getMinutes();
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  return `${mo}/${d}/${y} ${h}:${String(m).padStart(2,'0')} ${ampm}`;
+}
+
+function processRows(rows) {
+  const clean = [];
+  for (const r of rows) {
+    try {
+      const od = r['order_date']||r['order date']||'';
+      const ot = r['order_time']||r['order _time']||r['order time']||'';
+      const pd = r['pick_date']||'';  const pt = r['pick_time']||'';
+      const vd = r['vap_date']||'';   const vt = r['vap_time']||'';
+      const bd = r['bill_date']||'';  const bt = r['bill_time']||'';
+      if (!od||!pd||!vd||!bd) continue;
+      const orderDt = new Date(od+'T'+(ot||'00:00:00'));
+      const pickDt  = new Date(pd+'T'+(pt||'00:00:00'));
+      const vapDt   = new Date(vd+'T'+(vt||'00:00:00'));
+      const billDt  = new Date(new Date(bd+'T'+(bt||'00:00:00')).getTime()+3600000);
+      const o2p=(pickDt-orderDt)/3600000, p2v=(vapDt-pickDt)/3600000, v2b=(billDt-vapDt)/3600000, tot=(billDt-orderDt)/3600000;
+      if (o2p<0||p2v<0||v2b<0||tot<0) continue;
+      clean.push({
+        order:        String(r['order']||''),
+        sku:          String(r['sku']||''),
+        description:  String(r['description']||''),
+        qty:          r['qty']||'',
+        pick_user:    String(r['pick_user']||''),
+        vas_user:     String(r['vas_user']||''),
+        bill_day:     bd.slice(0,10),
+        order_dt_fmt: fmtDt(orderDt),
+        pick_dt_fmt:  fmtDt(pickDt),
+        vap_dt_fmt:   fmtDt(vapDt),
+        bill_dt_fmt:  fmtDt(billDt),
+        o2p: round2(o2p), p2v: round2(p2v), v2b: round2(v2b), tot: round2(tot)
+      });
+    } catch(e) { /* skip */ }
+  }
+  const { agg, byDay } = buildAggAndByDay(clean);
+  agg.uploaded_at = new Date().toLocaleString();
+  return { agg, byDay, cleanRows: clean };
+}
+
+function buildAggAndByDay(clean) {
+  // per-day detail object (for drill-down Firebase storage)
+  const byDay = {};
+  clean.forEach((r,i) => {
+    const d = r.bill_day;
+    if (!byDay[d]) byDay[d] = {};
+    byDay[d][`r${i}`] = r;
+  });
+
+  // aggregation helpers
+  function aggMap(keyFn) {
+    const m = {};
+    for (const r of clean) {
+      const k = keyFn(r);
+      if (!m[k]) m[k] = { orders:new Set(), lines:0, so2p:0, sp2v:0, sv2b:0, stot:0 };
+      m[k].orders.add(r.order);
+      m[k].lines++;
+      m[k].so2p += r.o2p; m[k].sp2v += r.p2v; m[k].sv2b += r.v2b; m[k].stot += r.tot;
+    }
+    return m;
+  }
+  function mapToArr(m, periodKey) {
+    return Object.entries(m).sort((a,b)=>a[0]<b[0]?-1:1).map(([k,g])=>({
+      [periodKey]: k,
+      orders: g.orders.size, lines: g.lines,
+      avg_order_to_pick: round2(g.so2p/g.lines),
+      avg_pick_to_vap:   round2(g.sp2v/g.lines),
+      avg_vap_to_bill:   round2(g.sv2b/g.lines),
+      avg_total:         round2(g.stot/g.lines),
+    }));
+  }
+
+  const daily   = mapToArr(aggMap(r => r.bill_day), 'bill_day');
+  const weekly  = mapToArr(aggMap(r => getWeekStart(r.bill_day)), 'bill_week');
+  const monthly = mapToArr(aggMap(r => r.bill_day.slice(0,7)), 'bill_month');
+
+  const n = clean.length;
+  const kpis = {
+    total_orders: new Set(clean.map(r=>r.order)).size,
+    total_lines: n,
+    avg_order_to_pick: round2(clean.reduce((s,r)=>s+r.o2p,0)/n),
+    avg_pick_to_vap:   round2(clean.reduce((s,r)=>s+r.p2v,0)/n),
+    avg_vap_to_bill:   round2(clean.reduce((s,r)=>s+r.v2b,0)/n),
+    avg_total:         round2(clean.reduce((s,r)=>s+r.tot,0)/n),
+  };
+
+  return { agg: { kpis, daily, weekly, monthly }, byDay };
+}
+
+function getWeekStart(dateStr) {
+  const d = new Date(dateStr+'T12:00:00');
+  d.setDate(d.getDate() - d.getDay() + 1);
+  return d.toISOString().slice(0,10);
+}
+function round2(n) { return Math.round(n*100)/100; }
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+function setStatus(msg) {
+  const b = document.getElementById('status-bar');
+  b.style.display = ''; b.innerHTML = msg;
+}
+
+/* ============================================================
+   RESIZE — keep all charts responsive on window/panel resize
+   ============================================================ */
+if (typeof ResizeObserver !== 'undefined') {
+  const ro = new ResizeObserver(() => {
+    if (charts.stacked) charts.stacked.resize();
+    if (charts.volume)  charts.volume.resize();
+    if (charts.trend)   charts.trend.resize();
+  });
+  // Observe both chart panel containers
+  document.querySelectorAll('.chart-canvas-sm, .chart-canvas-wrap').forEach(el => ro.observe(el));
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+refreshData();
+</script>
+</body>
+</html>
