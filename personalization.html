@@ -7,9 +7,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-/* ============================================================
-   CEVA COLOR SCHEME — matching VAS Forecast vs Shipped (light)
-   ============================================================ */
 :root {
   --bg:        #f0f2f5;
   --surface:   #ffffff;
@@ -43,7 +40,6 @@ body {
   min-height: 100vh;
 }
 
-/* ---- TOP HEADER BAR — dark navy so white logo is visible ---- */
 .top-bar {
   background: var(--nav-bg);
   border-bottom: 1px solid var(--nav-border);
@@ -93,7 +89,6 @@ body {
   margin-top: 2px;
 }
 
-/* ---- ACTION BAR ---- */
 .action-bar {
   background: var(--surface2);
   border-bottom: 1px solid var(--border);
@@ -146,7 +141,6 @@ body {
 .view-toggle button.active { background: var(--red); color: #fff; }
 .view-toggle button + button { border-left: 1px solid var(--border2); }
 
-/* ---- KPI CARDS ROW ---- */
 .kpi-row {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -188,7 +182,6 @@ body {
 .kpi-bar.bill  { background: var(--bill); }
 .kpi-bar.orders { background: linear-gradient(90deg, var(--pick), var(--vap)); }
 
-/* ---- CHART SECTION HEADER ---- */
 .section-header {
   background: var(--surface2);
   border-bottom: 1px solid var(--border);
@@ -208,15 +201,14 @@ body {
 .legend-item { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .3px; }
 .legend-dot { width: 10px; height: 3px; border-radius: 1px; }
 
-/* ---- MAIN CHART ---- */
 .main-chart-wrap {
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   padding: 14px 16px;
 }
-.chart-canvas-wrap { position: relative; height: 220px; }
+/* Extra right padding so end-of-line labels don't clip */
+.chart-canvas-wrap { position: relative; height: 220px; padding-right: 56px; }
 
-/* ---- TWO COL CHARTS ---- */
 .chart-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -230,7 +222,6 @@ body {
 .chart-panel-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin-bottom: 10px; }
 .chart-canvas-sm { position: relative; height: 160px; width: 100%; }
 
-/* ---- BREAKDOWN TABLE ---- */
 .table-section { background: var(--surface); }
 .table-wrap { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; font-size: 12px; }
@@ -298,7 +289,6 @@ td.period-cell {
 .pill-normal { background: rgba(192,122,0,.12);  color: var(--normal); }
 .pill-slow   { background: rgba(204,31,45,.12);  color: var(--slow); }
 
-/* ---- DRILL-DOWN ROWS ---- */
 tr.drill-row { display: none; }
 tr.drill-row.visible { display: table-row; }
 tr.drill-row td {
@@ -340,7 +330,6 @@ table.drill-table tbody tr:hover { background: rgba(0,0,0,.02); }
 table.drill-table td { padding: 5px 10px; color: var(--text2); }
 .drill-loading { padding: 12px 36px; font-size: 11px; color: var(--muted); }
 
-/* ---- STATUS BAR ---- */
 #status-bar {
   padding: 20px;
   text-align: center;
@@ -359,7 +348,6 @@ table.drill-table td { padding: 5px 10px; color: var(--text2); }
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ---- IMPORT MODAL ---- */
 .modal-overlay {
   display: none;
   position: fixed; inset: 0;
@@ -408,7 +396,6 @@ td.norm-val { color: var(--text2); }
 </head>
 <body>
 
-<!-- TOP HEADER -->
 <div class="top-bar">
   <img src="https://www.freelogovectors.net/wp-content/uploads/2022/07/ceva-logistics-logo-freelogovectors.net_.png" alt="CEVA" />
   <div class="top-bar-divider"></div>
@@ -433,7 +420,6 @@ td.norm-val { color: var(--text2); }
   </div>
 </div>
 
-<!-- ACTION BAR -->
 <div class="action-bar">
   <button class="btn btn-red" onclick="openImport()">⬆ Import Data</button>
   <button class="btn btn-dark" onclick="refreshData()">↻ Refresh Data</button>
@@ -453,10 +439,8 @@ td.norm-val { color: var(--text2); }
   </div>
 </div>
 
-<!-- STATUS -->
 <div id="status-bar"><span class="spinner"></span> Loading data from Firebase…</div>
 
-<!-- KPI CARDS -->
 <div class="kpi-row" id="kpi-row" style="display:none">
   <div class="kpi-card">
     <div class="kpi-card-label">Total Orders</div>
@@ -490,7 +474,6 @@ td.norm-val { color: var(--text2); }
   </div>
 </div>
 
-<!-- MAIN TREND CHART -->
 <div id="charts-section" style="display:none">
   <div class="section-header">
     <span class="section-title">Turnaround Time Trend</span>
@@ -517,7 +500,6 @@ td.norm-val { color: var(--text2); }
   </div>
 </div>
 
-<!-- BREAKDOWN TABLE -->
 <div class="table-section" id="table-section" style="display:none">
   <div class="section-header">
     <span class="section-title">Period Breakdown</span>
@@ -542,7 +524,6 @@ td.norm-val { color: var(--text2); }
   </div>
 </div>
 
-<!-- IMPORT MODAL -->
 <div class="modal-overlay" id="import-modal">
   <div class="modal">
     <h2>Import Completed Orders</h2>
@@ -566,8 +547,8 @@ td.norm-val { color: var(--text2); }
    CONFIG
    ============================================================ */
 const FB_URL  = 'https://vas-personalization-default-rtdb.firebaseio.com';
-const FB_AGG  = `${FB_URL}/turnaround`;       // aggregated daily/weekly/monthly/kpis
-const FB_ROWS = `${FB_URL}/order_rows`;       // per-order detail keyed by bill_day
+const FB_AGG  = `${FB_URL}/turnaround`;
+const FB_ROWS = `${FB_URL}/order_rows`;
 
 /* ============================================================
    STATE
@@ -580,7 +561,7 @@ let sortCol   = 'period';
 let sortAsc   = true;
 let charts    = {};
 let importFile = null;
-let drillCache = {};   // { "2026-01-05": [...] }
+let drillCache = {};
 
 /* ============================================================
    FIREBASE
@@ -634,7 +615,6 @@ function render() {
     return true;
   });
 
-  // weighted-average KPIs
   const totLines  = filtered.reduce((s,r) => s+r.lines,  0);
   const totOrders = filtered.reduce((s,r) => s+r.orders, 0);
   const wAvg = k => totLines ? filtered.reduce((s,r) => s + r.lines*r[k], 0) / totLines : 0;
@@ -647,7 +627,6 @@ function render() {
     total:  wAvg('avg_total'),
   };
 
-  // Header + KPI cards
   document.getElementById('kpi-row').style.display = '';
   document.getElementById('hdr-orders').textContent = kpis.orders.toLocaleString();
   document.getElementById('hdr-lines').textContent  = kpis.lines.toLocaleString();
@@ -671,25 +650,128 @@ function render() {
 /* ============================================================
    CHARTS
    ============================================================ */
-const CHART_OPTS = {
-  responsive: true,
-  maintainAspectRatio: false,
-  animation: false,
-  plugins: {
-    legend: { display: false },
-    tooltip: {
-      backgroundColor: '#1a1f2e',
-      borderColor: '#2a3145',
-      borderWidth: 1,
-      titleColor: '#fff',
-      bodyColor: '#9aa3b8',
-      callbacks: { label: c => ` ${c.dataset.label}: ${hhmm(c.parsed.y ?? 0)}` }
-    }
-  },
-  scales: {
-    x: { ticks: { color:'#9aa3b8', maxRotation:45, autoSkip:true, maxTicksLimit:24, font:{size:9} }, grid: { color:'rgba(0,0,0,.06)' } },
-    y: { ticks: { color:'#9aa3b8', font:{size:9} }, grid: { color:'rgba(0,0,0,.06)' } }
+
+/* Shared tooltip config */
+const SHARED_TOOLTIP = {
+  backgroundColor: '#1a1f2e',
+  borderColor: '#2a3145',
+  borderWidth: 1,
+  titleColor: '#fff',
+  bodyColor: '#9aa3b8',
+};
+
+/* End-of-line label plugin for the trend chart.
+   Draws one label per dataset at the last non-null data point,
+   positioned to the right of the plot area. */
+const endLabelPlugin = {
+  id: 'endLabel',
+  afterDatasetsDraw(chart) {
+    const { ctx, data, chartArea } = chart;
+    if (!chartArea) return;
+
+    const colors  = ['#1a1f2e', '#1a6fc4', '#0e9e7e', '#c07a00'];
+    const bgAlpha = 'f0'; // slight bg for readability
+
+    ctx.save();
+    ctx.font = 'bold 9px "Segoe UI", Arial, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+
+    data.datasets.forEach((ds, di) => {
+      /* find last non-null value */
+      let lastIdx = -1;
+      for (let i = ds.data.length - 1; i >= 0; i--) {
+        if (ds.data[i] != null) { lastIdx = i; break; }
+      }
+      if (lastIdx < 0) return;
+
+      const meta = chart.getDatasetMeta(di);
+      if (!meta.visible) return;
+      const pt = meta.data[lastIdx];
+      if (!pt) return;
+
+      const label = hhmm(ds.data[lastIdx]);
+      const color = colors[di];
+      const x = chartArea.right + 4;
+      const y = pt.y;
+
+      /* pill background */
+      const w = ctx.measureText(label).width + 8;
+      const h = 14;
+      ctx.fillStyle = color + '22';
+      ctx.beginPath();
+      ctx.roundRect(x, y - h/2, w, h, 2);
+      ctx.fill();
+
+      ctx.fillStyle = color;
+      ctx.fillText(label, x + 4, y);
+    });
+
+    ctx.restore();
   }
+};
+
+/* Plugin: draw hh:mm labels inside stacked bar segments when tall enough */
+const stackedLabelPlugin = {
+  id: 'stackedLabel',
+  afterDatasetsDraw(chart) {
+    const { ctx } = chart;
+    ctx.save();
+    ctx.font = '700 9px "Segoe UI", Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    const MIN_HEIGHT = 18; /* px — don't draw if segment shorter than this */
+
+    chart.data.datasets.forEach((ds, di) => {
+      const meta = chart.getDatasetMeta(di);
+      if (!meta.visible) return;
+      meta.data.forEach((bar, i) => {
+        const val = ds.data[i];
+        if (!val) return;
+        const h = Math.abs(bar.height ?? (bar.base - bar.y));
+        if (h < MIN_HEIGHT) return;
+        const label = hhmm(val);
+        ctx.fillStyle = 'rgba(255,255,255,0.92)';
+        ctx.fillText(label, bar.x, bar.y + h / 2);
+      });
+    });
+
+    ctx.restore();
+  }
+};
+
+/* Plugin: draw order count above each volume bar */
+const volumeLabelPlugin = {
+  id: 'volumeLabel',
+  afterDatasetsDraw(chart) {
+    const { ctx, chartArea } = chart;
+    if (!chartArea) return;
+    ctx.save();
+    ctx.font = '700 9px "Segoe UI", Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillStyle = '#3d4660';
+
+    const meta = chart.getDatasetMeta(0);
+    if (!meta.visible) return;
+    meta.data.forEach((bar, i) => {
+      const val = chart.data.datasets[0].data[i];
+      if (!val) return;
+      const label = val.toLocaleString();
+      /* only draw if bar is tall enough not to crowd the axis */
+      const y = bar.y - 3;
+      if (y < chartArea.top + 2) return; /* clamp: skip if above plot area */
+      ctx.fillText(label, bar.x, y);
+    });
+
+    ctx.restore();
+  }
+};
+
+const BASE_SCALE = {
+  x: { ticks: { color:'#9aa3b8', maxRotation:45, autoSkip:true, maxTicksLimit:24, font:{size:9} }, grid: { color:'rgba(0,0,0,.06)' } },
+  y: { ticks: { color:'#9aa3b8', font:{size:9} }, grid: { color:'rgba(0,0,0,.06)' } }
 };
 
 function dc(id) { if(charts[id]){charts[id].destroy();delete charts[id];} }
@@ -697,35 +779,91 @@ function dc(id) { if(charts[id]){charts[id].destroy();delete charts[id];} }
 function buildCharts(labels, data) {
   dc('trend'); dc('stacked'); dc('volume');
 
+  /* ---- TREND (line) ---- */
   charts.trend = new Chart(document.getElementById('trendChart'), {
-    type:'line',
-    data:{ labels, datasets:[
-      { label:'Total',      data:data.map(r=>r.avg_total),         borderColor:'#1a1f2e', backgroundColor:'rgba(26,31,46,.04)', tension:.3, borderWidth:2, pointRadius:2, fill:false },
-      { label:'Order→Pick', data:data.map(r=>r.avg_order_to_pick), borderColor:'#1a6fc4', backgroundColor:'rgba(26,111,196,.04)', tension:.3, borderWidth:1.5, pointRadius:2, fill:false },
-      { label:'Pick→VAP',   data:data.map(r=>r.avg_pick_to_vap),   borderColor:'#0e9e7e', backgroundColor:'rgba(14,158,126,.04)', tension:.3, borderWidth:1.5, pointRadius:2, fill:false },
-      { label:'VAP→Bill',   data:data.map(r=>r.avg_vap_to_bill),   borderColor:'#c07a00', backgroundColor:'rgba(192,122,0,.04)', tension:.3, borderWidth:1.5, pointRadius:2, fill:false },
+    type: 'line',
+    plugins: [endLabelPlugin],
+    data: { labels, datasets: [
+      { label:'Total',      data:data.map(r=>r.avg_total),         borderColor:'#1a1f2e', tension:.3, borderWidth:2, pointRadius:3, pointHoverRadius:5, fill:false },
+      { label:'Order→Pick', data:data.map(r=>r.avg_order_to_pick), borderColor:'#1a6fc4', tension:.3, borderWidth:1.5, pointRadius:2.5, pointHoverRadius:4, fill:false },
+      { label:'Pick→VAP',   data:data.map(r=>r.avg_pick_to_vap),   borderColor:'#0e9e7e', tension:.3, borderWidth:1.5, pointRadius:2.5, pointHoverRadius:4, fill:false },
+      { label:'VAP→Bill',   data:data.map(r=>r.avg_vap_to_bill),   borderColor:'#c07a00', tension:.3, borderWidth:1.5, pointRadius:2.5, pointHoverRadius:4, fill:false },
     ]},
-    options:{ ...CHART_OPTS, scales:{ ...CHART_OPTS.scales, y:{ ...CHART_OPTS.scales.y, title:{display:true,text:'hh:mm',color:'#9aa3b8',font:{size:9}} } } }
-  });
-
-  charts.stacked = new Chart(document.getElementById('stackedChart'), {
-    type:'bar',
-    data:{ labels, datasets:[
-      { label:'Order→Pick', data:data.map(r=>r.avg_order_to_pick), backgroundColor:'rgba(26,111,196,.75)',  stack:'a' },
-      { label:'Pick→VAP',   data:data.map(r=>r.avg_pick_to_vap),   backgroundColor:'rgba(14,158,126,.75)', stack:'a' },
-      { label:'VAP→Bill',   data:data.map(r=>r.avg_vap_to_bill),   backgroundColor:'rgba(192,122,0,.75)',  stack:'a' },
-    ]},
-    options:{
-      ...CHART_OPTS,
-      plugins:{ ...CHART_OPTS.plugins, legend:{ display:true, labels:{ color:'#6b7590', boxWidth:10, font:{size:9} } } },
-      scales:{ x:{...CHART_OPTS.scales.x, stacked:true}, y:{...CHART_OPTS.scales.y, stacked:true} }
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      layout: { padding: { right: 0 } }, /* endLabelPlugin draws outside chartArea */
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          ...SHARED_TOOLTIP,
+          callbacks: { label: c => ` ${c.dataset.label}: ${hhmm(c.parsed.y ?? 0)}` }
+        },
+        datalabels: { display: false } /* suppress if chartjs-plugin-datalabels loaded */
+      },
+      scales: {
+        x: { ...BASE_SCALE.x },
+        y: { ...BASE_SCALE.y, title: { display:true, text:'Hours', color:'#9aa3b8', font:{size:9} } }
+      }
     }
   });
 
+  /* ---- STACKED BAR ---- */
+  charts.stacked = new Chart(document.getElementById('stackedChart'), {
+    type: 'bar',
+    plugins: [stackedLabelPlugin],
+    data: { labels, datasets: [
+      { label:'Order→Pick', data:data.map(r=>r.avg_order_to_pick), backgroundColor:'rgba(26,111,196,.80)',  stack:'a' },
+      { label:'Pick→VAP',   data:data.map(r=>r.avg_pick_to_vap),   backgroundColor:'rgba(14,158,126,.80)', stack:'a' },
+      { label:'VAP→Bill',   data:data.map(r=>r.avg_vap_to_bill),   backgroundColor:'rgba(192,122,0,.80)',  stack:'a' },
+    ]},
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      plugins: {
+        legend: { display:true, labels:{ color:'#6b7590', boxWidth:10, font:{size:9} } },
+        tooltip: {
+          ...SHARED_TOOLTIP,
+          callbacks: { label: c => ` ${c.dataset.label}: ${hhmm(c.parsed.y ?? 0)}` }
+        }
+      },
+      scales: {
+        x: { ...BASE_SCALE.x, stacked: true },
+        y: { ...BASE_SCALE.y, stacked: true }
+      }
+    }
+  });
+
+  /* ---- VOLUME (bar) ---- */
   charts.volume = new Chart(document.getElementById('volumeChart'), {
-    type:'bar',
-    data:{ labels, datasets:[{ label:'Orders', data:data.map(r=>r.orders), backgroundColor:'rgba(204,31,45,.7)', borderColor:'#cc1f2d', borderWidth:1 }] },
-    options:{ ...CHART_OPTS, plugins:{ ...CHART_OPTS.plugins, tooltip:{ ...CHART_OPTS.plugins.tooltip, callbacks:{ label:c=>` Orders: ${c.parsed.y.toLocaleString()}` } } } }
+    type: 'bar',
+    plugins: [volumeLabelPlugin],
+    data: { labels, datasets: [{
+      label:'Orders',
+      data: data.map(r=>r.orders),
+      backgroundColor: 'rgba(204,31,45,.70)',
+      borderColor: '#cc1f2d',
+      borderWidth: 1
+    }]},
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      layout: { padding: { top: 16 } }, /* headroom for above-bar labels */
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          ...SHARED_TOOLTIP,
+          callbacks: { label: c => ` Orders: ${c.parsed.y.toLocaleString()}` }
+        }
+      },
+      scales: {
+        x: { ...BASE_SCALE.x },
+        y: { ...BASE_SCALE.y }
+      }
+    }
   });
 }
 
@@ -739,14 +877,12 @@ function buildTable(data, periodKey) {
   const avgTotal = rawData.kpis.avg_total;
 
   const sorted = [...data].sort((a,b) => {
-    const pk = a[periodKey] ? periodKey : 'bill_day';
     let va = sortCol==='period' ? a[periodKey] : (a[sortCol] ?? 0);
     let vb = sortCol==='period' ? b[periodKey] : (b[sortCol] ?? 0);
     if (typeof va==='string') return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
     return sortAsc ? va-vb : vb-va;
   });
 
-  // update sort arrows
   document.querySelectorAll('thead th').forEach(th => th.classList.remove('sorted'));
 
   const tbody = document.getElementById('table-body');
@@ -777,7 +913,6 @@ function buildTable(data, periodKey) {
     tr.addEventListener('click', () => toggleDrill(period, i, periodKey));
     tbody.appendChild(tr);
 
-    // drill row (hidden initially)
     const drillTr = document.createElement('tr');
     drillTr.className = 'drill-row';
     drillTr.id = `drill-${i}`;
@@ -806,7 +941,6 @@ async function toggleDrill(period, idx, periodKey) {
   icon.classList.add('open');
   periodRow.classList.add('expanded');
 
-  // populate
   if (!drillCache[period]) {
     drillInner.innerHTML = '<div class="drill-loading"><span class="spinner"></span> Loading orders…</div>';
     drillInner.classList.add('open');
@@ -823,19 +957,14 @@ async function toggleDrill(period, idx, periodKey) {
 }
 
 async function loadDrillData(period, periodKey) {
-  // For daily view: fetch from order_rows/{date}
-  // For weekly/monthly: fetch all daily keys that fall in range then merge
   if (periodKey === 'bill_day') {
     const snap = await fbGet(`${FB_ROWS}/${period.replace(/-/g,'_')}`);
     return snap ? Object.values(snap) : [];
   } else {
-    // determine date range for this period
     const dates = (rawData.daily || [])
       .filter(r => {
         if (periodKey === 'bill_week') {
-          const d = r.bill_day;
-          const wStart = getWeekStart(d);
-          return wStart === period;
+          return getWeekStart(r.bill_day) === period;
         } else {
           return r.bill_day.slice(0,7) === period;
         }
@@ -847,7 +976,7 @@ async function loadDrillData(period, periodKey) {
       try {
         const snap = await fbGet(`${FB_ROWS}/${d.replace(/-/g,'_')}`);
         if (snap) allRows.push(...Object.values(snap));
-      } catch(e) { /* skip */ }
+      } catch(e) { }
     }
     return allRows;
   }
@@ -865,24 +994,20 @@ function renderDrillTable(container, rows, period) {
     return;
   }
 
-  // sort by total descending
   const sorted = [...rows].sort((a,b) => (b.tot||0) - (a.tot||0));
   const uniqueOrders = new Set(sorted.map(r=>r.order)).size;
   const avg = rawData.kpis.avg_total;
 
-  // Title
   const titleDiv = document.createElement('div');
   titleDiv.className = 'drill-title';
   titleDiv.textContent = `${period} — ${sorted.length.toLocaleString()} line items across ${uniqueOrders.toLocaleString()} orders`;
 
-  // Table shell
   const wrapDiv = document.createElement('div');
   wrapDiv.className = 'drill-table-wrap';
 
   const table = document.createElement('table');
   table.className = 'drill-table';
 
-  // Header
   const thead = document.createElement('thead');
   thead.innerHTML = `<tr>
     <th>Order #</th>
@@ -903,7 +1028,6 @@ function renderDrillTable(container, rows, period) {
   </tr>`;
   table.appendChild(thead);
 
-  // Body — built row by row via DOM to avoid innerHTML string truncation
   const tbody = document.createElement('tbody');
   for (const r of sorted) {
     const tot = r.tot || 0;
@@ -913,7 +1037,6 @@ function renderDrillTable(container, rows, period) {
     const tCls    = pct > 1.15 ? 'slow-val' : pct <= .85 ? 'fast-val' : 'norm-val';
 
     const tr = document.createElement('tr');
-
     const cells = [
       { text: r.order||'—',       style: 'font-weight:700;color:var(--text)' },
       { text: r.sku||'—' },
@@ -930,7 +1053,6 @@ function renderDrillTable(container, rows, period) {
       { text: hhmm(r.v2b||0),     cls: 'num' },
       { text: hhmm(tot),           cls: `num ${tCls}` },
     ];
-
     for (const c of cells) {
       const td = document.createElement('td');
       if (c.cls)   td.className = c.cls;
@@ -938,21 +1060,17 @@ function renderDrillTable(container, rows, period) {
       td.textContent = c.text;
       tr.appendChild(td);
     }
-
-    // Status pill cell
     const tdStatus = document.createElement('td');
     const pill = document.createElement('span');
     pill.className = `pill ${pillCls}`;
     pill.textContent = pillTxt;
     tdStatus.appendChild(pill);
     tr.appendChild(tdStatus);
-
     tbody.appendChild(tr);
   }
 
   table.appendChild(tbody);
   wrapDiv.appendChild(table);
-
   container.innerHTML = '';
   container.appendChild(titleDiv);
   container.appendChild(wrapDiv);
@@ -1019,16 +1137,14 @@ async function doImport() {
     await new Promise(r => setTimeout(r, 30));
     const { agg: newAgg, byDay: newByDay, cleanRows: newClean } = processRows(rows);
 
-    // ---- Fetch existing data to merge ----
     setProgress('<span class="spinner"></span> Fetching existing Firebase data to merge…');
     let existingAgg = null;
-    try { existingAgg = await fbGet(FB_AGG); } catch(e) { /* no existing data */ }
+    try { existingAgg = await fbGet(FB_AGG); } catch(e) { }
 
     let mergedClean = newClean;
     let skipped = 0;
 
     if (existingAgg) {
-      // Build a dedup key set from existing per-day rows
       setProgress('<span class="spinner"></span> Loading existing order keys for deduplication…');
       const existingKeys = new Set();
       const existingDays = (existingAgg.daily || []).map(r => r.bill_day);
@@ -1037,10 +1153,9 @@ async function doImport() {
         try {
           const snap = await fbGet(`${FB_ROWS}/${existingDays[i].replace(/-/g,'_')}`);
           if (snap) Object.values(snap).forEach(r => existingKeys.add(r.order + '|' + r.sku + '|' + r.bill_day));
-        } catch(e) { /* skip */ }
+        } catch(e) { }
       }
 
-      // Filter new rows — only keep ones not already in Firebase
       const before = mergedClean.length;
       mergedClean = mergedClean.filter(r => !existingKeys.has(r.order + '|' + r.sku + '|' + r.bill_day));
       skipped = before - mergedClean.length;
@@ -1053,16 +1168,13 @@ async function doImport() {
         return;
       }
 
-      // Merge new clean rows with existing raw rows to re-aggregate fully
-      // We'll rebuild agg from scratch using combined dataset
-      // Pull all existing rows into memory for re-aggregation
       setProgress('<span class="spinner"></span> Loading full existing dataset for re-aggregation…');
       const allExistingRows = [];
       for (let i = 0; i < existingDays.length; i++) {
         try {
           const snap = await fbGet(`${FB_ROWS}/${existingDays[i].replace(/-/g,'_')}`);
           if (snap) allExistingRows.push(...Object.values(snap));
-        } catch(e) { /* skip */ }
+        } catch(e) { }
       }
       mergedClean = [...allExistingRows, ...mergedClean];
     }
@@ -1072,17 +1184,14 @@ async function doImport() {
     const { agg: finalAgg, byDay: finalByDay } = buildAggAndByDay(mergedClean);
     finalAgg.uploaded_at = new Date().toLocaleString();
 
-    // Push aggregates
     setProgress('<span class="spinner"></span> Uploading aggregates…');
     await fbPut(FB_AGG, finalAgg);
 
-    // Push only the NEW days' rows (existing days are already in Firebase)
     const newDayKeys = Object.keys(newByDay);
     setProgress(`<span class="spinner"></span> Uploading ${newDayKeys.length} day(s) of new order detail…`);
     for (let i = 0; i < newDayKeys.length; i++) {
       const d = newDayKeys[i];
       const dayKey = d.replace(/-/g,'_');
-      // For days that already exist, merge with existing rather than overwrite
       let existingDaySnap = null;
       try { existingDaySnap = await fbGet(`${FB_ROWS}/${dayKey}`); } catch(e) {}
       const merged = { ...(existingDaySnap || {}), ...newByDay[d] };
@@ -1122,7 +1231,6 @@ function readXlsx(file) {
 }
 
 function fmtDt(dt) {
-  // Format: M/D/YYYY h:mmAM/PM  e.g. "5/11/2026 6:42 PM"
   if (!dt || isNaN(dt.getTime())) return '—';
   const mo = dt.getMonth()+1, d = dt.getDate(), y = dt.getFullYear();
   let h = dt.getHours(), m = dt.getMinutes();
@@ -1132,7 +1240,6 @@ function fmtDt(dt) {
 }
 
 function hhmm(decimalHours) {
-  // Convert decimal hours to hh:mm  e.g. 43.13 → "43:08", 0.36 → "0:22"
   if (decimalHours == null || isNaN(decimalHours)) return '—';
   const totalMins = Math.round(Math.abs(decimalHours) * 60);
   const h = Math.floor(totalMins / 60);
@@ -1170,7 +1277,7 @@ function processRows(rows) {
         bill_dt_fmt:  fmtDt(billDt),
         o2p: round2(o2p), p2v: round2(p2v), v2b: round2(v2b), tot: round2(tot)
       });
-    } catch(e) { /* skip */ }
+    } catch(e) { }
   }
   const { agg, byDay } = buildAggAndByDay(clean);
   agg.uploaded_at = new Date().toLocaleString();
@@ -1178,7 +1285,6 @@ function processRows(rows) {
 }
 
 function buildAggAndByDay(clean) {
-  // per-day detail object (for drill-down Firebase storage)
   const byDay = {};
   clean.forEach((r,i) => {
     const d = r.bill_day;
@@ -1186,7 +1292,6 @@ function buildAggAndByDay(clean) {
     byDay[d][`r${i}`] = r;
   });
 
-  // aggregation helpers
   function aggMap(keyFn) {
     const m = {};
     for (const r of clean) {
@@ -1226,37 +1331,22 @@ function buildAggAndByDay(clean) {
   return { agg: { kpis, daily, weekly, monthly }, byDay };
 }
 
-function getWeekStart(dateStr) {
-  const d = new Date(dateStr+'T12:00:00');
-  d.setDate(d.getDate() - d.getDay() + 1);
-  return d.toISOString().slice(0,10);
-}
 function round2(n) { return Math.round(n*100)/100; }
 
-/* ============================================================
-   HELPERS
-   ============================================================ */
 function setStatus(msg) {
   const b = document.getElementById('status-bar');
   b.style.display = ''; b.innerHTML = msg;
 }
 
-/* ============================================================
-   RESIZE — keep all charts responsive on window/panel resize
-   ============================================================ */
 if (typeof ResizeObserver !== 'undefined') {
   const ro = new ResizeObserver(() => {
     if (charts.stacked) charts.stacked.resize();
     if (charts.volume)  charts.volume.resize();
     if (charts.trend)   charts.trend.resize();
   });
-  // Observe both chart panel containers
   document.querySelectorAll('.chart-canvas-sm, .chart-canvas-wrap').forEach(el => ro.observe(el));
 }
 
-/* ============================================================
-   INIT
-   ============================================================ */
 refreshData();
 </script>
 </body>
