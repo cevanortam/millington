@@ -434,6 +434,13 @@ const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct"
 // ═══════════════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════════════
+// ─── Hardcoded VAS accounts that appear in shipped data
+// but have no forecast sheet row. Add new accounts here as needed.
+const KNOWN_NAMES = {
+  '500128': 'Nordstrom Direct',
+  '500106': 'Bloomingdales'
+};
+
 let shippedData  = [];
 let forecastData = [];
 let gran         = 'day';
@@ -506,9 +513,9 @@ function getDateRange() {
 function getCustomer() { return document.getElementById('fCustomer').value; }
 
 function getVASAccts() {
-  const EXTRA_ACCTS = ['500128'];
+  // Forecast sheet accounts + all hardcoded KNOWN_NAMES accounts
   const forecastAccts = forecastData.map(r => r.account_id);
-  return [...new Set([...forecastAccts, ...EXTRA_ACCTS])];
+  return [...new Set([...forecastAccts, ...Object.keys(KNOWN_NAMES)])];
 }
 
 function getActiveAccts() {
@@ -585,7 +592,6 @@ function initFilters() {
     if(!document.getElementById('fTo').value)   document.getElementById('fTo').value   = maxDate;
   }
 
-  const KNOWN_NAMES = { '500128': 'Nordstrom Direct' };
   const sel = document.getElementById('fCustomer');
   sel.innerHTML = '<option value="ALL">All Customers</option>';
   getVASAccts().forEach(id => {
@@ -649,7 +655,6 @@ function computeMain() {
   const pct  = totalForecast>0 ? (totalShipped/totalForecast)*100 : null;
   const varN = totalShipped - totalForecast;
 
-  const KNOWN_NAMES = { '500128': 'Nordstrom Direct' };
   const perCust = activeAccts.map(a => {
     const fRow = forecastData.find(f=>f.account_id===a);
     const name = fRow ? (fRow.account_name || a) : (KNOWN_NAMES[a] || a);
