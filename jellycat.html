@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VAS Forecast vs Shipped — Jellycat Customer Portal</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800&family=Barlow:wght@300;400;500;600&display=swap');
+
+/* ── RESET & BASE ─────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --navy:        #1a2d4f;
+  --navy-dark:   #142240;
+  --navy-mid:    #1e3a5f;
+  --navy-light:  #2a4a7f;
+  --red:         #c41230;
+  --red-bright:  #e01535;
+  --red-dark:    #a00e28;
+  --gold:        #f5a623;
+  --white:       #ffffff;
+  --offwhite:    #f4f5f7;
+  --border:      #d8dde6;
+  --text-dark:   #1a2d4f;
+  --text-mid:    #4a5568;
+  --text-light:  #8898aa;
+  --header-h:    52px;
+  --toolbar-h:   42px;
+}
+
+html, body {
+  height: 100%;
+  background: var(--offwhite);
+  font-family: 'Barlow', sans-serif;
+  color: var(--text-dark);
+  font-size: 13px;
+}
+
+/* ── HEADER ───────────────────────────────────────────── */
+header {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+  height: var(--header-h);
+  background: var(--navy-dark);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 16px;
+  border-bottom: 3px solid var(--red);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.35);
+}
+.hdr-left { display: flex; align-items: center; gap: 14px; }
+.hdr-logo { height: 32px; filter: brightness(0) invert(1); display: block; }
+.hdr-divider { width: 1px; height: 28px; background: rgba(255,255,255,0.2); }
+.hdr-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 18px; font-weight: 700; color: #fff;
+  letter-spacing: 1.5px; text-transform: uppercase;
+}
+.hdr-subtitle {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px; font-weight: 400; color: rgba(255,255,255,0.5);
+  letter-spacing: 1px; text-transform: uppercase;
+  margin-top: 1px;
+}
+.hdr-right { display: flex; gap: 10px; }
+.hdr-kpi {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 4px; padding: 4px 14px; text-align: center; min-width: 100px;
+}
+.hdr-kpi-val {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 19px; font-weight: 700; color: #fff; line-height: 1.1;
+}
+.hdr-kpi-val.red   { color: var(--red-bright); }
+.hdr-kpi-val.gold  { color: var(--gold); }
+.hdr-kpi-val.green { color: #4cd964; }
+.hdr-kpi-lbl { font-size: 9px; color: rgba(255,255,255,0.55); text-transform: uppercase; letter-spacing: 1px; }
+
+/* ── TOOLBAR ──────────────────────────────────────────── */
+.toolbar {
+  position: fixed; top: var(--header-h); left: 0; right: 0; z-index: 190;
+  height: var(--toolbar-h);
+  background: #fff;
+  border-bottom: 2px solid var(--navy);
+  display: flex; align-items: center; gap: 8px; padding: 0 16px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.toolbar-sep { width: 1px; height: 22px; background: var(--border); margin: 0 4px; }
+
+.status-badge {
+  font-size: 11px; color: var(--text-mid);
+  display: flex; align-items: center; gap: 5px;
+}
+.status-dot { width: 7px; height: 7px; border-radius: 50%; background: #4cd964; animation: pulse 2.5s infinite; flex-shrink: 0; }
+.status-dot.loading { background: var(--gold); }
+.status-dot.error   { background: var(--red); animation: none; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+
+/* right-side filters */
+.toolbar-filters { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.filter-group { display: flex; align-items: center; gap: 5px; }
+.filter-lbl { font-size: 10px; font-weight: 600; color: var(--text-mid); text-transform: uppercase; letter-spacing: 1px; }
+.filter-select, .filter-date {
+  font-family: 'Barlow', sans-serif; font-size: 12px; color: var(--text-dark);
+  background: #fff; border: 1px solid var(--border); border-radius: 3px;
+  padding: 4px 8px; cursor: pointer; outline: none; height: 28px;
+}
+.filter-select:focus, .filter-date:focus { border-color: var(--navy); }
+.filter-date { width: 120px; }
+
+.toggle-group { display: flex; }
+.tgl {
+  font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 700;
+  padding: 4px 11px; border: 1px solid var(--border); background: #f4f5f7;
+  color: var(--text-mid); cursor: pointer; letter-spacing: 0.5px; transition: all .15s;
+}
+.tgl:first-child { border-radius: 3px 0 0 3px; }
+.tgl:last-child  { border-radius: 0 3px 3px 0; }
+.tgl.active      { background: var(--navy); color: #fff; border-color: var(--navy); }
+.x-clear {
+  font-size: 11px; color: var(--text-mid); background: none; border: none;
+  cursor: pointer; padding: 4px 6px; text-decoration: underline;
+}
+
+/* readonly badge */
+.readonly-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: rgba(26,45,79,0.07); border: 1px solid rgba(26,45,79,0.15);
+  border-radius: 3px; padding: 3px 10px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+  color: var(--text-mid);
+}
+.readonly-badge svg { width: 11px; height: 11px; opacity: 0.6; }
+
+/* ── MAIN BODY ────────────────────────────────────────── */
+.main {
+  padding-top: calc(var(--header-h) + var(--toolbar-h) + 14px);
+  padding-bottom: 20px;
+  padding-left: 14px;
+  padding-right: 14px;
+  overflow-x: hidden;
+  width: 100%;
+}
+
+/* ── CARDS ────────────────────────────────────────────── */
+.card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.card-header {
+  background: var(--navy);
+  color: #fff;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+  padding: 6px 12px;
+  border-radius: 3px 3px 0 0;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.card-body { padding: 12px; overflow: hidden; }
+
+/* ── KPI ROW ──────────────────────────────────────────── */
+.kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 12px; }
+
+.kpi-card {
+  background: #fff; border: 1px solid var(--border);
+  border-radius: 4px; padding: 10px 14px;
+  border-left: 4px solid var(--navy);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.kpi-card.red   { border-left-color: var(--red); }
+.kpi-card.gold  { border-left-color: var(--gold); }
+.kpi-card.green { border-left-color: #4cd964; }
+
+.kpi-lbl {
+  font-size: 9px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-light); margin-bottom: 3px; font-weight: 600;
+}
+.kpi-val {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 28px; font-weight: 700; color: var(--navy); line-height: 1;
+}
+.kpi-val.red   { color: var(--red); }
+.kpi-val.gold  { color: var(--gold); }
+.kpi-val.green { color: #2a9d4f; }
+.kpi-sub { font-size: 10px; color: var(--text-light); margin-top: 3px; }
+
+/* ── CHART LAYOUTS ────────────────────────────────────── */
+.row { display: grid; gap: 10px; margin-bottom: 12px; }
+.row-1   { grid-template-columns: 1fr; }
+
+.chart-wrap {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* ── TABLE STYLES ─────────────────────────────────────── */
+.dash-table { width: 100%; border-collapse: collapse; }
+.dash-table thead th {
+  background: var(--navy); color: #fff;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+  padding: 7px 10px; text-align: left; border-right: 1px solid rgba(255,255,255,0.1);
+  white-space: nowrap;
+}
+.dash-table thead th:last-child { border-right: none; }
+.dash-table tbody tr { border-bottom: 1px solid #edf0f4; }
+.dash-table tbody tr:nth-child(even) { background: #f8f9fb; }
+.dash-table tbody tr:hover { background: #eef2f8; }
+.dash-table tbody td {
+  padding: 7px 10px; font-size: 12px; color: var(--text-dark);
+  border-right: 1px solid #edf0f4;
+}
+.dash-table tbody td:last-child { border-right: none; }
+
+/* bar in table */
+.tbl-bar-wrap { display: flex; align-items: center; gap: 6px; }
+.tbl-bar-bg { flex: 1; height: 8px; background: #e8ecf2; border-radius: 2px; overflow: hidden; max-width: 120px; }
+.tbl-bar-fill { height: 100%; border-radius: 2px; }
+.tbl-pct { font-size: 11px; font-weight: 700; min-width: 38px; }
+
+/* status pills */
+.pill {
+  display: inline-block; padding: 2px 8px; border-radius: 20px;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.5px;
+}
+.pill-blue { background: rgba(26,45,79,0.12); color: var(--navy); }
+.pill-red  { background: rgba(196,18,48,0.12); color: var(--red); }
+.pill-gold { background: rgba(245,166,35,0.15); color: #a06a00; }
+.pill-green{ background: rgba(76,217,100,0.15); color: #1e7e34; }
+
+/* legend */
+.chart-legend { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
+.leg-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: rgba(255,255,255,0.85); }
+.leg-swatch { width: 12px; height: 12px; border-radius: 2px; flex-shrink: 0; }
+
+/* ── NO DATA ──────────────────────────────────────────── */
+.no-data {
+  display: flex; align-items: center; justify-content: center;
+  height: 100%; min-height: 80px;
+  font-size: 12px; color: var(--text-light); font-style: italic;
+}
+
+/* scrollable chart area */
+.scroll-x { overflow-x: auto; }
+
+/* ── RESPONSIVE ───────────────────────────────────────── */
+@media (max-width: 900px) {
+  .kpi-row   { grid-template-columns: repeat(2,1fr); }
+  .hdr-right { display: none; }
+  .toolbar-filters { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════
+     HEADER
+══════════════════════════════════════════════ -->
+<header>
+  <div class="hdr-left">
+    <img class="hdr-logo"
+         src="https://www.freelogovectors.net/wp-content/uploads/2022/07/ceva-logistics-logo-freelogovectors.net_.png"
+         alt="CEVA Logistics"
+         onerror="this.style.display='none'">
+    <div class="hdr-divider"></div>
+    <div>
+      <div class="hdr-title">VAS Forecast vs Shipped</div>
+      <div class="hdr-subtitle">Jellycat Customer Portal</div>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <div class="hdr-kpi">
+      <div class="hdr-kpi-val" id="hKpiShipped">—</div>
+      <div class="hdr-kpi-lbl">Units Shipped</div>
+    </div>
+    <div class="hdr-kpi">
+      <div class="hdr-kpi-val gold" id="hKpiAttain">—</div>
+      <div class="hdr-kpi-lbl">Attainment</div>
+    </div>
+    <div class="hdr-kpi">
+      <div class="hdr-kpi-val" id="hKpiForecast">—</div>
+      <div class="hdr-kpi-lbl">Total Forecast</div>
+    </div>
+    <div class="hdr-kpi">
+      <div class="hdr-kpi-val red" id="hKpiVar">—</div>
+      <div class="hdr-kpi-lbl">Variance</div>
+    </div>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════════════
+     TOOLBAR  (filters only — no import buttons)
+══════════════════════════════════════════════ -->
+<div class="toolbar">
+  <!-- Read-only indicator -->
+  <div class="readonly-badge">
+    <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="2" y="5" width="8" height="6" rx="1"/>
+      <path d="M4 5V3.5a2 2 0 114 0V5"/>
+    </svg>
+    View Only
+  </div>
+
+  <div class="toolbar-sep"></div>
+  <div class="status-badge">
+    <div class="status-dot loading" id="statusDot"></div>
+    <span id="statusText">Loading data…</span>
+  </div>
+
+  <!-- Filters (right) -->
+  <div class="toolbar-filters">
+    <div class="filter-group">
+      <span class="filter-lbl">Date</span>
+      <input type="date" class="filter-date" id="fFrom">
+      <span style="font-size:11px;color:var(--text-mid)">→</span>
+      <input type="date" class="filter-date" id="fTo">
+    </div>
+    <div class="toolbar-sep"></div>
+    <div class="filter-group">
+      <span class="filter-lbl">Customer</span>
+      <select class="filter-select" id="fCustomer" style="min-width:160px">
+        <option value="ALL">All Customers</option>
+      </select>
+    </div>
+    <div class="toolbar-sep"></div>
+    <div class="filter-group">
+      <span class="filter-lbl">View</span>
+      <div class="toggle-group">
+        <button class="tgl active" id="tDay"   onclick="setGran('day')">Day</button>
+        <button class="tgl"        id="tWeek"  onclick="setGran('week')">Week</button>
+        <button class="tgl"        id="tMonth" onclick="setGran('month')">Month</button>
+      </div>
+    </div>
+    <button class="x-clear" onclick="clearFilters()">✕ Clear Filters</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     MAIN CONTENT
+══════════════════════════════════════════════ -->
+<div class="main">
+
+  <!-- KPI ROW -->
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-lbl">Total Units Shipped</div>
+      <div class="kpi-val" id="kpiShipped">—</div>
+      <div class="kpi-sub">VAS customers in range</div>
+    </div>
+    <div class="kpi-card gold">
+      <div class="kpi-lbl">Attainment Rate</div>
+      <div class="kpi-val gold" id="kpiPct">—</div>
+      <div class="kpi-sub">Shipped ÷ Forecast</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-lbl">Total Forecasted</div>
+      <div class="kpi-val" id="kpiForecast">—</div>
+      <div class="kpi-sub">Pro-rated from monthly targets</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="kpi-lbl">Variance</div>
+      <div class="kpi-val red" id="kpiVar">—</div>
+      <div class="kpi-sub">Shipped minus Forecast</div>
+    </div>
+  </div>
+
+  <!-- MAIN TREND CHART -->
+  <div class="row row-1" style="margin-bottom:12px">
+    <div class="card">
+      <div class="card-header">
+        Shipped vs Forecasted Units
+        <div class="chart-legend">
+          <div class="leg-item"><div class="leg-swatch" style="background:#1e3a5f"></div>Shipped</div>
+          <div class="leg-item"><div class="leg-swatch" style="background:var(--red)"></div>Forecast</div>
+        </div>
+      </div>
+      <div class="card-body" style="padding-bottom:8px">
+        <div class="chart-wrap" style="position:relative;height:230px;min-height:180px">
+          <canvas id="trendChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CUSTOMER CHARTS ROW -->
+  <div id="custChartsRow" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:10px;margin-bottom:12px">
+    <!-- populated dynamically -->
+  </div>
+
+  <!-- CUSTOMER TABLE -->
+  <div class="row row-1">
+    <div class="card">
+      <div class="card-header">Per-Customer Breakdown</div>
+      <div class="scroll-x">
+        <table class="dash-table">
+          <thead>
+            <tr>
+              <th style="width:30px">#</th>
+              <th>Customer</th>
+              <th>Account</th>
+              <th style="text-align:right">Shipped</th>
+              <th style="text-align:right">Forecast</th>
+              <th style="text-align:right">Variance</th>
+              <th style="min-width:180px">Attainment</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="custTableBody">
+            <tr><td colspan="8" class="no-data">Loading data…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- ══════════════════════════════════════════════
+     JAVASCRIPT  (read-only — no import logic)
+══════════════════════════════════════════════ -->
+<script>
+// ═══════════════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════════════
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxzv8okNi0OMrrnRVgTy-b3xBvBp5pI_ortQXMOsmP2wFp7IjJsNdWOED3vJ_SCoCArJQ/exec";
+const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+// ═══════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════
+let shippedData  = [];
+let forecastData = [];
+let gran         = 'day';
+let trendChart   = null;
+const custCharts = {};
+
+// ═══════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════
+const isWorkday = d => { const day = new Date(d+'T12:00:00').getDay(); return day!==0 && day!==6; };
+
+function daysInMonth(y,m){ return new Date(y,m,0).getDate(); }
+
+function workdaysInMonth(y, m) {
+  let n=0;
+  for(let d=1;d<=daysInMonth(y,m);d++){
+    const ds=`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    if(isWorkday(ds)) n++;
+  }
+  return n;
+}
+
+function dailyForecast(acctId, date) {
+  const row = forecastData.find(r => r.account_id === acctId);
+  if(!row) return 0;
+  const m = parseInt(date.substring(5,7));
+  const y = parseInt(date.substring(0,4));
+  const mo = MONTH_NAMES[m-1];
+  const monthly = parseFloat(row[mo]) || 0;
+  const wd = workdaysInMonth(y, m);
+  return wd > 0 ? monthly / wd : 0;
+}
+
+function getKey(date) {
+  if(gran==='day')   return date;
+  if(gran==='month') return date.substring(0,7);
+  const d = new Date(date+'T12:00:00');
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day===0 ? -6 : 1);
+  const mon = new Date(d); mon.setDate(diff);
+  return mon.toISOString().substring(0,10);
+}
+
+function keyLabel(k) {
+  if(gran==='month') {
+    const [y,m] = k.split('-');
+    return new Date(+y,+m-1,1).toLocaleDateString('en-US',{month:'short',year:'2-digit'});
+  }
+  if(gran==='week') {
+    const d = new Date(k+'T12:00:00');
+    return 'Wk '+d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  }
+  const d = new Date(k+'T12:00:00');
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
+
+function fmt(n) {
+  if(n===null||n===undefined) return '—';
+  return Math.round(n).toLocaleString();
+}
+function fmtPct(n) {
+  if(n===null||n===undefined) return '—';
+  return n.toFixed(1)+'%';
+}
+function getDateRange() {
+  const from = document.getElementById('fFrom').value;
+  const to   = document.getElementById('fTo').value;
+  return { from, to };
+}
+function getCustomer() { return document.getElementById('fCustomer').value; }
+
+function getVASAccts() {
+  const EXTRA_ACCTS = ['500128'];
+  const forecastAccts = forecastData.map(r => r.account_id);
+  return [...new Set([...forecastAccts, ...EXTRA_ACCTS])];
+}
+
+function getActiveAccts() {
+  const c = getCustomer();
+  return c==='ALL' ? getVASAccts() : [c];
+}
+
+// ═══════════════════════════════════════════════════════
+// LOAD FROM GOOGLE SHEETS
+// ═══════════════════════════════════════════════════════
+function setStatus(msg, type='loading') {
+  document.getElementById('statusText').textContent = msg;
+  const dot = document.getElementById('statusDot');
+  dot.className = 'status-dot ' + type;
+}
+
+function gasGet(action) {
+  return new Promise((resolve, reject) => {
+    const cbName = '_cb' + Date.now();
+    const url = GAS_URL + '?action=' + encodeURIComponent(action) + '&callback=' + cbName;
+
+    let settled = false;
+    const done = () => { settled = true; script.remove(); delete window[cbName]; };
+
+    window[cbName] = data => { if(!settled){ done(); resolve(data); } };
+
+    const script = document.createElement('script');
+    script.src = url;
+    script.onerror = () => { if(!settled){ done(); reject(new Error('Unable to load data — please try refreshing the page.')); } };
+    document.head.appendChild(script);
+
+    setTimeout(() => { if(!settled){ done(); reject(new Error('Request timed out. Please refresh the page.')); } }, 15000);
+  });
+}
+
+async function loadFromSheets() {
+  setStatus('Loading data…', 'loading');
+  try {
+    const json = await gasGet('getAll');
+    if(json.error) throw new Error(json.error);
+
+    shippedData  = json.shipped  || [];
+    forecastData = json.forecast || [];
+
+    // Deduplicate shipped by date+account
+    const seen = new Set();
+    shippedData = shippedData.filter(r => {
+      const k = r.bill_date+'|'+r.account;
+      if(seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+
+    initFilters();
+    render();
+    setStatus(`Data current as of ${new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`, 'ok');
+  } catch(err) {
+    setStatus('Error loading data: ' + err.message, 'error');
+    console.error(err);
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// FILTER INIT
+// ═══════════════════════════════════════════════════════
+function initFilters() {
+  if(shippedData.length) {
+    const vasAccts = getVASAccts();
+    const vasDates = shippedData.filter(r=>vasAccts.includes(r.account)).map(r=>r.bill_date).sort();
+    const dates    = shippedData.map(r=>r.bill_date).sort();
+    const minDate  = vasDates.length ? vasDates[0] : dates[0];
+    const maxDate  = vasDates.length ? vasDates[vasDates.length-1] : dates[dates.length-1];
+    if(!document.getElementById('fFrom').value) document.getElementById('fFrom').value = minDate;
+    if(!document.getElementById('fTo').value)   document.getElementById('fTo').value   = maxDate;
+  }
+
+  const KNOWN_NAMES = { '500128': 'Nordstrom Direct' };
+  const sel = document.getElementById('fCustomer');
+  sel.innerHTML = '<option value="ALL">All Customers</option>';
+  getVASAccts().forEach(id => {
+    const fRow = forecastData.find(r => r.account_id === id);
+    const name = fRow ? (fRow.account_name || id) : (KNOWN_NAMES[id] || id);
+    const opt  = document.createElement('option');
+    opt.value  = id;
+    opt.textContent = name + ' (' + id + ')';
+    sel.appendChild(opt);
+  });
+}
+
+function clearFilters() {
+  document.getElementById('fFrom').value = '';
+  document.getElementById('fTo').value   = '';
+  document.getElementById('fCustomer').value = 'ALL';
+  initFilters();
+  render();
+}
+
+function setGran(g) {
+  gran = g;
+  ['Day','Week','Month'].forEach(x => {
+    document.getElementById('t'+x).classList.toggle('active', x.toLowerCase()===g);
+  });
+  render();
+}
+
+// ═══════════════════════════════════════════════════════
+// COMPUTE
+// ═══════════════════════════════════════════════════════
+function computeMain() {
+  const { from, to } = getDateRange();
+  if(!from || !to) return null;
+
+  const activeAccts = getActiveAccts();
+
+  const workdays = [];
+  let cur = new Date(from+'T12:00:00');
+  const end = new Date(to+'T12:00:00');
+  while(cur<=end){ const ds=cur.toISOString().substring(0,10); if(isWorkday(ds)) workdays.push(ds); cur.setDate(cur.getDate()+1); }
+
+  const filteredShipped = shippedData.filter(r => r.bill_date>=from && r.bill_date<=to && activeAccts.includes(r.account));
+
+  const forecastByKey = {}, shippedByKey = {};
+  workdays.forEach(d => {
+    const k = getKey(d);
+    if(!forecastByKey[k]) forecastByKey[k]=0;
+    activeAccts.forEach(a => { forecastByKey[k] += dailyForecast(a, d); });
+  });
+  filteredShipped.forEach(r => {
+    const k = getKey(r.bill_date);
+    if(!shippedByKey[k]) shippedByKey[k]=0;
+    shippedByKey[k] += r.units;
+  });
+
+  const keys = [...new Set([...Object.keys(forecastByKey), ...Object.keys(shippedByKey)])].sort();
+
+  const totalShipped  = Object.values(shippedByKey).reduce((s,v)=>s+v,0);
+  const totalForecast = Object.values(forecastByKey).reduce((s,v)=>s+v,0);
+  const pct  = totalForecast>0 ? (totalShipped/totalForecast)*100 : null;
+  const varN = totalShipped - totalForecast;
+
+  const KNOWN_NAMES = { '500128': 'Nordstrom Direct' };
+  const perCust = activeAccts.map(a => {
+    const fRow = forecastData.find(f=>f.account_id===a);
+    const name = fRow ? (fRow.account_name || a) : (KNOWN_NAMES[a] || a);
+    const shipped  = filteredShipped.filter(r=>r.account===a).reduce((s,r)=>s+r.units,0);
+    const forecast = workdays.reduce((s,d)=>s+dailyForecast(a,d),0);
+    return { acct:a, name, shipped, forecast, variance:shipped-forecast, pct: forecast>0?(shipped/forecast)*100:null };
+  }).filter(r => r.shipped>0 || r.forecast>0);
+
+  return { keys, shippedByKey, forecastByKey, totalShipped, totalForecast, pct, varN, perCust, from, to, activeAccts };
+}
+
+function computeCustByKey(acctId, from, to) {
+  const workdays = [];
+  let cur = new Date(from+'T12:00:00');
+  const end = new Date(to+'T12:00:00');
+  while(cur<=end){ const ds=cur.toISOString().substring(0,10); if(isWorkday(ds)) workdays.push(ds); cur.setDate(cur.getDate()+1); }
+
+  const fByKey={}, sByKey={};
+  workdays.forEach(d => {
+    const k=getKey(d);
+    if(!fByKey[k]) fByKey[k]=0;
+    fByKey[k]+=dailyForecast(acctId,d);
+  });
+  shippedData.filter(r=>r.bill_date>=from&&r.bill_date<=to&&r.account===acctId).forEach(r=>{
+    const k=getKey(r.bill_date);
+    if(!sByKey[k]) sByKey[k]=0;
+    sByKey[k]+=r.units;
+  });
+  const keys=[...new Set([...Object.keys(fByKey)])].sort();
+  return {keys, sByKey, fByKey};
+}
+
+// ═══════════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════════
+Chart.defaults.font.family = "'Barlow', sans-serif";
+Chart.defaults.font.size   = 11;
+Chart.defaults.color       = '#4a5568';
+
+const BASE_OPTS = {
+  responsive: true,
+  maintainAspectRatio: false,
+  animation: { duration: 300 },
+  plugins: {
+    legend: { display: false },
+    tooltip: {
+      backgroundColor: '#1a2d4f',
+      borderColor: 'rgba(255,255,255,0.15)', borderWidth: 1,
+      callbacks: { label: ctx => '  '+ctx.dataset.label+': '+fmt(ctx.parsed.y) }
+    }
+  },
+  scales: {
+    x: { grid:{ color:'rgba(0,0,0,0.05)' }, ticks:{ maxTicksLimit:16, maxRotation:45 } },
+    y: { grid:{ color:'rgba(0,0,0,0.05)' }, ticks:{ callback: v => v>=1000?(v/1000).toFixed(0)+'K':v } }
+  }
+};
+
+function render() {
+  const data = computeMain();
+  if(!data) { updateKPIs(null); return; }
+  updateKPIs(data);
+  renderTrendChart(data);
+  renderCustCharts(data);
+  renderTable(data);
+}
+
+function updateKPIs(data) {
+  if(!data) {
+    ['kpiShipped','kpiForecast','kpiPct','kpiVar','hKpiShipped','hKpiForecast','hKpiAttain','hKpiVar']
+      .forEach(id => { const el=document.getElementById(id); if(el) el.textContent='—'; });
+    return;
+  }
+  const { totalShipped, totalForecast, pct, varN } = data;
+  document.getElementById('kpiShipped').textContent  = fmt(totalShipped);
+  document.getElementById('kpiForecast').textContent = fmt(totalForecast);
+  document.getElementById('kpiPct').textContent      = fmtPct(pct);
+  document.getElementById('kpiVar').textContent      = (varN>=0?'+':'')+fmt(varN);
+  document.getElementById('hKpiShipped').textContent  = fmt(totalShipped);
+  document.getElementById('hKpiForecast').textContent = fmt(totalForecast);
+  document.getElementById('hKpiAttain').textContent   = fmtPct(pct);
+  document.getElementById('hKpiVar').textContent      = (varN>=0?'+':'')+fmt(varN);
+}
+
+function renderTrendChart(data) {
+  const { keys, shippedByKey, forecastByKey } = data;
+  if(trendChart) { trendChart.destroy(); trendChart=null; }
+
+  const wrap = document.getElementById('trendChart').parentNode;
+  wrap.innerHTML = '<canvas id="trendChart"></canvas>';
+  const ctx = document.getElementById('trendChart').getContext('2d');
+  trendChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: keys.map(keyLabel),
+      datasets: [
+        {
+          label: 'Shipped',
+          data: keys.map(k=>shippedByKey[k]||0),
+          backgroundColor: '#1e3a5f',
+          borderColor: '#1e3a5f',
+          borderWidth: 0,
+          borderRadius: 2,
+          order: 2
+        },
+        {
+          label: 'Forecast',
+          data: keys.map(k=>forecastByKey[k]||0),
+          type: 'line',
+          borderColor: '#c41230',
+          backgroundColor: 'rgba(196,18,48,0.08)',
+          borderWidth: 2,
+          pointRadius: keys.length > 60 ? 0 : 3,
+          pointBackgroundColor: '#c41230',
+          tension: 0.35,
+          fill: true,
+          order: 1
+        }
+      ]
+    },
+    options: { ...BASE_OPTS }
+  });
+}
+
+function renderCustCharts(data) {
+  const { perCust, from, to, activeAccts } = data;
+  const row = document.getElementById('custChartsRow');
+  row.innerHTML = '';
+  Object.values(custCharts).forEach(c => { try{ c.destroy(); } catch(e){} });
+
+  if(activeAccts.length <= 1) return;
+
+  perCust.forEach(c => {
+    const { keys, sByKey, fByKey } = computeCustByKey(c.acct, from, to);
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="card-header" style="font-size:11px">
+        ${c.name}
+        <span style="font-size:10px;opacity:0.7;font-weight:400">${c.acct}</span>
+      </div>
+      <div class="card-body" style="padding:8px 10px">
+        <div class="chart-wrap" style="position:relative;height:160px">
+          <canvas id="cc_${c.acct}"></canvas>
+        </div>
+      </div>`;
+    row.appendChild(card);
+
+    requestAnimationFrame(() => {
+      const el = document.getElementById('cc_'+c.acct);
+      if(!el) return;
+      custCharts[c.acct] = new Chart(el.getContext('2d'), {
+        type:'bar',
+        data:{
+          labels: keys.map(keyLabel),
+          datasets:[
+            { label:'Shipped', data:keys.map(k=>sByKey[k]||0), backgroundColor:'#1e3a5f', borderWidth:0, borderRadius:2, order:2 },
+            { label:'Forecast', data:keys.map(k=>fByKey[k]||0), type:'line', borderColor:'#c41230', backgroundColor:'rgba(196,18,48,0.06)', borderWidth:1.5, pointRadius:0, tension:0.3, fill:true, order:1 }
+          ]
+        },
+        options:{
+          ...BASE_OPTS,
+          scales:{
+            x:{ ...BASE_OPTS.scales.x, ticks:{maxTicksLimit:8, maxRotation:45} },
+            y:{ ...BASE_OPTS.scales.y }
+          }
+        }
+      });
+    });
+  });
+}
+
+function renderTable(data) {
+  const { perCust } = data;
+  const tbody = document.getElementById('custTableBody');
+  if(!perCust.length) {
+    tbody.innerHTML='<tr><td colspan="8" class="no-data">No data for selected filters</td></tr>';
+    return;
+  }
+  tbody.innerHTML = perCust.map((c, i) => {
+    const pct   = c.pct;
+    const barW  = pct===null ? 0 : Math.min(pct, 100);
+    const barColor = pct===null ? '#ccc' : pct>=95 ? '#1e3a5f' : pct<80 ? '#c41230' : '#f5a623';
+    const varColor = c.variance>=0 ? '#2a9d4f' : '#c41230';
+    let pill, pillClass;
+    if(pct===null)               { pill='No Forecast';       pillClass='pill-blue';  }
+    else if(pct>=95 && pct<=110) { pill='On Track';          pillClass='pill-blue';  }
+    else if(pct>110)             { pill='Ahead';              pillClass='pill-green'; }
+    else if(pct>=80)             { pill='Slightly Behind';   pillClass='pill-gold';  }
+    else                         { pill='Behind';             pillClass='pill-red';   }
+
+    return `<tr>
+      <td style="color:var(--text-light);font-weight:600">${i+1}</td>
+      <td><strong>${c.name}</strong></td>
+      <td style="color:var(--text-mid)">${c.acct}</td>
+      <td style="text-align:right;font-weight:600">${fmt(c.shipped)}</td>
+      <td style="text-align:right;color:var(--text-mid)">${c.forecast>0?fmt(c.forecast):'<span style="color:var(--text-light);font-style:italic">No forecast</span>'}</td>
+      <td style="text-align:right;font-weight:600;color:${varColor}">${c.variance>=0?'+':''}${fmt(c.variance)}</td>
+      <td>
+        <div class="tbl-bar-wrap">
+          <div class="tbl-bar-bg"><div class="tbl-bar-fill" style="width:${barW}%;background:${barColor}"></div></div>
+          <span class="tbl-pct" style="color:${barColor}">${fmtPct(pct)}</span>
+        </div>
+      </td>
+      <td><span class="pill ${pillClass}">${pill}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+document.getElementById('fFrom').addEventListener('change', render);
+document.getElementById('fTo').addEventListener('change', render);
+document.getElementById('fCustomer').addEventListener('change', render);
+
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(render, 150);
+});
+
+loadFromSheets();
+</script>
+</body>
+</html>
