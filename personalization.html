@@ -28,6 +28,8 @@
   --fast:      #0e9e7e;
   --normal:    #c07a00;
   --slow:      #cc1f2d;
+  --filter-bill:   #1a6fc4;
+  --filter-create: #7c3aed;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -40,6 +42,7 @@ body {
   min-height: 100vh;
 }
 
+/* ── TOP BAR ── */
 .top-bar {
   background: var(--nav-bg);
   border-bottom: 1px solid var(--nav-border);
@@ -51,87 +54,83 @@ body {
 }
 .top-bar img { height: 28px; object-fit: contain; flex-shrink: 0; filter: brightness(0) invert(1); }
 .top-bar-divider { width: 1px; height: 28px; background: var(--nav-border); }
-.top-bar-title {
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: .5px;
-  text-transform: uppercase;
-  color: #ffffff;
-}
-.top-bar-right {
-  margin-left: auto;
-  display: flex;
-  align-items: stretch;
-  height: 100%;
-}
+.top-bar-title { font-size: 15px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: #ffffff; }
+.top-bar-right { margin-left: auto; display: flex; align-items: stretch; height: 100%; }
 .top-kpi {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: 0 18px;
-  border-left: 1px solid var(--nav-border);
-  min-width: 110px;
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  padding: 0 18px; border-left: 1px solid var(--nav-border); min-width: 110px;
 }
-.top-kpi-val {
-  font-size: 16px;
-  font-weight: 800;
-  color: #ffffff;
-  line-height: 1;
-}
+.top-kpi-val { font-size: 16px; font-weight: 800; color: #ffffff; line-height: 1; }
 .top-kpi-val.red { color: #ff6b74; }
-.top-kpi-label {
-  font-size: 9px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .7px;
-  color: #6b7a99;
-  margin-top: 2px;
-}
+.top-kpi-label { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: .7px; color: #6b7a99; margin-top: 2px; }
 
+/* ── ACTION BAR ── */
 .action-bar {
   background: var(--surface2);
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
   padding: 0 16px;
-  height: 40px;
+  min-height: 52px;
   gap: 8px;
   flex-wrap: wrap;
 }
+
 .btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 0 12px;
-  height: 28px;
-  border-radius: 3px;
-  border: none;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .4px;
-  cursor: pointer;
-  transition: opacity .15s;
-  white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 0 12px; height: 28px; border-radius: 3px; border: none;
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px;
+  cursor: pointer; transition: opacity .15s; white-space: nowrap;
 }
 .btn:hover { opacity: .85; }
-.btn-red    { background: var(--red);    color: #fff; }
-.btn-ghost  { background: transparent;  color: var(--text2); border: 1px solid var(--border2); }
-.btn-dark   { background: var(--surface3); color: var(--text2); border: 1px solid var(--border); }
-.action-bar-info { font-size: 11px; color: var(--muted); }
-.action-bar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.action-label { font-size: 11px; color: var(--muted); white-space: nowrap; }
-.action-bar input[type=date] {
-  background: var(--surface);
-  color: var(--text);
-  border: 1px solid var(--border2);
-  border-radius: 3px;
-  padding: 3px 8px;
-  font-size: 11px;
-  height: 28px;
+.btn-red   { background: var(--red); color: #fff; }
+.btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border2); }
+.btn-dark  { background: var(--surface3); color: var(--text2); border: 1px solid var(--border); }
+.action-bar-info { font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+/* vertical rule between logical groups */
+.action-bar-sep { width: 1px; height: 30px; background: var(--border2); margin: 0 4px; flex-shrink: 0; }
+
+/* ── DATE FILTER PILLS ── */
+.filter-group {
+  display: flex; align-items: center; gap: 5px;
+  padding: 4px 8px 4px 6px; border-radius: 4px;
+  border: 1.5px solid transparent; white-space: nowrap;
 }
-.action-bar input[type=date]:focus { outline: none; border-color: var(--red); }
+/* Bill date — blue */
+.filter-group.bill-group {
+  background: rgba(26,111,196,.07);
+  border-color: rgba(26,111,196,.30);
+}
+/* Order Create date — purple */
+.filter-group.create-group {
+  background: rgba(124,58,237,.07);
+  border-color: rgba(124,58,237,.30);
+}
+
+.filter-group-label {
+  font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .7px;
+  display: flex; align-items: center; gap: 4px;
+}
+.fgl-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+.bill-group   .filter-group-label { color: var(--filter-bill); }
+.create-group .filter-group-label { color: var(--filter-create); }
+.bill-group   .fgl-dot { background: var(--filter-bill); }
+.create-group .fgl-dot { background: var(--filter-create); }
+
+.filter-arrow { font-size: 10px; color: var(--muted); }
+
+.filter-group input[type=date] {
+  background: var(--surface); color: var(--text);
+  border: 1px solid var(--border2); border-radius: 3px;
+  padding: 3px 7px; font-size: 11px; height: 26px; width: 128px;
+}
+.filter-group input[type=date]:focus { outline: none; }
+.bill-group   input[type=date]:focus { border-color: var(--filter-bill); }
+.create-group input[type=date]:focus { border-color: var(--filter-create); }
+
+.action-bar-right { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
 .view-toggle { display: flex; border: 1px solid var(--border2); border-radius: 3px; overflow: hidden; height: 28px; }
 .view-toggle button {
   background: transparent; border: none; color: var(--muted);
@@ -141,243 +140,127 @@ body {
 .view-toggle button.active { background: var(--red); color: #fff; }
 .view-toggle button + button { border-left: 1px solid var(--border2); }
 
-.kpi-row {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
+/* ── ACTIVE FILTER STATUS BAR ── */
+.filter-status-bar {
+  display: none;
+  background: #fff;
   border-bottom: 1px solid var(--border);
-}
-.kpi-card {
-  padding: 14px 20px;
-  border-right: 1px solid var(--border);
-  position: relative;
-}
-.kpi-card:last-child { border-right: none; }
-.kpi-card-label {
-  font-size: 9px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .8px;
+  padding: 4px 16px;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
   color: var(--muted);
-  margin-bottom: 5px;
 }
-.kpi-card-val {
-  font-size: 26px;
-  font-weight: 800;
-  line-height: 1;
-  color: var(--text);
+.filter-status-bar.visible { display: flex; }
+.filter-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 2px 9px; border-radius: 10px;
+  font-size: 10px; font-weight: 700;
 }
-.kpi-card-val.red   { color: var(--red); }
-.kpi-card-val.pick  { color: var(--pick); }
-.kpi-card-val.vap   { color: var(--vap); }
-.kpi-card-val.bill  { color: var(--bill); }
+.filter-badge.bill-badge   { background: rgba(26,111,196,.10);  color: var(--filter-bill);   }
+.filter-badge.create-badge { background: rgba(124,58,237,.10); color: var(--filter-create); }
+
+/* ── KPI ROW ── */
+.kpi-row { display: grid; grid-template-columns: repeat(5, 1fr); border-bottom: 1px solid var(--border); }
+.kpi-card { padding: 14px 20px; border-right: 1px solid var(--border); position: relative; }
+.kpi-card:last-child { border-right: none; }
+.kpi-card-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); margin-bottom: 5px; }
+.kpi-card-val { font-size: 26px; font-weight: 800; line-height: 1; color: var(--text); }
+.kpi-card-val.red  { color: var(--red); }
+.kpi-card-val.pick { color: var(--pick); }
+.kpi-card-val.vap  { color: var(--vap); }
+.kpi-card-val.bill { color: var(--bill); }
 .kpi-card-sub { font-size: 10px; color: var(--muted); margin-top: 4px; }
-.kpi-bar {
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 2px;
-}
-.kpi-bar.total { background: var(--red); }
-.kpi-bar.pick  { background: var(--pick); }
-.kpi-bar.vap   { background: var(--vap); }
-.kpi-bar.bill  { background: var(--bill); }
+.kpi-bar { position: absolute; bottom: 0; left: 0; right: 0; height: 2px; }
+.kpi-bar.total  { background: var(--red); }
+.kpi-bar.pick   { background: var(--pick); }
+.kpi-bar.vap    { background: var(--vap); }
+.kpi-bar.bill   { background: var(--bill); }
 .kpi-bar.orders { background: linear-gradient(90deg, var(--pick), var(--vap)); }
 
+/* ── SECTION HEADERS ── */
 .section-header {
-  background: var(--surface2);
-  border-bottom: 1px solid var(--border);
-  padding: 8px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  background: var(--surface2); border-bottom: 1px solid var(--border);
+  padding: 8px 16px; display: flex; align-items: center; justify-content: space-between;
 }
-.section-title {
-  font-size: 10px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: .8px;
-  color: var(--text2);
-}
+.section-title { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .8px; color: var(--text2); }
 .legend { display: flex; gap: 14px; align-items: center; }
 .legend-item { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .3px; }
 .legend-dot { width: 10px; height: 3px; border-radius: 1px; }
 
-.main-chart-wrap {
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  padding: 14px 16px;
-}
-/* Extra right padding so end-of-line labels don't clip */
+/* ── CHARTS ── */
+.main-chart-wrap { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 16px; }
 .chart-canvas-wrap { position: relative; height: 220px; padding-right: 56px; }
-
-.chart-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  border-bottom: 1px solid var(--border);
-}
-.chart-panel {
-  background: var(--surface);
-  padding: 14px 16px;
-}
+.chart-row { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--border); }
+.chart-panel { background: var(--surface); padding: 14px 16px; }
 .chart-panel + .chart-panel { border-left: 1px solid var(--border); }
 .chart-panel-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin-bottom: 10px; }
 .chart-canvas-sm { position: relative; height: 160px; width: 100%; }
 
+/* ── TABLE ── */
 .table-section { background: var(--surface); }
 .table-wrap { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; font-size: 12px; }
 thead th {
-  background: var(--surface2);
-  text-align: left;
-  padding: 7px 12px;
-  font-size: 9px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: .7px;
-  color: var(--muted);
-  border-bottom: 1px solid var(--border);
-  white-space: nowrap;
-  cursor: pointer;
-  user-select: none;
-  position: sticky;
-  top: 0;
-  z-index: 2;
+  background: var(--surface2); text-align: left; padding: 7px 12px;
+  font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .7px; color: var(--muted);
+  border-bottom: 1px solid var(--border); white-space: nowrap; cursor: pointer; user-select: none;
+  position: sticky; top: 0; z-index: 2;
 }
 thead th:hover { color: var(--text2); }
 thead th .sort-arrow { opacity: .4; margin-left: 3px; }
 thead th.sorted .sort-arrow { opacity: 1; color: var(--red); }
 
-tbody tr.period-row {
-  border-bottom: 1px solid var(--border);
-  cursor: pointer;
-  transition: background .1s;
-}
+tbody tr.period-row { border-bottom: 1px solid var(--border); cursor: pointer; transition: background .1s; }
 tbody tr.period-row:hover { background: rgba(204,31,45,.04); }
 tbody tr.period-row.expanded { background: rgba(204,31,45,.06); }
 tbody td { padding: 7px 12px; white-space: nowrap; color: var(--text); }
-td.period-cell {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 700;
-  color: var(--text);
-}
+td.period-cell { display: flex; align-items: center; gap: 6px; font-weight: 700; color: var(--text); }
 .expand-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px; height: 16px;
-  border-radius: 2px;
-  background: var(--surface3);
-  border: 1px solid var(--border2);
-  font-size: 9px;
-  color: var(--muted);
-  flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px; border-radius: 2px;
+  background: var(--surface3); border: 1px solid var(--border2);
+  font-size: 9px; color: var(--muted); flex-shrink: 0;
   transition: transform .2s, background .1s, color .1s;
 }
 .expand-icon.open { transform: rotate(90deg); background: var(--red); color: #fff; border-color: var(--red); }
 
-.pill {
-  display: inline-block;
-  padding: 2px 7px;
-  border-radius: 2px;
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .3px;
-}
+.pill { display: inline-block; padding: 2px 7px; border-radius: 2px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; }
 .pill-fast   { background: rgba(14,158,126,.12); color: var(--fast); }
 .pill-normal { background: rgba(192,122,0,.12);  color: var(--normal); }
 .pill-slow   { background: rgba(204,31,45,.12);  color: var(--slow); }
 
+/* ── DRILL-DOWN ── */
 tr.drill-row { display: none; }
 tr.drill-row.visible { display: table-row; }
-tr.drill-row td {
-  padding: 0;
-  background: var(--surface2);
-  border-bottom: 1px solid var(--border);
-}
-.drill-inner {
-  overflow: hidden;
-  max-height: 0;
-  transition: max-height .25s ease;
-}
+tr.drill-row td { padding: 0; background: var(--surface2); border-bottom: 1px solid var(--border); }
+.drill-inner { overflow: hidden; max-height: 0; transition: max-height .25s ease; }
 .drill-inner.open { max-height: 9999px; }
-.drill-table-wrap {
-  padding: 8px 16px 12px 36px;
-  overflow-x: auto;
-  max-height: 500px;
-  overflow-y: auto;
-}
-.drill-title {
-  font-size: 9px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: .8px;
-  color: var(--muted);
-  padding: 8px 16px 4px 36px;
-  border-top: 1px solid var(--border);
-}
+.drill-table-wrap { padding: 8px 16px 12px 36px; overflow-x: auto; max-height: 500px; overflow-y: auto; }
+.drill-title { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); padding: 8px 16px 4px 36px; border-top: 1px solid var(--border); }
 table.drill-table { font-size: 11px; }
-table.drill-table thead th {
-  font-size: 9px;
-  background: var(--surface3);
-  position: sticky;
-  top: 0;
-  z-index: 1;
-}
+table.drill-table thead th { font-size: 9px; background: var(--surface3); position: sticky; top: 0; z-index: 1; }
 table.drill-table tbody tr { border-bottom: 1px solid var(--border); }
 table.drill-table tbody tr:hover { background: rgba(0,0,0,.02); }
 table.drill-table td { padding: 5px 10px; color: var(--text2); }
 .drill-loading { padding: 12px 36px; font-size: 11px; color: var(--muted); }
 
-#status-bar {
-  padding: 20px;
-  text-align: center;
-  font-size: 13px;
-  color: var(--muted);
-}
+/* ── MISC ── */
+#status-bar { padding: 20px; text-align: center; font-size: 13px; color: var(--muted); }
 .spinner {
-  display: inline-block;
-  width: 12px; height: 12px;
-  border: 2px solid var(--border2);
-  border-top-color: var(--red);
-  border-radius: 50%;
-  animation: spin .7s linear infinite;
-  vertical-align: middle;
-  margin-right: 5px;
+  display: inline-block; width: 12px; height: 12px;
+  border: 2px solid var(--border2); border-top-color: var(--red);
+  border-radius: 50%; animation: spin .7s linear infinite;
+  vertical-align: middle; margin-right: 5px;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-.modal-overlay {
-  display: none;
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,.4);
-  z-index: 200;
-  align-items: center;
-  justify-content: center;
-}
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 200; align-items: center; justify-content: center; }
 .modal-overlay.open { display: flex; }
-.modal {
-  background: var(--surface);
-  border: 1px solid var(--border2);
-  border-radius: 4px;
-  padding: 24px 28px;
-  width: 440px;
-  max-width: 95vw;
-  box-shadow: 0 8px 32px rgba(0,0,0,.15);
-}
+.modal { background: var(--surface); border: 1px solid var(--border2); border-radius: 4px; padding: 24px 28px; width: 440px; max-width: 95vw; box-shadow: 0 8px 32px rgba(0,0,0,.15); }
 .modal h2 { font-size: 15px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; color: var(--text); margin-bottom: 6px; }
 .modal p { font-size: 11px; color: var(--muted); margin-bottom: 18px; }
-.drop-zone {
-  border: 2px dashed var(--border2);
-  border-radius: 4px;
-  padding: 30px;
-  text-align: center;
-  cursor: pointer;
-  transition: border-color .2s;
-  font-size: 12px;
-  color: var(--muted);
-}
+.drop-zone { border: 2px dashed var(--border2); border-radius: 4px; padding: 30px; text-align: center; cursor: pointer; transition: border-color .2s; font-size: 12px; color: var(--muted); }
 .drop-zone:hover, .drop-zone.dragging { border-color: var(--red); color: var(--text2); }
 .drop-zone .icon { font-size: 28px; margin-bottom: 8px; }
 .modal-footer { margin-top: 16px; display: flex; gap: 8px; justify-content: flex-end; }
@@ -391,56 +274,79 @@ td.norm-val { color: var(--text2); }
 @media(max-width:900px) {
   .kpi-row { grid-template-columns: repeat(3,1fr); }
   .chart-row { grid-template-columns: 1fr; }
+  .action-bar { height: auto; padding: 6px 16px; }
 }
 </style>
 </head>
 <body>
 
+<!-- ══ TOP BAR ══ -->
 <div class="top-bar">
   <img src="https://www.freelogovectors.net/wp-content/uploads/2022/07/ceva-logistics-logo-freelogovectors.net_.png" alt="CEVA" />
   <div class="top-bar-divider"></div>
   <div class="top-bar-title">VAS Personalization Turnaround Time</div>
   <div class="top-bar-right">
-    <div class="top-kpi">
-      <div class="top-kpi-val" id="hdr-orders">—</div>
-      <div class="top-kpi-label">Orders</div>
-    </div>
-    <div class="top-kpi">
-      <div class="top-kpi-val" id="hdr-lines">—</div>
-      <div class="top-kpi-label">Lines</div>
-    </div>
-    <div class="top-kpi">
-      <div class="top-kpi-val" id="hdr-total">—</div>
-      <div class="top-kpi-label">Avg Total (hh:mm)</div>
-    </div>
-    <div class="top-kpi">
-      <div class="top-kpi-val red" id="hdr-pick">—</div>
-      <div class="top-kpi-label">Avg Order→Pick (hh:mm)</div>
-    </div>
+    <div class="top-kpi"><div class="top-kpi-val" id="hdr-orders">—</div><div class="top-kpi-label">Orders</div></div>
+    <div class="top-kpi"><div class="top-kpi-val" id="hdr-lines">—</div><div class="top-kpi-label">Lines</div></div>
+    <div class="top-kpi"><div class="top-kpi-val" id="hdr-total">—</div><div class="top-kpi-label">Avg Total (hh:mm)</div></div>
+    <div class="top-kpi"><div class="top-kpi-val red" id="hdr-pick">—</div><div class="top-kpi-label">Avg Order→Pick (hh:mm)</div></div>
   </div>
 </div>
 
+<!-- ══ ACTION BAR  —  two clearly-labelled date filter groups ══ -->
 <div class="action-bar">
+
+  <!-- buttons + info -->
   <button class="btn btn-red" onclick="openImport()">⬆ Import Data</button>
-  <button class="btn btn-dark" onclick="refreshData()">↻ Refresh Data</button>
+  <button class="btn btn-dark" onclick="refreshData()">↻ Refresh</button>
   <span class="action-bar-info" id="data-info">Loading…</span>
+
+  <div class="action-bar-sep"></div>
+
+  <!-- BILL / SHIP DATE filter (blue) -->
+  <div class="filter-group bill-group" title="Filter rows by the date the order was billed / shipped">
+    <span class="filter-group-label">
+      <span class="fgl-dot"></span>Bill&nbsp;Date
+    </span>
+    <input type="date" id="bill-from" title="Bill date from" />
+    <span class="filter-arrow">→</span>
+    <input type="date" id="bill-to"   title="Bill date to" />
+  </div>
+
+  <div class="action-bar-sep"></div>
+
+  <!-- ORDER CREATE DATE filter (purple) -->
+  <div class="filter-group create-group" title="Filter rows by the date the order was originally created / received">
+    <span class="filter-group-label">
+      <span class="fgl-dot"></span>Order&nbsp;Create&nbsp;Date
+    </span>
+    <input type="date" id="create-from" title="Order create date from" />
+    <span class="filter-arrow">→</span>
+    <input type="date" id="create-to"   title="Order create date to" />
+  </div>
+
+  <!-- right: view toggle + apply / clear -->
   <div class="action-bar-right">
-    <span class="action-label">Date</span>
-    <input type="date" id="date-from" />
-    <span class="action-label">→</span>
-    <input type="date" id="date-to" />
     <div class="view-toggle">
       <button id="vt-day"   onclick="setView('day')">Day</button>
       <button id="vt-week"  onclick="setView('week')" class="active">Week</button>
       <button id="vt-month" onclick="setView('month')">Month</button>
     </div>
     <button class="btn btn-ghost" onclick="applyFilters()">Apply</button>
-    <button class="btn btn-ghost" onclick="clearFilters()">✕ Clear Filters</button>
+    <button class="btn btn-ghost" onclick="clearFilters()">✕ Clear</button>
   </div>
+</div>
+
+<!-- thin bar showing which filters are currently active -->
+<div class="filter-status-bar" id="filter-status-bar">
+  Active filters:&nbsp;
+  <span class="filter-badge bill-badge"   id="fsb-bill"   style="display:none"></span>
+  <span class="filter-badge create-badge" id="fsb-create" style="display:none"></span>
 </div>
 
 <div id="status-bar"><span class="spinner"></span> Loading data from Firebase…</div>
 
+<!-- ══ KPI ROW ══ -->
 <div class="kpi-row" id="kpi-row" style="display:none">
   <div class="kpi-card">
     <div class="kpi-card-label">Total Orders</div>
@@ -474,6 +380,7 @@ td.norm-val { color: var(--text2); }
   </div>
 </div>
 
+<!-- ══ CHARTS ══ -->
 <div id="charts-section" style="display:none">
   <div class="section-header">
     <span class="section-title">Turnaround Time Trend</span>
@@ -487,7 +394,6 @@ td.norm-val { color: var(--text2); }
   <div class="main-chart-wrap">
     <div class="chart-canvas-wrap"><canvas id="trendChart"></canvas></div>
   </div>
-
   <div class="chart-row">
     <div class="chart-panel">
       <div class="chart-panel-title">Stage Breakdown (Stacked Avg Hours)</div>
@@ -500,9 +406,10 @@ td.norm-val { color: var(--text2); }
   </div>
 </div>
 
+<!-- ══ TABLE ══ -->
 <div class="table-section" id="table-section" style="display:none">
   <div class="section-header">
-    <span class="section-title">Period Breakdown</span>
+    <span class="section-title">Period Breakdown by Order Create Date</span>
     <span style="font-size:10px;color:var(--muted)">Click any row to expand orders for that period</span>
   </div>
   <div class="table-wrap">
@@ -524,6 +431,7 @@ td.norm-val { color: var(--text2); }
   </div>
 </div>
 
+<!-- ══ IMPORT MODAL ══ -->
 <div class="modal-overlay" id="import-modal">
   <div class="modal">
     <h2>Import Completed Orders</h2>
@@ -553,13 +461,18 @@ const FB_ROWS = `${FB_URL}/order_rows`;
 /* ============================================================
    STATE
    ============================================================ */
-let rawData   = null;
-let view      = 'week';
-let dateFrom  = null;
-let dateTo    = null;
-let sortCol   = 'period';
-let sortAsc   = true;
-let charts    = {};
+let rawData    = null;
+let view       = 'week';
+
+// Independent date filter ranges
+let billFrom   = null;   // filter by bill / ship date
+let billTo     = null;
+let createFrom = null;   // filter by order create date
+let createTo   = null;
+
+let sortCol    = 'period';
+let sortAsc    = true;
+let charts     = {};
 let importFile = null;
 let drillCache = {};
 
@@ -587,8 +500,7 @@ async function refreshData() {
     if (!snap) { setStatus('No data. Use Import Data to upload.'); return; }
     rawData = snap;
     drillCache = {};
-    document.getElementById('data-info').textContent =
-      `Updated: ${snap.uploaded_at || '—'}`;
+    document.getElementById('data-info').textContent = `Updated: ${snap.uploaded_at || '—'}`;
     render();
   } catch(e) {
     setStatus('⚠ ' + e.message);
@@ -602,127 +514,150 @@ function render() {
   if (!rawData) return;
   document.getElementById('status-bar').style.display = 'none';
 
-  const source = view === 'day' ? rawData.daily
-               : view === 'week' ? rawData.weekly
-               : rawData.monthly;
+  // Charts use bill-date aggregations (trend over ship date)
+  const billSource = view === 'day'  ? rawData.daily
+                   : view === 'week' ? rawData.weekly
+                   : rawData.monthly;
+  const billKey = view === 'day'  ? 'bill_day'
+                : view === 'week' ? 'bill_week'
+                : 'bill_month';
 
-  const periodKey = view === 'day' ? 'bill_day' : view === 'week' ? 'bill_week' : 'bill_month';
+  // Table uses order-create-date aggregations stored as order_daily/weekly/monthly.
+  // Falls back to bill-date source for data imported before this field existed.
+  const hasOrderAgg = !!rawData.order_daily;
+  const createSource = view === 'day'  ? (rawData.order_daily   || rawData.daily)
+                     : view === 'week' ? (rawData.order_weekly  || rawData.weekly)
+                     : (rawData.order_monthly || rawData.monthly);
+  const createKey = view === 'day'  ? 'order_day'
+                  : view === 'week' ? 'order_week'
+                  : 'order_month';
+  // Field actually present on each row in createSource
+  const tablePeriodField = hasOrderAgg ? createKey : billKey;
 
-  let filtered = (source || []).filter(r => {
-    const d = r[periodKey];
-    if (dateFrom && d < dateFrom) return false;
-    if (dateTo   && d > dateTo)   return false;
+  // Filter table rows by order create date (and optionally bill date)
+  let tableFiltered = (createSource || []).filter(r => {
+    const cd = r[tablePeriodField];
+    if (createFrom && cd < createFrom) return false;
+    if (createTo   && cd > createTo)   return false;
+    // Bill date filter applies to the bill_day stored on every row
+    const bd = r.bill_day || cd;
+    if (billFrom && bd < billFrom) return false;
+    if (billTo   && bd > billTo)   return false;
     return true;
   });
 
-  const totLines  = filtered.reduce((s,r) => s+r.lines,  0);
-  const totOrders = filtered.reduce((s,r) => s+r.orders, 0);
-  const wAvg = k => totLines ? filtered.reduce((s,r) => s + r.lines*r[k], 0) / totLines : 0;
+  // Filter chart rows by bill date only
+  let chartFiltered = (billSource || []).filter(r => {
+    const bd = r[billKey];
+    if (billFrom && bd < billFrom) return false;
+    if (billTo   && bd > billTo)   return false;
+    return true;
+  });
+
+  const totLines  = tableFiltered.reduce((s,r) => s+r.lines,  0);
+  const totOrders = tableFiltered.reduce((s,r) => s+r.orders, 0);
+  const wAvg = k => totLines ? tableFiltered.reduce((s,r) => s + r.lines*r[k], 0) / totLines : 0;
   const kpis = {
-    orders: totOrders,
-    lines:  totLines,
-    pick:   wAvg('avg_order_to_pick'),
-    vap:    wAvg('avg_pick_to_vap'),
-    bill:   wAvg('avg_vap_to_bill'),
-    total:  wAvg('avg_total'),
+    orders: totOrders, lines: totLines,
+    pick: wAvg('avg_order_to_pick'), vap: wAvg('avg_pick_to_vap'),
+    bill: wAvg('avg_vap_to_bill'),   total: wAvg('avg_total'),
   };
 
   document.getElementById('kpi-row').style.display = '';
-  document.getElementById('hdr-orders').textContent = kpis.orders.toLocaleString();
-  document.getElementById('hdr-lines').textContent  = kpis.lines.toLocaleString();
-  document.getElementById('hdr-total').textContent  = hhmm(kpis.total);
-  document.getElementById('hdr-pick').textContent   = hhmm(kpis.pick);
-  document.getElementById('kpi-orders').textContent = kpis.orders.toLocaleString();
+  document.getElementById('hdr-orders').textContent    = kpis.orders.toLocaleString();
+  document.getElementById('hdr-lines').textContent     = kpis.lines.toLocaleString();
+  document.getElementById('hdr-total').textContent     = hhmm(kpis.total);
+  document.getElementById('hdr-pick').textContent      = hhmm(kpis.pick);
+  document.getElementById('kpi-orders').textContent    = kpis.orders.toLocaleString();
   document.getElementById('kpi-lines-sub').textContent = kpis.lines.toLocaleString() + ' line items';
-  document.getElementById('kpi-total').textContent  = hhmm(kpis.total);
-  document.getElementById('kpi-pick').textContent   = hhmm(kpis.pick);
-  document.getElementById('kpi-vap').textContent    = hhmm(kpis.vap);
-  document.getElementById('kpi-bill').textContent   = hhmm(kpis.bill);
+  document.getElementById('kpi-total').textContent     = hhmm(kpis.total);
+  document.getElementById('kpi-pick').textContent      = hhmm(kpis.pick);
+  document.getElementById('kpi-vap').textContent       = hhmm(kpis.vap);
+  document.getElementById('kpi-bill').textContent      = hhmm(kpis.bill);
 
   document.getElementById('charts-section').style.display = '';
   document.getElementById('table-section').style.display  = '';
 
-  const labels = filtered.map(r => r[periodKey]);
-  buildCharts(labels, filtered);
-  buildTable(filtered, periodKey);
+  updateFilterStatusBar();
+
+  // Charts still group by bill/ship date
+  buildCharts(chartFiltered.map(r => r[billKey]), chartFiltered);
+  // Table groups by order CREATE date
+  buildTable(tableFiltered, tablePeriodField);
+}
+
+/* thin bar that echoes which filters are active */
+function updateFilterStatusBar() {
+  const bar       = document.getElementById('filter-status-bar');
+  const fsbBill   = document.getElementById('fsb-bill');
+  const fsbCreate = document.getElementById('fsb-create');
+
+  let anyActive = false;
+
+  if (billFrom || billTo) {
+    anyActive = true;
+    fsbBill.style.display = '';
+    fsbBill.textContent = `📅 Bill Date: ${billFrom || '…'} → ${billTo || '…'}`;
+  } else {
+    fsbBill.style.display = 'none';
+  }
+
+  if (createFrom || createTo) {
+    anyActive = true;
+    fsbCreate.style.display = '';
+    fsbCreate.textContent = `🟣 Order Create: ${createFrom || '…'} → ${createTo || '…'}`;
+  } else {
+    fsbCreate.style.display = 'none';
+  }
+
+  bar.classList.toggle('visible', anyActive);
 }
 
 /* ============================================================
    CHARTS
    ============================================================ */
-
-/* Shared tooltip config */
 const SHARED_TOOLTIP = {
-  backgroundColor: '#1a1f2e',
-  borderColor: '#2a3145',
-  borderWidth: 1,
-  titleColor: '#fff',
-  bodyColor: '#9aa3b8',
+  backgroundColor: '#1a1f2e', borderColor: '#2a3145', borderWidth: 1,
+  titleColor: '#fff', bodyColor: '#9aa3b8',
 };
 
-/* End-of-line label plugin for the trend chart.
-   Draws one label per dataset at the last non-null data point,
-   positioned to the right of the plot area. */
 const endLabelPlugin = {
   id: 'endLabel',
   afterDatasetsDraw(chart) {
     const { ctx, data, chartArea } = chart;
     if (!chartArea) return;
-
-    const colors  = ['#1a1f2e', '#1a6fc4', '#0e9e7e', '#c07a00'];
-    const bgAlpha = 'f0'; // slight bg for readability
-
+    const colors = ['#1a1f2e', '#1a6fc4', '#0e9e7e', '#c07a00'];
     ctx.save();
     ctx.font = 'bold 9px "Segoe UI", Arial, sans-serif';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
     data.datasets.forEach((ds, di) => {
-      /* find last non-null value */
       let lastIdx = -1;
-      for (let i = ds.data.length - 1; i >= 0; i--) {
-        if (ds.data[i] != null) { lastIdx = i; break; }
-      }
+      for (let i = ds.data.length - 1; i >= 0; i--) { if (ds.data[i] != null) { lastIdx = i; break; } }
       if (lastIdx < 0) return;
-
       const meta = chart.getDatasetMeta(di);
       if (!meta.visible) return;
       const pt = meta.data[lastIdx];
       if (!pt) return;
-
       const label = hhmm(ds.data[lastIdx]);
       const color = colors[di];
-      const x = chartArea.right + 4;
-      const y = pt.y;
-
-      /* pill background */
-      const w = ctx.measureText(label).width + 8;
-      const h = 14;
+      const x = chartArea.right + 4, y = pt.y;
+      const w = ctx.measureText(label).width + 8, h = 14;
       ctx.fillStyle = color + '22';
-      ctx.beginPath();
-      ctx.roundRect(x, y - h/2, w, h, 2);
-      ctx.fill();
-
-      ctx.fillStyle = color;
-      ctx.fillText(label, x + 4, y);
+      ctx.beginPath(); ctx.roundRect(x, y - h/2, w, h, 2); ctx.fill();
+      ctx.fillStyle = color; ctx.fillText(label, x + 4, y);
     });
-
     ctx.restore();
   }
 };
 
-/* Plugin: draw hh:mm labels inside stacked bar segments when tall enough */
 const stackedLabelPlugin = {
   id: 'stackedLabel',
   afterDatasetsDraw(chart) {
     const { ctx } = chart;
     ctx.save();
     ctx.font = '700 9px "Segoe UI", Arial, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-
-    const MIN_HEIGHT = 18; /* px — don't draw if segment shorter than this */
-
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const MIN_HEIGHT = 18;
     chart.data.datasets.forEach((ds, di) => {
       const meta = chart.getDatasetMeta(di);
       if (!meta.visible) return;
@@ -731,17 +666,14 @@ const stackedLabelPlugin = {
         if (!val) return;
         const h = Math.abs(bar.height ?? (bar.base - bar.y));
         if (h < MIN_HEIGHT) return;
-        const label = hhmm(val);
         ctx.fillStyle = 'rgba(255,255,255,0.92)';
-        ctx.fillText(label, bar.x, bar.y + h / 2);
+        ctx.fillText(hhmm(val), bar.x, bar.y + h / 2);
       });
     });
-
     ctx.restore();
   }
 };
 
-/* Plugin: draw order count above each volume bar */
 const volumeLabelPlugin = {
   id: 'volumeLabel',
   afterDatasetsDraw(chart) {
@@ -749,22 +681,16 @@ const volumeLabelPlugin = {
     if (!chartArea) return;
     ctx.save();
     ctx.font = '700 9px "Segoe UI", Arial, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'bottom';
-    ctx.fillStyle = '#3d4660';
-
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.fillStyle = '#3d4660';
     const meta = chart.getDatasetMeta(0);
     if (!meta.visible) return;
     meta.data.forEach((bar, i) => {
       const val = chart.data.datasets[0].data[i];
       if (!val) return;
-      const label = val.toLocaleString();
-      /* only draw if bar is tall enough not to crowd the axis */
       const y = bar.y - 3;
-      if (y < chartArea.top + 2) return; /* clamp: skip if above plot area */
-      ctx.fillText(label, bar.x, y);
+      if (y < chartArea.top + 2) return;
+      ctx.fillText(val.toLocaleString(), bar.x, y);
     });
-
     ctx.restore();
   }
 };
@@ -779,90 +705,44 @@ function dc(id) { if(charts[id]){charts[id].destroy();delete charts[id];} }
 function buildCharts(labels, data) {
   dc('trend'); dc('stacked'); dc('volume');
 
-  /* ---- TREND (line) ---- */
   charts.trend = new Chart(document.getElementById('trendChart'), {
-    type: 'line',
-    plugins: [endLabelPlugin],
+    type: 'line', plugins: [endLabelPlugin],
     data: { labels, datasets: [
-      { label:'Total',      data:data.map(r=>r.avg_total),         borderColor:'#1a1f2e', tension:.3, borderWidth:2, pointRadius:3, pointHoverRadius:5, fill:false },
+      { label:'Total',      data:data.map(r=>r.avg_total),         borderColor:'#1a1f2e', tension:.3, borderWidth:2,   pointRadius:3,   pointHoverRadius:5, fill:false },
       { label:'Order→Pick', data:data.map(r=>r.avg_order_to_pick), borderColor:'#1a6fc4', tension:.3, borderWidth:1.5, pointRadius:2.5, pointHoverRadius:4, fill:false },
       { label:'Pick→VAP',   data:data.map(r=>r.avg_pick_to_vap),   borderColor:'#0e9e7e', tension:.3, borderWidth:1.5, pointRadius:2.5, pointHoverRadius:4, fill:false },
       { label:'VAP→Bill',   data:data.map(r=>r.avg_vap_to_bill),   borderColor:'#c07a00', tension:.3, borderWidth:1.5, pointRadius:2.5, pointHoverRadius:4, fill:false },
     ]},
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      animation: false,
-      layout: { padding: { right: 0 } }, /* endLabelPlugin draws outside chartArea */
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          ...SHARED_TOOLTIP,
-          callbacks: { label: c => ` ${c.dataset.label}: ${hhmm(c.parsed.y ?? 0)}` }
-        },
-        datalabels: { display: false } /* suppress if chartjs-plugin-datalabels loaded */
-      },
-      scales: {
-        x: { ...BASE_SCALE.x },
-        y: { ...BASE_SCALE.y, title: { display:true, text:'Hours', color:'#9aa3b8', font:{size:9} } }
-      }
+      responsive:true, maintainAspectRatio:false, animation:false,
+      layout: { padding: { right: 0 } },
+      plugins: { legend: { display: false }, tooltip: { ...SHARED_TOOLTIP, callbacks: { label: c => ` ${c.dataset.label}: ${hhmm(c.parsed.y ?? 0)}` } } },
+      scales: { x: { ...BASE_SCALE.x }, y: { ...BASE_SCALE.y, title: { display:true, text:'Hours', color:'#9aa3b8', font:{size:9} } } }
     }
   });
 
-  /* ---- STACKED BAR ---- */
   charts.stacked = new Chart(document.getElementById('stackedChart'), {
-    type: 'bar',
-    plugins: [stackedLabelPlugin],
+    type: 'bar', plugins: [stackedLabelPlugin],
     data: { labels, datasets: [
       { label:'Order→Pick', data:data.map(r=>r.avg_order_to_pick), backgroundColor:'rgba(26,111,196,.80)',  stack:'a' },
       { label:'Pick→VAP',   data:data.map(r=>r.avg_pick_to_vap),   backgroundColor:'rgba(14,158,126,.80)', stack:'a' },
       { label:'VAP→Bill',   data:data.map(r=>r.avg_vap_to_bill),   backgroundColor:'rgba(192,122,0,.80)',  stack:'a' },
     ]},
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      animation: false,
-      plugins: {
-        legend: { display:true, labels:{ color:'#6b7590', boxWidth:10, font:{size:9} } },
-        tooltip: {
-          ...SHARED_TOOLTIP,
-          callbacks: { label: c => ` ${c.dataset.label}: ${hhmm(c.parsed.y ?? 0)}` }
-        }
-      },
-      scales: {
-        x: { ...BASE_SCALE.x, stacked: true },
-        y: { ...BASE_SCALE.y, stacked: true }
-      }
+      responsive:true, maintainAspectRatio:false, animation:false,
+      plugins: { legend: { display:true, labels:{ color:'#6b7590', boxWidth:10, font:{size:9} } }, tooltip: { ...SHARED_TOOLTIP, callbacks: { label: c => ` ${c.dataset.label}: ${hhmm(c.parsed.y ?? 0)}` } } },
+      scales: { x: { ...BASE_SCALE.x, stacked:true }, y: { ...BASE_SCALE.y, stacked:true } }
     }
   });
 
-  /* ---- VOLUME (bar) ---- */
   charts.volume = new Chart(document.getElementById('volumeChart'), {
-    type: 'bar',
-    plugins: [volumeLabelPlugin],
-    data: { labels, datasets: [{
-      label:'Orders',
-      data: data.map(r=>r.orders),
-      backgroundColor: 'rgba(204,31,45,.70)',
-      borderColor: '#cc1f2d',
-      borderWidth: 1
-    }]},
+    type: 'bar', plugins: [volumeLabelPlugin],
+    data: { labels, datasets: [{ label:'Orders', data:data.map(r=>r.orders), backgroundColor:'rgba(204,31,45,.70)', borderColor:'#cc1f2d', borderWidth:1 }] },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      animation: false,
-      layout: { padding: { top: 16 } }, /* headroom for above-bar labels */
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          ...SHARED_TOOLTIP,
-          callbacks: { label: c => ` Orders: ${c.parsed.y.toLocaleString()}` }
-        }
-      },
-      scales: {
-        x: { ...BASE_SCALE.x },
-        y: { ...BASE_SCALE.y }
-      }
+      responsive:true, maintainAspectRatio:false, animation:false,
+      layout: { padding: { top: 16 } },
+      plugins: { legend: { display:false }, tooltip: { ...SHARED_TOOLTIP, callbacks: { label: c => ` Orders: ${c.parsed.y.toLocaleString()}` } } },
+      scales: { x: { ...BASE_SCALE.x }, y: { ...BASE_SCALE.y } }
     }
   });
 }
@@ -870,28 +750,34 @@ function buildCharts(labels, data) {
 /* ============================================================
    TABLE + DRILL-DOWN
    ============================================================ */
-let currentPeriodKey = 'bill_day';
+let currentPeriodKey  = 'order_day';
+let currentCreateKey  = 'order_day';
 
 function buildTable(data, periodKey) {
   currentPeriodKey = periodKey;
+  currentCreateKey = periodKey;
   const avgTotal = rawData.kpis.avg_total;
-
   const sorted = [...data].sort((a,b) => {
-    let va = sortCol==='period' ? a[periodKey] : (a[sortCol] ?? 0);
-    let vb = sortCol==='period' ? b[periodKey] : (b[sortCol] ?? 0);
+    let va = sortCol==='period' ? (a[periodKey] ?? '') : (a[sortCol] ?? 0);
+    let vb = sortCol==='period' ? (b[periodKey] ?? '') : (b[sortCol] ?? 0);
     if (typeof va==='string') return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
     return sortAsc ? va-vb : vb-va;
   });
-
-  document.querySelectorAll('thead th').forEach(th => th.classList.remove('sorted'));
 
   const tbody = document.getElementById('table-body');
   tbody.innerHTML = '';
 
   sorted.forEach((r,i) => {
-    const period = r[periodKey];
-    const total  = r.avg_total;
-    const pct    = total / avgTotal;
+    const period    = r[periodKey];
+    // For drill-down Firebase lookup we need the bill_day period equivalent
+    // Each agg row carries bill_day (daily) or bill_week/bill_month; fall back gracefully
+    const billPeriod = r.bill_day || r.bill_week || r.bill_month || period;
+    const billKey    = r.bill_day   ? 'bill_day'
+                     : r.bill_week  ? 'bill_week'
+                     : r.bill_month ? 'bill_month'
+                     : periodKey;
+    const total   = r.avg_total;
+    const pct     = total / avgTotal;
     const pillCls = pct <= .85 ? 'pill-fast' : pct <= 1.15 ? 'pill-normal' : 'pill-slow';
     const pillTxt = pct <= .85 ? 'Fast' : pct <= 1.15 ? 'Normal' : 'Slow';
     const totalCls = pct > 1.15 ? 'slow-val' : pct <= .85 ? 'fast-val' : 'norm-val';
@@ -899,7 +785,6 @@ function buildTable(data, periodKey) {
     const tr = document.createElement('tr');
     tr.className = 'period-row';
     tr.dataset.period = period;
-    tr.dataset.idx = i;
     tr.innerHTML = `
       <td><div class="period-cell"><span class="expand-icon" id="icon-${i}">▶</span>${period}</div></td>
       <td class="num">${r.orders.toLocaleString()}</td>
@@ -910,7 +795,7 @@ function buildTable(data, periodKey) {
       <td class="num ${totalCls}">${hhmm(total)}</td>
       <td><span class="pill ${pillCls}">${pillTxt}</span></td>
     `;
-    tr.addEventListener('click', () => toggleDrill(period, i, periodKey));
+    tr.addEventListener('click', () => toggleDrill(billPeriod, i, billKey));
     tbody.appendChild(tr);
 
     const drillTr = document.createElement('tr');
@@ -928,7 +813,6 @@ async function toggleDrill(period, idx, periodKey) {
   const periodRow  = drillTr.previousElementSibling;
 
   const isOpen = drillTr.classList.contains('visible');
-
   if (isOpen) {
     drillInner.classList.remove('open');
     drillTr.classList.remove('visible');
@@ -957,29 +841,45 @@ async function toggleDrill(period, idx, periodKey) {
 }
 
 async function loadDrillData(period, periodKey) {
+  // Firebase rows are always stored under bill_day keys
   if (periodKey === 'bill_day') {
     const snap = await fbGet(`${FB_ROWS}/${period.replace(/-/g,'_')}`);
     return snap ? Object.values(snap) : [];
-  } else {
-    const dates = (rawData.daily || [])
-      .filter(r => {
-        if (periodKey === 'bill_week') {
-          return getWeekStart(r.bill_day) === period;
-        } else {
-          return r.bill_day.slice(0,7) === period;
-        }
-      })
-      .map(r => r.bill_day);
-
-    const allRows = [];
-    for (const d of dates) {
-      try {
-        const snap = await fbGet(`${FB_ROWS}/${d.replace(/-/g,'_')}`);
-        if (snap) allRows.push(...Object.values(snap));
-      } catch(e) { }
-    }
-    return allRows;
   }
+
+  // Find all daily agg rows that match this period, then load their bill_day Firebase keys
+  const billDays = (rawData.daily || [])
+    .filter(r => {
+      if (periodKey === 'bill_week')   return getWeekStart(r.bill_day) === period;
+      if (periodKey === 'bill_month')  return r.bill_day.slice(0,7) === period;
+      // order_day/week/month — match by order_day stored on daily agg rows
+      const od = r.order_day || r.bill_day;
+      if (periodKey === 'order_day')   return od === period;
+      if (periodKey === 'order_week')  return getWeekStart(od) === period;
+      if (periodKey === 'order_month') return od.slice(0,7) === period;
+      return false;
+    })
+    .map(r => r.bill_day);
+
+  const allRows = [];
+  for (const d of billDays) {
+    try {
+      const snap = await fbGet(`${FB_ROWS}/${d.replace(/-/g,'_')}`);
+      if (snap) allRows.push(...Object.values(snap));
+    } catch(e) {}
+  }
+
+  // For order-keyed lookups, filter fetched rows to only those whose order_day matches
+  if (periodKey.startsWith('order_')) {
+    return allRows.filter(r => {
+      const od = r.order_day || r.bill_day;
+      if (periodKey === 'order_day')   return od === period;
+      if (periodKey === 'order_week')  return getWeekStart(od) === period;
+      if (periodKey === 'order_month') return od.slice(0,7) === period;
+      return true;
+    });
+  }
+  return allRows;
 }
 
 function getWeekStart(dateStr) {
@@ -993,7 +893,6 @@ function renderDrillTable(container, rows, period) {
     container.innerHTML = '<div class="drill-loading" style="color:var(--muted)">No order detail available for this period. Re-import data to enable drill-down.</div>';
     return;
   }
-
   const sorted = [...rows].sort((a,b) => (b.tot||0) - (a.tot||0));
   const uniqueOrders = new Set(sorted.map(r=>r.order)).size;
   const avg = rawData.kpis.avg_total;
@@ -1007,24 +906,13 @@ function renderDrillTable(container, rows, period) {
 
   const table = document.createElement('table');
   table.className = 'drill-table';
-
   const thead = document.createElement('thead');
   thead.innerHTML = `<tr>
-    <th>Order #</th>
-    <th>SKU</th>
-    <th>Description</th>
-    <th class="num">Qty</th>
-    <th>Pick User</th>
-    <th>VAS User</th>
-    <th>Order Created</th>
-    <th>Picked</th>
-    <th>VAP Complete</th>
-    <th>Billed</th>
-    <th class="num">Order→Pick (hh:mm)</th>
-    <th class="num">Pick→VAP (hh:mm)</th>
-    <th class="num">VAP→Bill (hh:mm)</th>
-    <th class="num">Total (hh:mm)</th>
-    <th>Status</th>
+    <th>Order #</th><th>SKU</th><th>Description</th><th class="num">Qty</th>
+    <th>Pick User</th><th>VAS User</th>
+    <th>Order Created</th><th>Picked</th><th>VAP Complete</th><th>Billed</th>
+    <th class="num">Order→Pick (hh:mm)</th><th class="num">Pick→VAP (hh:mm)</th>
+    <th class="num">VAP→Bill (hh:mm)</th><th class="num">Total (hh:mm)</th><th>Status</th>
   </tr>`;
   table.appendChild(thead);
 
@@ -1035,23 +923,22 @@ function renderDrillTable(container, rows, period) {
     const pillCls = pct <= .85 ? 'pill-fast' : pct <= 1.15 ? 'pill-normal' : 'pill-slow';
     const pillTxt = pct <= .85 ? 'Fast' : pct <= 1.15 ? 'Normal' : 'Slow';
     const tCls    = pct > 1.15 ? 'slow-val' : pct <= .85 ? 'fast-val' : 'norm-val';
-
     const tr = document.createElement('tr');
     const cells = [
-      { text: r.order||'—',       style: 'font-weight:700;color:var(--text)' },
+      { text: r.order||'—',        style: 'font-weight:700;color:var(--text)' },
       { text: r.sku||'—' },
-      { text: r.description||'—', style: 'max-width:180px;overflow:hidden;text-overflow:ellipsis' },
-      { text: r.qty||'—',         cls: 'num' },
+      { text: r.description||'—',  style: 'max-width:180px;overflow:hidden;text-overflow:ellipsis' },
+      { text: r.qty||'—',          cls: 'num' },
       { text: r.pick_user||'—' },
       { text: r.vas_user||'—' },
       { text: r.order_dt_fmt||'—', style: 'white-space:nowrap;color:var(--muted)' },
       { text: r.pick_dt_fmt||'—',  style: 'white-space:nowrap;color:var(--muted)' },
       { text: r.vap_dt_fmt||'—',   style: 'white-space:nowrap;color:var(--muted)' },
       { text: r.bill_dt_fmt||'—',  style: 'white-space:nowrap;color:var(--muted)' },
-      { text: hhmm(r.o2p||0),     cls: 'num' },
-      { text: hhmm(r.p2v||0),     cls: 'num' },
-      { text: hhmm(r.v2b||0),     cls: 'num' },
-      { text: hhmm(tot),           cls: `num ${tCls}` },
+      { text: hhmm(r.o2p||0),      cls: 'num' },
+      { text: hhmm(r.p2v||0),      cls: 'num' },
+      { text: hhmm(r.v2b||0),      cls: 'num' },
+      { text: hhmm(tot),            cls: `num ${tCls}` },
     ];
     for (const c of cells) {
       const td = document.createElement('td');
@@ -1068,7 +955,6 @@ function renderDrillTable(container, rows, period) {
     tr.appendChild(tdStatus);
     tbody.appendChild(tr);
   }
-
   table.appendChild(tbody);
   wrapDiv.appendChild(table);
   container.innerHTML = '';
@@ -1080,8 +966,7 @@ function renderDrillTable(container, rows, period) {
    TABLE SORT
    ============================================================ */
 function sortTable(col) {
-  if (sortCol === col) sortAsc = !sortAsc;
-  else { sortCol = col; sortAsc = true; }
+  if (sortCol === col) sortAsc = !sortAsc; else { sortCol = col; sortAsc = true; }
   if (rawData) render();
 }
 
@@ -1093,15 +978,18 @@ function setView(v) {
   ['day','week','month'].forEach(x => document.getElementById('vt-'+x).classList.toggle('active', x===v));
   if (rawData) render();
 }
+
 function applyFilters() {
-  dateFrom = document.getElementById('date-from').value || null;
-  dateTo   = document.getElementById('date-to').value   || null;
+  billFrom   = document.getElementById('bill-from').value   || null;
+  billTo     = document.getElementById('bill-to').value     || null;
+  createFrom = document.getElementById('create-from').value || null;
+  createTo   = document.getElementById('create-to').value   || null;
   if (rawData) render();
 }
+
 function clearFilters() {
-  dateFrom = dateTo = null;
-  document.getElementById('date-from').value = '';
-  document.getElementById('date-to').value   = '';
+  billFrom = billTo = createFrom = createTo = null;
+  ['bill-from','bill-to','create-from','create-to'].forEach(id => document.getElementById(id).value = '');
   if (rawData) render();
 }
 
@@ -1120,11 +1008,7 @@ dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classL
 dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragging'));
 dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragging'); if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
 
-function handleFile(f) {
-  importFile = f;
-  setProgress('✓ ' + f.name);
-  document.getElementById('import-btn').disabled = false;
-}
+function handleFile(f) { importFile = f; setProgress('✓ ' + f.name); document.getElementById('import-btn').disabled = false; }
 function setProgress(msg) { document.getElementById('import-progress').innerHTML = msg; }
 
 async function doImport() {
@@ -1139,7 +1023,7 @@ async function doImport() {
 
     setProgress('<span class="spinner"></span> Fetching existing Firebase data to merge…');
     let existingAgg = null;
-    try { existingAgg = await fbGet(FB_AGG); } catch(e) { }
+    try { existingAgg = await fbGet(FB_AGG); } catch(e) {}
 
     let mergedClean = newClean;
     let skipped = 0;
@@ -1153,28 +1037,25 @@ async function doImport() {
         try {
           const snap = await fbGet(`${FB_ROWS}/${existingDays[i].replace(/-/g,'_')}`);
           if (snap) Object.values(snap).forEach(r => existingKeys.add(r.order + '|' + r.sku + '|' + r.bill_day));
-        } catch(e) { }
+        } catch(e) {}
       }
-
       const before = mergedClean.length;
       mergedClean = mergedClean.filter(r => !existingKeys.has(r.order + '|' + r.sku + '|' + r.bill_day));
       skipped = before - mergedClean.length;
       setProgress(`<span class="spinner"></span> ${mergedClean.length.toLocaleString()} new records (${skipped.toLocaleString()} duplicates skipped). Re-aggregating…`);
       await new Promise(r => setTimeout(r, 30));
-
       if (mergedClean.length === 0) {
         setProgress(`✅ No new records found — all ${skipped.toLocaleString()} rows already exist in Firebase.`);
         document.getElementById('import-btn').disabled = false;
         return;
       }
-
       setProgress('<span class="spinner"></span> Loading full existing dataset for re-aggregation…');
       const allExistingRows = [];
-      for (let i = 0; i < existingDays.length; i++) {
+      for (const d of existingDays) {
         try {
-          const snap = await fbGet(`${FB_ROWS}/${existingDays[i].replace(/-/g,'_')}`);
+          const snap = await fbGet(`${FB_ROWS}/${d.replace(/-/g,'_')}`);
           if (snap) allExistingRows.push(...Object.values(snap));
-        } catch(e) { }
+        } catch(e) {}
       }
       mergedClean = [...allExistingRows, ...mergedClean];
     }
@@ -1271,13 +1152,14 @@ function processRows(rows) {
         pick_user:    String(r['pick_user']||''),
         vas_user:     String(r['vas_user']||''),
         bill_day:     bd.slice(0,10),
+        order_day:    od.slice(0,10),   // ← NEW: stored for create-date filter
         order_dt_fmt: fmtDt(orderDt),
         pick_dt_fmt:  fmtDt(pickDt),
         vap_dt_fmt:   fmtDt(vapDt),
         bill_dt_fmt:  fmtDt(billDt),
         o2p: round2(o2p), p2v: round2(p2v), v2b: round2(v2b), tot: round2(tot)
       });
-    } catch(e) { }
+    } catch(e) {}
   }
   const { agg, byDay } = buildAggAndByDay(clean);
   agg.uploaded_at = new Date().toLocaleString();
@@ -1303,6 +1185,7 @@ function buildAggAndByDay(clean) {
     }
     return m;
   }
+
   function mapToArr(m, periodKey) {
     return Object.entries(m).sort((a,b)=>a[0]<b[0]?-1:1).map(([k,g])=>({
       [periodKey]: k,
@@ -1314,21 +1197,27 @@ function buildAggAndByDay(clean) {
     }));
   }
 
-  const daily   = mapToArr(aggMap(r => r.bill_day), 'bill_day');
+  // Bill-date aggregations — used by charts
+  const daily   = mapToArr(aggMap(r => r.bill_day),               'bill_day');
   const weekly  = mapToArr(aggMap(r => getWeekStart(r.bill_day)), 'bill_week');
-  const monthly = mapToArr(aggMap(r => r.bill_day.slice(0,7)), 'bill_month');
+  const monthly = mapToArr(aggMap(r => r.bill_day.slice(0,7)),    'bill_month');
+
+  // Order-create-date aggregations — used by the Period Breakdown table
+  const order_daily   = mapToArr(aggMap(r => r.order_day || r.bill_day),               'order_day');
+  const order_weekly  = mapToArr(aggMap(r => getWeekStart(r.order_day || r.bill_day)), 'order_week');
+  const order_monthly = mapToArr(aggMap(r => (r.order_day || r.bill_day).slice(0,7)),  'order_month');
 
   const n = clean.length;
   const kpis = {
-    total_orders: new Set(clean.map(r=>r.order)).size,
-    total_lines: n,
+    total_orders:      new Set(clean.map(r=>r.order)).size,
+    total_lines:       n,
     avg_order_to_pick: round2(clean.reduce((s,r)=>s+r.o2p,0)/n),
     avg_pick_to_vap:   round2(clean.reduce((s,r)=>s+r.p2v,0)/n),
     avg_vap_to_bill:   round2(clean.reduce((s,r)=>s+r.v2b,0)/n),
     avg_total:         round2(clean.reduce((s,r)=>s+r.tot,0)/n),
   };
 
-  return { agg: { kpis, daily, weekly, monthly }, byDay };
+  return { agg: { kpis, daily, weekly, monthly, order_daily, order_weekly, order_monthly }, byDay };
 }
 
 function round2(n) { return Math.round(n*100)/100; }
