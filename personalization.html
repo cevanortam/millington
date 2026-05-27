@@ -14,12 +14,10 @@
   --red:#cc1f2d; --text:#1a1f2e; --text2:#3d4660; --muted:#6b7590;
   --pick:#1a6fc4; --vap:#0e9e7e; --bill:#c07a00;
   --fast:#0e9e7e; --normal:#c07a00; --slow:#cc1f2d;
-  --fbill:#1a6fc4; --fcreate:#7c3aed;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;font-size:13px;min-height:100vh}
 
-/* TOP BAR */
 .top-bar{background:var(--nav-bg);border-bottom:1px solid var(--nav-border);display:flex;align-items:center;padding:0 16px;height:48px;gap:14px}
 .top-bar img{height:28px;object-fit:contain;flex-shrink:0;filter:brightness(0) invert(1)}
 .top-bar-divider{width:1px;height:28px;background:var(--nav-border)}
@@ -30,55 +28,33 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI','Helvetica Ne
 .top-kpi-val.red{color:#ff6b74}
 .top-kpi-label{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:#6b7a99;margin-top:2px}
 
-/* ACTION BAR */
-.action-bar{background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;min-height:48px;gap:8px;flex-wrap:wrap}
+.action-bar{background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;height:40px;gap:8px;flex-wrap:wrap}
 .btn{display:inline-flex;align-items:center;gap:5px;padding:0 12px;height:28px;border-radius:3px;border:none;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;cursor:pointer;transition:opacity .15s;white-space:nowrap}
 .btn:hover{opacity:.85}
 .btn-red{background:var(--red);color:#fff}
 .btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border2)}
 .btn-dark{background:var(--surface3);color:var(--text2);border:1px solid var(--border)}
-.action-bar-info{font-size:11px;color:var(--muted);white-space:nowrap}
-.ab-sep{width:1px;height:28px;background:var(--border2);margin:0 4px;flex-shrink:0}
-
-/* FILTER GROUPS */
-.fg{display:flex;align-items:center;gap:5px;padding:4px 8px 4px 7px;border-radius:4px;border:1.5px solid transparent;white-space:nowrap}
-.fg.fg-bill{background:rgba(26,111,196,.07);border-color:rgba(26,111,196,.28)}
-.fg.fg-create{background:rgba(124,58,237,.07);border-color:rgba(124,58,237,.28)}
-.fg-label{display:flex;align-items:center;gap:4px;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.7px}
-.fg-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.fg-bill .fg-label{color:var(--fbill)} .fg-bill .fg-dot{background:var(--fbill)}
-.fg-create .fg-label{color:var(--fcreate)} .fg-create .fg-dot{background:var(--fcreate)}
-.fg-arrow{font-size:10px;color:var(--muted)}
-.fg input[type=date]{background:var(--surface);color:var(--text);border:1px solid var(--border2);border-radius:3px;padding:3px 7px;font-size:11px;height:26px;width:128px}
-.fg input[type=date]:focus{outline:none}
-.fg-bill input[type=date]:focus{border-color:var(--fbill)}
-.fg-create input[type=date]:focus{border-color:var(--fcreate)}
-.ab-right{margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.action-bar-info{font-size:11px;color:var(--muted)}
+.action-bar-right{margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.action-label{font-size:11px;color:var(--muted);white-space:nowrap;font-weight:600}
+.action-bar input[type=date]{background:var(--surface);color:var(--text);border:1px solid var(--border2);border-radius:3px;padding:3px 8px;font-size:11px;height:28px}
+.action-bar input[type=date]:focus{outline:none;border-color:var(--red)}
 .view-toggle{display:flex;border:1px solid var(--border2);border-radius:3px;overflow:hidden;height:28px}
 .view-toggle button{background:transparent;border:none;color:var(--muted);padding:0 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;cursor:pointer;transition:background .15s,color .15s}
 .view-toggle button.active{background:var(--red);color:#fff}
 .view-toggle button+button{border-left:1px solid var(--border2)}
 
-/* FILTER RIBBON */
-.filter-ribbon{display:none;background:#fff;border-bottom:1px solid var(--border);padding:4px 16px;align-items:center;gap:8px;font-size:10px;color:var(--muted)}
-.filter-ribbon.on{display:flex}
-.fr-badge{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:10px;font-size:10px;font-weight:700}
-.fr-badge.bill-b{background:rgba(26,111,196,.10);color:var(--fbill)}
-.fr-badge.create-b{background:rgba(124,58,237,.10);color:var(--fcreate)}
-
-/* KPI ROW */
 .kpi-row{display:grid;grid-template-columns:repeat(5,1fr);border-bottom:1px solid var(--border)}
 .kpi-card{padding:14px 20px;border-right:1px solid var(--border);position:relative}
 .kpi-card:last-child{border-right:none}
 .kpi-card-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:5px}
 .kpi-card-val{font-size:26px;font-weight:800;line-height:1;color:var(--text)}
-.kpi-card-val.red{color:var(--red)} .kpi-card-val.pick{color:var(--pick)} .kpi-card-val.vap{color:var(--vap)} .kpi-card-val.bill{color:var(--bill)}
+.kpi-card-val.red{color:var(--red)}.kpi-card-val.pick{color:var(--pick)}.kpi-card-val.vap{color:var(--vap)}.kpi-card-val.bill{color:var(--bill)}
 .kpi-card-sub{font-size:10px;color:var(--muted);margin-top:4px}
 .kpi-bar{position:absolute;bottom:0;left:0;right:0;height:2px}
-.kpi-bar.total{background:var(--red)} .kpi-bar.pick{background:var(--pick)} .kpi-bar.vap{background:var(--vap)} .kpi-bar.bill{background:var(--bill)}
+.kpi-bar.total{background:var(--red)}.kpi-bar.pick{background:var(--pick)}.kpi-bar.vap{background:var(--vap)}.kpi-bar.bill{background:var(--bill)}
 .kpi-bar.orders{background:linear-gradient(90deg,var(--pick),var(--vap))}
 
-/* SECTION / CHARTS */
 .section-header{background:var(--surface2);border-bottom:1px solid var(--border);padding:8px 16px;display:flex;align-items:center;justify-content:space-between}
 .section-title{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--text2)}
 .legend{display:flex;gap:14px;align-items:center}
@@ -92,7 +68,6 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI','Helvetica Ne
 .chart-panel-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:10px}
 .chart-canvas-sm{position:relative;height:160px;width:100%}
 
-/* TABLE */
 .table-section{background:var(--surface)}
 .table-wrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:12px}
@@ -112,7 +87,6 @@ td.period-cell{display:flex;align-items:center;gap:6px;font-weight:700;color:var
 .pill-normal{background:rgba(192,122,0,.12);color:var(--normal)}
 .pill-slow{background:rgba(204,31,45,.12);color:var(--slow)}
 
-/* DRILL DOWN */
 tr.drill-row{display:none}
 tr.drill-row.visible{display:table-row}
 tr.drill-row td{padding:0;background:var(--surface2);border-bottom:1px solid var(--border)}
@@ -127,7 +101,6 @@ table.drill-table tbody tr:hover{background:rgba(0,0,0,.02)}
 table.drill-table td{padding:5px 10px;color:var(--text2)}
 .drill-loading{padding:12px 36px;font-size:11px;color:var(--muted)}
 
-/* MISC */
 #status-bar{padding:20px;text-align:center;font-size:13px;color:var(--muted)}
 .spinner{display:inline-block;width:12px;height:12px;border:2px solid var(--border2);border-top-color:var(--red);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:5px}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -145,7 +118,7 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
 td.slow-val{color:var(--slow);font-weight:700}
 td.fast-val{color:var(--fast);font-weight:600}
 td.norm-val{color:var(--text2)}
-@media(max-width:900px){.kpi-row{grid-template-columns:repeat(3,1fr)}.chart-row{grid-template-columns:1fr}.action-bar{height:auto;padding:6px 16px}}
+@media(max-width:900px){.kpi-row{grid-template-columns:repeat(3,1fr)}.chart-row{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -166,35 +139,19 @@ td.norm-val{color:var(--text2)}
   <button class="btn btn-red" onclick="openImport()">⬆ Import Data</button>
   <button class="btn btn-dark" onclick="refreshData()">↻ Refresh Data</button>
   <span class="action-bar-info" id="data-info">Loading…</span>
-  <div class="ab-sep"></div>
-  <div class="fg fg-bill" title="Include orders whose bill/ship date is within this range">
-    <span class="fg-label"><span class="fg-dot"></span>Bill Date</span>
-    <input type="date" id="bill-from" />
-    <span class="fg-arrow">→</span>
-    <input type="date" id="bill-to" />
-  </div>
-  <div class="ab-sep"></div>
-  <div class="fg fg-create" title="Include orders whose order create date is within this range">
-    <span class="fg-label"><span class="fg-dot"></span>Order Create Date</span>
-    <input type="date" id="create-from" />
-    <span class="fg-arrow">→</span>
-    <input type="date" id="create-to" />
-  </div>
-  <div class="ab-right">
+  <div class="action-bar-right">
+    <span class="action-label">Order Create Date</span>
+    <input type="date" id="date-from" />
+    <span class="action-label">→</span>
+    <input type="date" id="date-to" />
     <div class="view-toggle">
       <button id="vt-day" onclick="setView('day')">Day</button>
       <button id="vt-week" onclick="setView('week')" class="active">Week</button>
       <button id="vt-month" onclick="setView('month')">Month</button>
     </div>
     <button class="btn btn-ghost" onclick="applyFilters()">Apply</button>
-    <button class="btn btn-ghost" onclick="clearFilters()">✕ Clear</button>
+    <button class="btn btn-ghost" onclick="clearFilters()">✕ Clear Filters</button>
   </div>
-</div>
-
-<div class="filter-ribbon" id="filter-ribbon">
-  Active filters:&nbsp;
-  <span class="fr-badge bill-b" id="frb-bill" style="display:none"></span>
-  <span class="fr-badge create-b" id="frb-create" style="display:none"></span>
 </div>
 
 <div id="status-bar"><span class="spinner"></span> Loading data from Firebase…</div>
@@ -251,7 +208,7 @@ td.norm-val{color:var(--text2)}
       <div class="chart-canvas-sm"><canvas id="stackedChart"></canvas></div>
     </div>
     <div class="chart-panel">
-      <div class="chart-panel-title">Order Volume (Billed)</div>
+      <div class="chart-panel-title">Order Volume</div>
       <div class="chart-canvas-sm"><canvas id="volumeChart"></canvas></div>
     </div>
   </div>
@@ -305,7 +262,7 @@ const FB_AGG  = FB_URL + '/turnaround';
 const FB_ROWS = FB_URL + '/order_rows';
 
 let rawData = null, view = 'week';
-let billFrom = null, billTo = null, createFrom = null, createTo = null;
+let dateFrom = null, dateTo = null;
 let sortCol = 'period', sortAsc = true;
 let charts = {}, importFile = null, drillCache = {};
 
@@ -334,71 +291,41 @@ async function refreshData() {
 
 /* =============================================================
    RENDER
-   - Bill Date filter  → filters rawData.daily rows by bill_day
-   - Order Create Date → filters rawData.order_daily rows by order_day
-   - Charts  → always grouped by bill date
-   - Table   → always grouped by order create date
-                read from rawData.order_daily (stored at import time,
-                grouped directly from raw rows — the only correct approach)
-   Bill Date filter applied to table: when only bill filter is set we
-   filter order_daily rows to those whose order_day falls within the
-   bill_days that exist in filtered rawData.daily.
+   Single filter: Order Create Date (dateFrom / dateTo).
+   Filters rawData.order_daily/weekly/monthly by order_day.
+   Charts use the same filtered periods.
+   Table groups by order create date — always.
 ============================================================= */
 function render() {
   if (!rawData) return;
   document.getElementById('status-bar').style.display = 'none';
 
-  const billKey    = view==='day' ? 'bill_day'   : view==='week' ? 'bill_week'   : 'bill_month';
-  const createKey  = view==='day' ? 'order_day'  : view==='week' ? 'order_week'  : 'order_month';
+  /* Pick the right order-create-date source for this view */
+  const createKey = view==='day' ? 'order_day' : view==='week' ? 'order_week' : 'order_month';
 
-  /* ── Charts: filter daily/weekly/monthly by bill date ── */
-  const billSource = view==='day' ? rawData.daily : view==='week' ? rawData.weekly : rawData.monthly;
-  const chartRows = (billSource || []).filter(r => {
-    const bd = r[billKey];
-    if (billFrom && bd < billFrom) return false;
-    if (billTo   && bd > billTo)   return false;
-    return true;
-  });
-
-  /* ── Table: use order_daily/weekly/monthly ──
-     These arrays are grouped directly from raw rows by order_day at
-     import time. Each period is an exact order create date bucket.
-     Fall back to bill-date arrays only for legacy data. */
-  const orderSource = view==='day'
+  /* Fall back to bill-date arrays for legacy Firebase data that
+     pre-dates order_daily (they'll at least show something). */
+  const source = view==='day'
     ? (rawData.order_daily   || rawData.daily)
     : view==='week'
     ? (rawData.order_weekly  || rawData.weekly)
     : (rawData.order_monthly || rawData.monthly);
-  const hasOrderAgg = !!(rawData.order_daily);
-  const tablePeriodKey = hasOrderAgg ? createKey : billKey;
 
-  /* Build a Set of order_days that are represented in the bill-filtered
-     daily rows — used to honour the Bill Date filter on the table. */
-  let allowedOrderDays = null;
-  if ((billFrom || billTo) && hasOrderAgg) {
-    allowedOrderDays = new Set();
-    (rawData.daily || []).forEach(r => {
-      const bd = r.bill_day;
-      if (billFrom && bd < billFrom) return;
-      if (billTo   && bd > billTo)   return;
-      if (r.order_day) allowedOrderDays.add(r.order_day);
-    });
-  }
+  const periodKey = rawData.order_daily ? createKey
+                  : (view==='day' ? 'bill_day' : view==='week' ? 'bill_week' : 'bill_month');
 
-  const tableRows = (orderSource || []).filter(r => {
-    const cd = r[tablePeriodKey];
-    /* Order Create Date filter */
-    if (createFrom && cd < createFrom) return false;
-    if (createTo   && cd > createTo)   return false;
-    /* Bill Date filter — applied via the allowed order_days set */
-    if (allowedOrderDays && !allowedOrderDays.has(cd)) return false;
+  /* Apply the single date filter */
+  const filtered = (source || []).filter(r => {
+    const d = r[periodKey];
+    if (dateFrom && d < dateFrom) return false;
+    if (dateTo   && d > dateTo)   return false;
     return true;
   });
 
   /* KPIs */
-  const totLines  = tableRows.reduce((s,r) => s+r.lines,  0);
-  const totOrders = tableRows.reduce((s,r) => s+r.orders, 0);
-  const wAvg = k => totLines ? tableRows.reduce((s,r) => s+r.lines*r[k], 0)/totLines : 0;
+  const totLines  = filtered.reduce((s,r) => s+r.lines,  0);
+  const totOrders = filtered.reduce((s,r) => s+r.orders, 0);
+  const wAvg = k => totLines ? filtered.reduce((s,r) => s+r.lines*r[k], 0)/totLines : 0;
 
   document.getElementById('kpi-row').style.display = '';
   document.getElementById('hdr-orders').textContent    = totOrders.toLocaleString();
@@ -415,19 +342,8 @@ function render() {
   document.getElementById('charts-section').style.display = '';
   document.getElementById('table-section').style.display  = '';
 
-  updateFilterRibbon();
-  buildCharts(chartRows.map(r => r[billKey]), chartRows);
-  buildTable(tableRows, tablePeriodKey);
-}
-
-function updateFilterRibbon() {
-  const ribbon = document.getElementById('filter-ribbon');
-  const fB = document.getElementById('frb-bill');
-  const fC = document.getElementById('frb-create');
-  let any = false;
-  if (billFrom || billTo) { any=true; fB.style.display=''; fB.textContent='📅 Bill Date: '+(billFrom||'…')+' → '+(billTo||'…'); } else fB.style.display='none';
-  if (createFrom || createTo) { any=true; fC.style.display=''; fC.textContent='🟣 Order Create: '+(createFrom||'…')+' → '+(createTo||'…'); } else fC.style.display='none';
-  ribbon.classList.toggle('on', any);
+  buildCharts(filtered.map(r => r[periodKey]), filtered);
+  buildTable(filtered, periodKey);
 }
 
 /* ============================================================ CHARTS */
@@ -441,8 +357,8 @@ const endLabelPlugin = { id:'endLabel', afterDatasetsDraw(chart) {
     let li=-1; for(let i=ds.data.length-1;i>=0;i--){if(ds.data[i]!=null){li=i;break;}} if(li<0) return;
     const meta=chart.getDatasetMeta(di); if(!meta.visible) return;
     const pt=meta.data[li]; if(!pt) return;
-    const lbl=hhmm(ds.data[li]), col=colors[di], x=chartArea.right+4, y=pt.y;
-    const w=ctx.measureText(lbl).width+8, h=14;
+    const lbl=hhmm(ds.data[li]),col=colors[di],x=chartArea.right+4,y=pt.y;
+    const w=ctx.measureText(lbl).width+8,h=14;
     ctx.fillStyle=col+'22'; ctx.beginPath(); ctx.roundRect(x,y-h/2,w,h,2); ctx.fill();
     ctx.fillStyle=col; ctx.fillText(lbl,x+4,y);
   }); ctx.restore();
@@ -472,7 +388,6 @@ const BS = {
   x:{ticks:{color:'#9aa3b8',maxRotation:45,autoSkip:true,maxTicksLimit:24,font:{size:9}},grid:{color:'rgba(0,0,0,.06)'}},
   y:{ticks:{color:'#9aa3b8',font:{size:9}},grid:{color:'rgba(0,0,0,.06)'}}
 };
-
 function dc(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
 
 function buildCharts(labels, data) {
@@ -508,47 +423,43 @@ function buildTable(data, periodKey) {
   const tbody = document.getElementById('table-body');
   tbody.innerHTML = '';
   sorted.forEach((r,i) => {
-    const period = r[periodKey];
-    const total = r.avg_total, pct = total/avgTotal;
-    const pillCls = pct<=.85?'pill-fast':pct<=1.15?'pill-normal':'pill-slow';
-    const pillTxt = pct<=.85?'Fast':pct<=1.15?'Normal':'Slow';
-    const tCls = pct>1.15?'slow-val':pct<=.85?'fast-val':'norm-val';
-    const tr = document.createElement('tr');
-    tr.className = 'period-row';
-    tr.dataset.period = period;
-    tr.innerHTML = `<td><div class="period-cell"><span class="expand-icon" id="icon-${i}">▶</span>${period}</div></td><td class="num">${r.orders.toLocaleString()}</td><td class="num">${r.lines.toLocaleString()}</td><td class="num">${hhmm(r.avg_order_to_pick)}</td><td class="num">${hhmm(r.avg_pick_to_vap)}</td><td class="num">${hhmm(r.avg_vap_to_bill)}</td><td class="num ${tCls}">${hhmm(total)}</td><td><span class="pill ${pillCls}">${pillTxt}</span></td>`;
-    tr.addEventListener('click', () => toggleDrill(period, i, periodKey));
+    const period=r[periodKey], total=r.avg_total, pct=total/avgTotal;
+    const pillCls=pct<=.85?'pill-fast':pct<=1.15?'pill-normal':'pill-slow';
+    const pillTxt=pct<=.85?'Fast':pct<=1.15?'Normal':'Slow';
+    const tCls=pct>1.15?'slow-val':pct<=.85?'fast-val':'norm-val';
+    const tr=document.createElement('tr'); tr.className='period-row'; tr.dataset.period=period;
+    tr.innerHTML='<td><div class="period-cell"><span class="expand-icon" id="icon-'+i+'">▶</span>'+period+'</div></td><td class="num">'+r.orders.toLocaleString()+'</td><td class="num">'+r.lines.toLocaleString()+'</td><td class="num">'+hhmm(r.avg_order_to_pick)+'</td><td class="num">'+hhmm(r.avg_pick_to_vap)+'</td><td class="num">'+hhmm(r.avg_vap_to_bill)+'</td><td class="num '+tCls+'">'+hhmm(total)+'</td><td><span class="pill '+pillCls+'">'+pillTxt+'</span></td>';
+    tr.addEventListener('click',()=>toggleDrill(period,i,periodKey));
     tbody.appendChild(tr);
-    const dtr = document.createElement('tr');
-    dtr.className = 'drill-row'; dtr.id = 'drill-'+i;
-    dtr.innerHTML = '<td colspan="8"><div class="drill-inner" id="drill-inner-'+i+'"></div></td>';
+    const dtr=document.createElement('tr'); dtr.className='drill-row'; dtr.id='drill-'+i;
+    dtr.innerHTML='<td colspan="8"><div class="drill-inner" id="drill-inner-'+i+'"></div></td>';
     tbody.appendChild(dtr);
   });
 }
 
 async function toggleDrill(period, idx, periodKey) {
-  const dtr = document.getElementById('drill-'+idx);
-  const din = document.getElementById('drill-inner-'+idx);
-  const icon = document.getElementById('icon-'+idx);
-  const prow = dtr.previousElementSibling;
+  const dtr=document.getElementById('drill-'+idx);
+  const din=document.getElementById('drill-inner-'+idx);
+  const icon=document.getElementById('icon-'+idx);
+  const prow=dtr.previousElementSibling;
   if (dtr.classList.contains('visible')) {
     din.classList.remove('open'); dtr.classList.remove('visible'); icon.classList.remove('open'); prow.classList.remove('expanded'); return;
   }
   dtr.classList.add('visible'); icon.classList.add('open'); prow.classList.add('expanded');
   if (!drillCache[period]) {
-    din.innerHTML = '<div class="drill-loading"><span class="spinner"></span> Loading orders…</div>';
+    din.innerHTML='<div class="drill-loading"><span class="spinner"></span> Loading orders…</div>';
     din.classList.add('open');
-    try { drillCache[period] = await loadDrillData(period, periodKey); }
-    catch(e) { din.innerHTML = '<div class="drill-loading" style="color:var(--slow)">⚠ '+e.message+'</div>'; return; }
+    try { drillCache[period]=await loadDrillData(period,periodKey); }
+    catch(e) { din.innerHTML='<div class="drill-loading" style="color:var(--slow)">⚠ '+e.message+'</div>'; return; }
   }
-  renderDrillTable(din, drillCache[period], period);
+  renderDrillTable(din,drillCache[period],period);
   din.classList.add('open');
 }
 
-/* loadDrillData
-   Table periods are order_day/week/month. Firebase stores rows under bill_day keys.
-   We find all bill_days whose order_day matches, fetch those, then filter to
-   rows whose order_day actually matches the requested period. */
+/* loadDrillData — table periods are order_day/week/month.
+   Firebase rows live under bill_day keys. We find all daily agg rows
+   whose order_day matches the requested period, fetch those bill_day
+   buckets, then filter to rows whose order_day actually matches. */
 async function loadDrillData(period, periodKey) {
   const matchBillDays = (rawData.daily || []).filter(r => {
     const od = r.order_day || r.bill_day;
@@ -563,7 +474,7 @@ async function loadDrillData(period, periodKey) {
 
   const allRows = [];
   for (const d of matchBillDays) {
-    try { const snap = await fbGet(FB_ROWS+'/'+d.replace(/-/g,'_')); if(snap) allRows.push(...Object.values(snap)); } catch(e) {}
+    try { const snap=await fbGet(FB_ROWS+'/'+d.replace(/-/g,'_')); if(snap) allRows.push(...Object.values(snap)); } catch(e) {}
   }
   if (periodKey.startsWith('order_')) {
     return allRows.filter(r => {
@@ -578,7 +489,7 @@ async function loadDrillData(period, periodKey) {
 }
 
 function getWeekStart(dateStr) {
-  const d = new Date(dateStr+'T12:00:00');
+  const d=new Date(dateStr+'T12:00:00');
   d.setDate(d.getDate()-d.getDay()+1);
   return d.toISOString().slice(0,10);
 }
@@ -599,17 +510,16 @@ function renderDrillTable(container, rows, period) {
     const pt=pct<=.85?'Fast':pct<=1.15?'Normal':'Slow';
     const tc=pct>1.15?'slow-val':pct<=.85?'fast-val':'norm-val';
     const tr=document.createElement('tr');
-    const cells=[
-      {text:r.order||'—',style:'font-weight:700;color:var(--text)'},{text:r.sku||'—'},
-      {text:r.description||'—',style:'max-width:180px;overflow:hidden;text-overflow:ellipsis'},
-      {text:r.qty||'—',cls:'num'},{text:r.pick_user||'—'},{text:r.vas_user||'—'},
-      {text:r.order_dt_fmt||'—',style:'white-space:nowrap;color:var(--muted)'},
-      {text:r.pick_dt_fmt||'—',style:'white-space:nowrap;color:var(--muted)'},
-      {text:r.vap_dt_fmt||'—',style:'white-space:nowrap;color:var(--muted)'},
-      {text:r.bill_dt_fmt||'—',style:'white-space:nowrap;color:var(--muted)'},
-      {text:hhmm(r.o2p||0),cls:'num'},{text:hhmm(r.p2v||0),cls:'num'},{text:hhmm(r.v2b||0),cls:'num'},{text:hhmm(tot),cls:'num '+tc},
-    ];
-    cells.forEach(c=>{ const td=document.createElement('td'); if(c.cls)td.className=c.cls; if(c.style)td.style.cssText=c.style; td.textContent=c.text; tr.appendChild(td); });
+    [{text:r.order||'—',style:'font-weight:700;color:var(--text)'},{text:r.sku||'—'},
+     {text:r.description||'—',style:'max-width:180px;overflow:hidden;text-overflow:ellipsis'},
+     {text:r.qty||'—',cls:'num'},{text:r.pick_user||'—'},{text:r.vas_user||'—'},
+     {text:r.order_dt_fmt||'—',style:'white-space:nowrap;color:var(--muted)'},
+     {text:r.pick_dt_fmt||'—',style:'white-space:nowrap;color:var(--muted)'},
+     {text:r.vap_dt_fmt||'—',style:'white-space:nowrap;color:var(--muted)'},
+     {text:r.bill_dt_fmt||'—',style:'white-space:nowrap;color:var(--muted)'},
+     {text:hhmm(r.o2p||0),cls:'num'},{text:hhmm(r.p2v||0),cls:'num'},
+     {text:hhmm(r.v2b||0),cls:'num'},{text:hhmm(tot),cls:'num '+tc}
+    ].forEach(c=>{ const td=document.createElement('td'); if(c.cls)td.className=c.cls; if(c.style)td.style.cssText=c.style; td.textContent=c.text; tr.appendChild(td); });
     const ts=document.createElement('td'); const sp=document.createElement('span'); sp.className='pill '+pc; sp.textContent=pt; ts.appendChild(sp); tr.appendChild(ts);
     tb.appendChild(tr);
   }
@@ -617,11 +527,11 @@ function renderDrillTable(container, rows, period) {
   container.innerHTML=''; container.appendChild(td); container.appendChild(wd);
 }
 
-function sortTable(col) { if(sortCol===col)sortAsc=!sortAsc;else{sortCol=col;sortAsc=true;} if(rawData)render(); }
+function sortTable(col) { if(sortCol===col)sortAsc=!sortAsc; else{sortCol=col;sortAsc=true;} if(rawData)render(); }
 
 function setView(v) { view=v; ['day','week','month'].forEach(x=>document.getElementById('vt-'+x).classList.toggle('active',x===v)); if(rawData)render(); }
-function applyFilters() { billFrom=document.getElementById('bill-from').value||null; billTo=document.getElementById('bill-to').value||null; createFrom=document.getElementById('create-from').value||null; createTo=document.getElementById('create-to').value||null; drillCache={}; if(rawData)render(); }
-function clearFilters() { billFrom=billTo=createFrom=createTo=null; ['bill-from','bill-to','create-from','create-to'].forEach(id=>document.getElementById(id).value=''); drillCache={}; if(rawData)render(); }
+function applyFilters() { dateFrom=document.getElementById('date-from').value||null; dateTo=document.getElementById('date-to').value||null; drillCache={}; if(rawData)render(); }
+function clearFilters() { dateFrom=dateTo=null; document.getElementById('date-from').value=''; document.getElementById('date-to').value=''; drillCache={}; if(rawData)render(); }
 
 /* ============================================================ IMPORT */
 function openImport(){document.getElementById('import-modal').classList.add('open');}
@@ -638,10 +548,10 @@ async function doImport() {
   document.getElementById('import-btn').disabled=true;
   setProgress('<span class="spinner"></span> Reading Excel…');
   try {
-    const rows = await readXlsx(importFile);
+    const rows=await readXlsx(importFile);
     setProgress('<span class="spinner"></span> Processing '+rows.length.toLocaleString()+' rows…');
     await new Promise(r=>setTimeout(r,30));
-    const {agg:newAgg,byDay:newByDay,cleanRows:newClean} = processRows(rows);
+    const {agg:newAgg,byDay:newByDay,cleanRows:newClean}=processRows(rows);
 
     setProgress('<span class="spinner"></span> Fetching existing Firebase data…');
     let existingAgg=null;
@@ -687,14 +597,13 @@ async function doImport() {
     await new Promise(r=>setTimeout(r,30));
     const {agg:finalAgg,byDay:finalByDay}=buildAggAndByDay(mergedClean);
     finalAgg.uploaded_at=new Date().toLocaleString();
-
     setProgress('<span class="spinner"></span> Uploading aggregates…');
     await fbPut(FB_AGG,finalAgg);
 
     const ndk=Object.keys(newByDay);
     setProgress('<span class="spinner"></span> Uploading '+ndk.length+' day(s) of order detail…');
     for(let i=0;i<ndk.length;i++){
-      const d=ndk[i], dk=d.replace(/-/g,'_');
+      const d=ndk[i],dk=d.replace(/-/g,'_');
       let ex=null; try{ex=await fbGet(FB_ROWS+'/'+dk);}catch(e){}
       await fbPut(FB_ROWS+'/'+dk,{...(ex||{}),...newByDay[d]});
       if((i+1)%10===0||(i+1)===ndk.length)setProgress('<span class="spinner"></span> Uploading detail… '+(i+1)+'/'+ndk.length+' days');
@@ -747,8 +656,7 @@ function processRows(rows) {
       clean.push({
         order:String(r['order']||''), sku:String(r['sku']||''), description:String(r['description']||''),
         qty:r['qty']||'', pick_user:String(r['pick_user']||''), vas_user:String(r['vas_user']||''),
-        bill_day:bd.slice(0,10),
-        order_day:od.slice(0,10),  /* stored on every raw row */
+        bill_day:bd.slice(0,10), order_day:od.slice(0,10),
         order_dt_fmt:fmtDt(orderDt), pick_dt_fmt:fmtDt(pickDt), vap_dt_fmt:fmtDt(vapDt), bill_dt_fmt:fmtDt(billDt),
         o2p:round2(o2p),p2v:round2(p2v),v2b:round2(v2b),tot:round2(tot)
       });
@@ -759,12 +667,6 @@ function processRows(rows) {
   return {agg,byDay,cleanRows:clean};
 }
 
-/* buildAggAndByDay
-   Produces TWO sets of aggregations stored in Firebase:
-   1. daily/weekly/monthly  — grouped by bill_day  → used by charts
-   2. order_daily/weekly/monthly — grouped by order_day DIRECTLY from
-      raw rows → used by table. This is the only correct approach:
-      each order_day gets its own exact bucket with no date blending. */
 function buildAggAndByDay(clean) {
   const byDay={};
   clean.forEach((r,i)=>{ const d=r.bill_day; if(!byDay[d])byDay[d]={}; byDay[d]['r'+i]=r; });
@@ -787,11 +689,12 @@ function buildAggAndByDay(clean) {
     }));
   }
 
+  /* Bill-date aggregations (charts / legacy fallback) */
   const daily   = mapToArr(aggMap(r=>r.bill_day),               'bill_day');
   const weekly  = mapToArr(aggMap(r=>getWeekStart(r.bill_day)), 'bill_week');
   const monthly = mapToArr(aggMap(r=>r.bill_day.slice(0,7)),    'bill_month');
 
-  /* Order-create aggregations: keyed by order_day directly from raw rows */
+  /* Order-create aggregations (table) — grouped directly from raw rows */
   const order_daily   = mapToArr(aggMap(r=>r.order_day||r.bill_day),               'order_day');
   const order_weekly  = mapToArr(aggMap(r=>getWeekStart(r.order_day||r.bill_day)), 'order_week');
   const order_monthly = mapToArr(aggMap(r=>(r.order_day||r.bill_day).slice(0,7)),  'order_month');
