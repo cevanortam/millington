@@ -262,6 +262,7 @@ td.norm-val { color: var(--text2); }
 <div class="action-bar">
   <button class="btn btn-red"  onclick="openImport()">⬆ Import Data</button>
   <button class="btn btn-dark" onclick="refreshData()">↻ Refresh Data</button>
+  <button class="btn btn-dark" onclick="openReset()" style="color:#cc1f2d;border-color:#cc1f2d;">⚠ Reset Database</button>
   <span class="action-bar-info" id="data-info">Loading…</span>
 
   <div class="ab-sep"></div>
@@ -401,7 +402,18 @@ td.norm-val { color: var(--text2); }
   </div>
 </div>
 
-<script>
+<!-- ── RESET MODAL ── -->
+<div class="modal-overlay" id="reset-modal">
+  <div class="modal">
+    <h2 style="color:var(--red)">⚠ Reset Database</h2>
+    <p>This will <strong>permanently erase all data</strong> in Firebase — all aggregates and every order row. The dashboard will be blank until you do a fresh Import.<br><br>This cannot be undone. Are you sure?</p>
+    <div id="reset-progress" style="min-height:16px;font-size:11px;color:var(--muted);"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="reset-cancel-btn" onclick="closeReset()">Cancel</button>
+      <button class="btn btn-red"   id="reset-confirm-btn" onclick="doReset()">Yes, Erase Everything</button>
+    </div>
+  </div>
+</div>
 /* ============================================================
    CONFIG
    ============================================================ */
@@ -460,66 +472,50 @@ async function refreshData() {
 /* ============================================================
    RENDER
    ============================================================
-   How it works:
-   - rawData.daily has one row per bill_day, each carrying order_day.
-   - We filter those daily rows by both date filters first.
-   - Charts: roll filtered rows up by BILL date.
-   - Table: roll the SAME filtered rows up by ORDER CREATE date.
-   So filtering by Bill Date 5/18–5/22 will capture an order
-   created 5/15 that billed 5/18, and it shows under 5/15 in the table.
+   - Bill Date filter  → controls which bill_day rows are included
+   - Order Create Date filter → controls which order_day rows are included
+   - Charts always group by BILL date
+   - Table always groups by ORDER CREATE date, read from
+     rawData.order_daily/weekly/monthly (stored directly in Firebase,
+     grouped from raw rows at import time — the only correct approach).
 */
 function render() {
   if (!rawData) return;
   document.getElementById('status-bar').style.display = 'none';
 
-  /* Step 1 — filter daily rows */
-  const filteredDaily = (rawData.daily || []).filter(r => {
-    const bd = r.bill_day;
-    const od = r.order_day || r.bill_day;
-    if (billFrom   && bd < billFrom)   return false;
-    if (billTo     && bd > billTo)     return false;
-    if (createFrom && od < createFrom) return false;
-    if (createTo   && od > createTo)   return false;
+  const billKey   = view==='day' ? 'bill_day'   : view==='week' ? 'bill_week'   : 'bill_month';
+  const createKey = view==='day' ? 'order_day'  : view==='week' ? 'order_week'  : 'order_month';
+
+  /* ── Filter bill-date source for charts ── */
+  const billSource = view==='day' ? rawData.daily : view==='week' ? rawData.weekly : rawData.monthly;
+  const chartRows = (billSource || []).filter(r => {
+    const bd = r[billKey];
+    if (billFrom && bd < billFrom) return false;
+    if (billTo   && bd > billTo)   return false;
     return true;
   });
 
-  /* Step 2 — aggregate helper */
-  function toPeriods(rows, keyFn, periodField) {
-    const m = {};
-    for (const r of rows) {
-      const k = keyFn(r);
-      if (!m[k]) m[k] = { orders:0, lines:0, so2p:0, sp2v:0, sv2b:0, stot:0 };
-      m[k].orders += r.orders; m[k].lines += r.lines;
-      m[k].so2p += r.avg_order_to_pick * r.lines;
-      m[k].sp2v += r.avg_pick_to_vap   * r.lines;
-      m[k].sv2b += r.avg_vap_to_bill   * r.lines;
-      m[k].stot += r.avg_total         * r.lines;
-    }
-    return Object.entries(m).sort((a,b) => a[0]<b[0]?-1:1).map(([k,g]) => ({
-      [periodField]: k,
-      orders: g.orders, lines: g.lines,
-      avg_order_to_pick: round2(g.so2p/g.lines),
-      avg_pick_to_vap:   round2(g.sp2v/g.lines),
-      avg_vap_to_bill:   round2(g.sv2b/g.lines),
-      avg_total:         round2(g.stot/g.lines),
-    }));
-  }
-
-  /* Step 3 — charts (bill date) */
-  const billKey   = view==='day' ? 'bill_day' : view==='week' ? 'bill_week' : 'bill_month';
-  const chartRows = view==='day'
-    ? toPeriods(filteredDaily, r => r.bill_day, 'bill_day')
+  /* ── Filter order-create-date source for table ──
+     rawData.order_daily/weekly/monthly are pre-aggregated at import
+     by order_day directly from raw rows, so each period is exact. */
+  const createSource = view==='day'
+    ? (rawData.order_daily   || rawData.daily)
     : view==='week'
-    ? toPeriods(filteredDaily, r => getWeekStart(r.bill_day), 'bill_week')
-    : toPeriods(filteredDaily, r => r.bill_day.slice(0,7), 'bill_month');
+    ? (rawData.order_weekly  || rawData.weekly)
+    : (rawData.order_monthly || rawData.monthly);
+  const createPeriodKey = rawData.order_daily ? createKey : billKey;
 
-  /* Step 4 — table (order create date) */
-  const createKey  = view==='day' ? 'order_day' : view==='week' ? 'order_week' : 'order_month';
-  const tableRows  = view==='day'
-    ? toPeriods(filteredDaily, r => r.order_day||r.bill_day, 'order_day')
-    : view==='week'
-    ? toPeriods(filteredDaily, r => getWeekStart(r.order_day||r.bill_day), 'order_week')
-    : toPeriods(filteredDaily, r => (r.order_day||r.bill_day).slice(0,7), 'order_month');
+  const tableRows = (createSource || []).filter(r => {
+    const cd = r[createPeriodKey];
+    if (createFrom && cd < createFrom) return false;
+    if (createTo   && cd > createTo)   return false;
+    // Bill date filter: also filter by bill range if set.
+    // For order_daily rows we don't have bill_day, so we apply
+    // the bill filter to the create date as a proxy when no order filter set.
+    if (billFrom && !createFrom && cd < billFrom) return false;
+    if (billTo   && !createTo   && cd > billTo)   return false;
+    return true;
+  });
 
   /* KPIs */
   const totLines  = tableRows.reduce((s,r) => s+r.lines,  0);
@@ -1104,7 +1100,7 @@ function processRows(rows) {
 }
 
 function buildAggAndByDay(clean) {
-  /* byDay — keyed by bill_day for Firebase storage */
+  /* byDay — keyed by bill_day for Firebase order_rows storage */
   const byDay = {};
   clean.forEach((r,i) => {
     const d = r.bill_day;
@@ -1112,28 +1108,22 @@ function buildAggAndByDay(clean) {
     byDay[d][`r${i}`] = r;
   });
 
+  /* Generic aggregator — groups raw rows by any key function */
   function aggMap(keyFn) {
     const m = {};
     for (const r of clean) {
       const k = keyFn(r);
-      if (!m[k]) m[k] = { orders:new Set(), lines:0, so2p:0, sp2v:0, sv2b:0, stot:0, minOrderDay:r.order_day||r.bill_day };
+      if (!m[k]) m[k] = { orders:new Set(), lines:0, so2p:0, sp2v:0, sv2b:0, stot:0 };
       m[k].orders.add(r.order);
       m[k].lines++;
       m[k].so2p+=r.o2p; m[k].sp2v+=r.p2v; m[k].sv2b+=r.v2b; m[k].stot+=r.tot;
-      const od = r.order_day||r.bill_day;
-      if (od < m[k].minOrderDay) m[k].minOrderDay = od;
     }
     return m;
   }
 
-  /*
-    Daily rows carry order_day so render() can re-group by order create date
-    entirely client-side without a separate Firebase array.
-  */
-  function mapToArr(m, periodKey, addOrderDay) {
+  function mapToArr(m, periodKey) {
     return Object.entries(m).sort((a,b)=>a[0]<b[0]?-1:1).map(([k,g])=>({
       [periodKey]: k,
-      ...(addOrderDay ? { order_day: g.minOrderDay } : {}),
       orders:g.orders.size, lines:g.lines,
       avg_order_to_pick: round2(g.so2p/g.lines),
       avg_pick_to_vap:   round2(g.sp2v/g.lines),
@@ -1142,9 +1132,21 @@ function buildAggAndByDay(clean) {
     }));
   }
 
-  const daily   = mapToArr(aggMap(r=>r.bill_day),               'bill_day',   true);
-  const weekly  = mapToArr(aggMap(r=>getWeekStart(r.bill_day)), 'bill_week',  false);
-  const monthly = mapToArr(aggMap(r=>r.bill_day.slice(0,7)),    'bill_month', false);
+  /* Bill-date aggregations — used by charts */
+  const daily   = mapToArr(aggMap(r=>r.bill_day),               'bill_day');
+  const weekly  = mapToArr(aggMap(r=>getWeekStart(r.bill_day)), 'bill_week');
+  const monthly = mapToArr(aggMap(r=>r.bill_day.slice(0,7)),    'bill_month');
+
+  /*
+    Order-create-date aggregations — grouped directly from raw rows so every
+    distinct order_day gets its own correct bucket. Stored in Firebase as
+    order_daily/order_weekly/order_monthly and read directly by render().
+    This is the only correct approach: re-deriving from bill_day buckets
+    loses precision because one bill_day can contain multiple order_days.
+  */
+  const order_daily   = mapToArr(aggMap(r=>r.order_day||r.bill_day),               'order_day');
+  const order_weekly  = mapToArr(aggMap(r=>getWeekStart(r.order_day||r.bill_day)), 'order_week');
+  const order_monthly = mapToArr(aggMap(r=>(r.order_day||r.bill_day).slice(0,7)),  'order_month');
 
   const n = clean.length;
   const kpis = {
@@ -1156,7 +1158,7 @@ function buildAggAndByDay(clean) {
     avg_total:         round2(clean.reduce((s,r)=>s+r.tot,0)/n),
   };
 
-  return { agg:{ kpis, daily, weekly, monthly }, byDay };
+  return { agg:{ kpis, daily, weekly, monthly, order_daily, order_weekly, order_monthly }, byDay };
 }
 
 function round2(n) { return Math.round(n*100)/100; }
