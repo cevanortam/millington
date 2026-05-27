@@ -28,8 +28,8 @@
   --fast:      #0e9e7e;
   --normal:    #c07a00;
   --slow:      #cc1f2d;
-  --filter-bill:   #1a6fc4;
-  --filter-create: #7c3aed;
+  --fbill:     #1a6fc4;
+  --fcreate:   #7c3aed;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -42,40 +42,31 @@ body {
   min-height: 100vh;
 }
 
-/* ── TOP BAR ── */
 .top-bar {
   background: var(--nav-bg);
   border-bottom: 1px solid var(--nav-border);
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
-  height: 48px;
-  gap: 14px;
+  display: flex; align-items: center;
+  padding: 0 16px; height: 48px; gap: 14px;
 }
 .top-bar img { height: 28px; object-fit: contain; flex-shrink: 0; filter: brightness(0) invert(1); }
 .top-bar-divider { width: 1px; height: 28px; background: var(--nav-border); }
-.top-bar-title { font-size: 15px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: #ffffff; }
+.top-bar-title { font-size: 15px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: #fff; }
 .top-bar-right { margin-left: auto; display: flex; align-items: stretch; height: 100%; }
 .top-kpi {
   display: flex; flex-direction: column; justify-content: center; align-items: center;
   padding: 0 18px; border-left: 1px solid var(--nav-border); min-width: 110px;
 }
-.top-kpi-val { font-size: 16px; font-weight: 800; color: #ffffff; line-height: 1; }
+.top-kpi-val { font-size: 16px; font-weight: 800; color: #fff; line-height: 1; }
 .top-kpi-val.red { color: #ff6b74; }
 .top-kpi-label { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: .7px; color: #6b7a99; margin-top: 2px; }
 
-/* ── ACTION BAR ── */
 .action-bar {
   background: var(--surface2);
   border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
-  min-height: 52px;
-  gap: 8px;
-  flex-wrap: wrap;
+  display: flex; align-items: center;
+  padding: 0 16px; min-height: 48px;
+  gap: 8px; flex-wrap: wrap;
 }
-
 .btn {
   display: inline-flex; align-items: center; gap: 5px;
   padding: 0 12px; height: 28px; border-radius: 3px; border: none;
@@ -83,53 +74,42 @@ body {
   cursor: pointer; transition: opacity .15s; white-space: nowrap;
 }
 .btn:hover { opacity: .85; }
-.btn-red   { background: var(--red); color: #fff; }
-.btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border2); }
+.btn-red   { background: var(--red);      color: #fff; }
+.btn-ghost { background: transparent;     color: var(--text2); border: 1px solid var(--border2); }
 .btn-dark  { background: var(--surface3); color: var(--text2); border: 1px solid var(--border); }
 .action-bar-info { font-size: 11px; color: var(--muted); white-space: nowrap; }
 
-/* vertical rule between logical groups */
-.action-bar-sep { width: 1px; height: 30px; background: var(--border2); margin: 0 4px; flex-shrink: 0; }
+.ab-sep { width: 1px; height: 28px; background: var(--border2); margin: 0 4px; flex-shrink: 0; }
 
-/* ── DATE FILTER PILLS ── */
-.filter-group {
+.fg {
   display: flex; align-items: center; gap: 5px;
-  padding: 4px 8px 4px 6px; border-radius: 4px;
-  border: 1.5px solid transparent; white-space: nowrap;
+  padding: 4px 8px 4px 7px; border-radius: 4px; border: 1.5px solid transparent;
+  white-space: nowrap;
 }
-/* Bill date — blue */
-.filter-group.bill-group {
-  background: rgba(26,111,196,.07);
-  border-color: rgba(26,111,196,.30);
-}
-/* Order Create date — purple */
-.filter-group.create-group {
-  background: rgba(124,58,237,.07);
-  border-color: rgba(124,58,237,.30);
-}
+.fg.fg-bill   { background: rgba(26,111,196,.07);  border-color: rgba(26,111,196,.28); }
+.fg.fg-create { background: rgba(124,58,237,.07); border-color: rgba(124,58,237,.28); }
 
-.filter-group-label {
-  font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .7px;
+.fg-label {
   display: flex; align-items: center; gap: 4px;
+  font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .7px;
 }
-.fgl-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
-.bill-group   .filter-group-label { color: var(--filter-bill); }
-.create-group .filter-group-label { color: var(--filter-create); }
-.bill-group   .fgl-dot { background: var(--filter-bill); }
-.create-group .fgl-dot { background: var(--filter-create); }
+.fg-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.fg-bill   .fg-label { color: var(--fbill); }
+.fg-create .fg-label { color: var(--fcreate); }
+.fg-bill   .fg-dot   { background: var(--fbill); }
+.fg-create .fg-dot   { background: var(--fcreate); }
+.fg-arrow { font-size: 10px; color: var(--muted); }
 
-.filter-arrow { font-size: 10px; color: var(--muted); }
-
-.filter-group input[type=date] {
+.fg input[type=date] {
   background: var(--surface); color: var(--text);
   border: 1px solid var(--border2); border-radius: 3px;
   padding: 3px 7px; font-size: 11px; height: 26px; width: 128px;
 }
-.filter-group input[type=date]:focus { outline: none; }
-.bill-group   input[type=date]:focus { border-color: var(--filter-bill); }
-.create-group input[type=date]:focus { border-color: var(--filter-create); }
+.fg input[type=date]:focus { outline: none; }
+.fg-bill   input[type=date]:focus { border-color: var(--fbill); }
+.fg-create input[type=date]:focus { border-color: var(--fcreate); }
 
-.action-bar-right { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ab-right { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
 .view-toggle { display: flex; border: 1px solid var(--border2); border-radius: 3px; overflow: hidden; height: 28px; }
 .view-toggle button {
@@ -140,28 +120,20 @@ body {
 .view-toggle button.active { background: var(--red); color: #fff; }
 .view-toggle button + button { border-left: 1px solid var(--border2); }
 
-/* ── ACTIVE FILTER STATUS BAR ── */
-.filter-status-bar {
-  display: none;
-  background: #fff;
-  border-bottom: 1px solid var(--border);
-  padding: 4px 16px;
-  align-items: center;
-  gap: 8px;
-  font-size: 10px;
-  color: var(--muted);
+.filter-ribbon {
+  display: none; background: #fff; border-bottom: 1px solid var(--border);
+  padding: 4px 16px; align-items: center; gap: 8px;
+  font-size: 10px; color: var(--muted);
 }
-.filter-status-bar.visible { display: flex; }
-.filter-badge {
+.filter-ribbon.on { display: flex; }
+.fr-badge {
   display: inline-flex; align-items: center; gap: 5px;
-  padding: 2px 9px; border-radius: 10px;
-  font-size: 10px; font-weight: 700;
+  padding: 2px 9px; border-radius: 10px; font-size: 10px; font-weight: 700;
 }
-.filter-badge.bill-badge   { background: rgba(26,111,196,.10);  color: var(--filter-bill);   }
-.filter-badge.create-badge { background: rgba(124,58,237,.10); color: var(--filter-create); }
+.fr-badge.bill-b   { background: rgba(26,111,196,.10);  color: var(--fbill); }
+.fr-badge.create-b { background: rgba(124,58,237,.10); color: var(--fcreate); }
 
-/* ── KPI ROW ── */
-.kpi-row { display: grid; grid-template-columns: repeat(5, 1fr); border-bottom: 1px solid var(--border); }
+.kpi-row { display: grid; grid-template-columns: repeat(5,1fr); border-bottom: 1px solid var(--border); }
 .kpi-card { padding: 14px 20px; border-right: 1px solid var(--border); position: relative; }
 .kpi-card:last-child { border-right: none; }
 .kpi-card-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); margin-bottom: 5px; }
@@ -178,7 +150,6 @@ body {
 .kpi-bar.bill   { background: var(--bill); }
 .kpi-bar.orders { background: linear-gradient(90deg, var(--pick), var(--vap)); }
 
-/* ── SECTION HEADERS ── */
 .section-header {
   background: var(--surface2); border-bottom: 1px solid var(--border);
   padding: 8px 16px; display: flex; align-items: center; justify-content: space-between;
@@ -188,7 +159,6 @@ body {
 .legend-item { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .3px; }
 .legend-dot { width: 10px; height: 3px; border-radius: 1px; }
 
-/* ── CHARTS ── */
 .main-chart-wrap { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 16px; }
 .chart-canvas-wrap { position: relative; height: 220px; padding-right: 56px; }
 .chart-row { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--border); }
@@ -197,7 +167,6 @@ body {
 .chart-panel-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin-bottom: 10px; }
 .chart-canvas-sm { position: relative; height: 160px; width: 100%; }
 
-/* ── TABLE ── */
 .table-section { background: var(--surface); }
 .table-wrap { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; font-size: 12px; }
@@ -230,7 +199,6 @@ td.period-cell { display: flex; align-items: center; gap: 6px; font-weight: 700;
 .pill-normal { background: rgba(192,122,0,.12);  color: var(--normal); }
 .pill-slow   { background: rgba(204,31,45,.12);  color: var(--slow); }
 
-/* ── DRILL-DOWN ── */
 tr.drill-row { display: none; }
 tr.drill-row.visible { display: table-row; }
 tr.drill-row td { padding: 0; background: var(--surface2); border-bottom: 1px solid var(--border); }
@@ -245,7 +213,6 @@ table.drill-table tbody tr:hover { background: rgba(0,0,0,.02); }
 table.drill-table td { padding: 5px 10px; color: var(--text2); }
 .drill-loading { padding: 12px 36px; font-size: 11px; color: var(--muted); }
 
-/* ── MISC ── */
 #status-bar { padding: 20px; text-align: center; font-size: 13px; color: var(--muted); }
 .spinner {
   display: inline-block; width: 12px; height: 12px;
@@ -280,7 +247,6 @@ td.norm-val { color: var(--text2); }
 </head>
 <body>
 
-<!-- ══ TOP BAR ══ -->
 <div class="top-bar">
   <img src="https://www.freelogovectors.net/wp-content/uploads/2022/07/ceva-logistics-logo-freelogovectors.net_.png" alt="CEVA" />
   <div class="top-bar-divider"></div>
@@ -293,40 +259,30 @@ td.norm-val { color: var(--text2); }
   </div>
 </div>
 
-<!-- ══ ACTION BAR  —  two clearly-labelled date filter groups ══ -->
 <div class="action-bar">
-
-  <!-- buttons + info -->
-  <button class="btn btn-red" onclick="openImport()">⬆ Import Data</button>
-  <button class="btn btn-dark" onclick="refreshData()">↻ Refresh</button>
+  <button class="btn btn-red"  onclick="openImport()">⬆ Import Data</button>
+  <button class="btn btn-dark" onclick="refreshData()">↻ Refresh Data</button>
   <span class="action-bar-info" id="data-info">Loading…</span>
 
-  <div class="action-bar-sep"></div>
+  <div class="ab-sep"></div>
 
-  <!-- BILL / SHIP DATE filter (blue) -->
-  <div class="filter-group bill-group" title="Filter rows by the date the order was billed / shipped">
-    <span class="filter-group-label">
-      <span class="fgl-dot"></span>Bill&nbsp;Date
-    </span>
-    <input type="date" id="bill-from" title="Bill date from" />
-    <span class="filter-arrow">→</span>
-    <input type="date" id="bill-to"   title="Bill date to" />
+  <div class="fg fg-bill" title="Include orders whose bill/ship date is within this range">
+    <span class="fg-label"><span class="fg-dot"></span>Bill Date</span>
+    <input type="date" id="bill-from" />
+    <span class="fg-arrow">→</span>
+    <input type="date" id="bill-to" />
   </div>
 
-  <div class="action-bar-sep"></div>
+  <div class="ab-sep"></div>
 
-  <!-- ORDER CREATE DATE filter (purple) -->
-  <div class="filter-group create-group" title="Filter rows by the date the order was originally created / received">
-    <span class="filter-group-label">
-      <span class="fgl-dot"></span>Order&nbsp;Create&nbsp;Date
-    </span>
-    <input type="date" id="create-from" title="Order create date from" />
-    <span class="filter-arrow">→</span>
-    <input type="date" id="create-to"   title="Order create date to" />
+  <div class="fg fg-create" title="Include orders whose order create date is within this range">
+    <span class="fg-label"><span class="fg-dot"></span>Order Create Date</span>
+    <input type="date" id="create-from" />
+    <span class="fg-arrow">→</span>
+    <input type="date" id="create-to" />
   </div>
 
-  <!-- right: view toggle + apply / clear -->
-  <div class="action-bar-right">
+  <div class="ab-right">
     <div class="view-toggle">
       <button id="vt-day"   onclick="setView('day')">Day</button>
       <button id="vt-week"  onclick="setView('week')" class="active">Week</button>
@@ -337,16 +293,14 @@ td.norm-val { color: var(--text2); }
   </div>
 </div>
 
-<!-- thin bar showing which filters are currently active -->
-<div class="filter-status-bar" id="filter-status-bar">
+<div class="filter-ribbon" id="filter-ribbon">
   Active filters:&nbsp;
-  <span class="filter-badge bill-badge"   id="fsb-bill"   style="display:none"></span>
-  <span class="filter-badge create-badge" id="fsb-create" style="display:none"></span>
+  <span class="fr-badge bill-b"   id="frb-bill"   style="display:none"></span>
+  <span class="fr-badge create-b" id="frb-create" style="display:none"></span>
 </div>
 
 <div id="status-bar"><span class="spinner"></span> Loading data from Firebase…</div>
 
-<!-- ══ KPI ROW ══ -->
 <div class="kpi-row" id="kpi-row" style="display:none">
   <div class="kpi-card">
     <div class="kpi-card-label">Total Orders</div>
@@ -380,7 +334,6 @@ td.norm-val { color: var(--text2); }
   </div>
 </div>
 
-<!-- ══ CHARTS ══ -->
 <div id="charts-section" style="display:none">
   <div class="section-header">
     <span class="section-title">Turnaround Time Trend</span>
@@ -406,7 +359,6 @@ td.norm-val { color: var(--text2); }
   </div>
 </div>
 
-<!-- ══ TABLE ══ -->
 <div class="table-section" id="table-section" style="display:none">
   <div class="section-header">
     <span class="section-title">Period Breakdown by Order Create Date</span>
@@ -431,7 +383,6 @@ td.norm-val { color: var(--text2); }
   </div>
 </div>
 
-<!-- ══ IMPORT MODAL ══ -->
 <div class="modal-overlay" id="import-modal">
   <div class="modal">
     <h2>Import Completed Orders</h2>
@@ -463,13 +414,10 @@ const FB_ROWS = `${FB_URL}/order_rows`;
    ============================================================ */
 let rawData    = null;
 let view       = 'week';
-
-// Independent date filter ranges
-let billFrom   = null;   // filter by bill / ship date
+let billFrom   = null;
 let billTo     = null;
-let createFrom = null;   // filter by order create date
+let createFrom = null;
 let createTo   = null;
-
 let sortCol    = 'period';
 let sortAsc    = true;
 let charts     = {};
@@ -485,7 +433,9 @@ async function fbGet(path) {
   return r.json();
 }
 async function fbPut(path, data) {
-  const r = await fetch(`${path}.json`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
+  const r = await fetch(`${path}.json`, {
+    method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data)
+  });
   if (!r.ok) throw new Error('Firebase PUT error ' + r.status);
   return r.json();
 }
@@ -509,39 +459,44 @@ async function refreshData() {
 
 /* ============================================================
    RENDER
-   ============================================================ */
+   ============================================================
+   How it works:
+   - rawData.daily has one row per bill_day, each carrying order_day.
+   - We filter those daily rows by both date filters first.
+   - Charts: roll filtered rows up by BILL date.
+   - Table: roll the SAME filtered rows up by ORDER CREATE date.
+   So filtering by Bill Date 5/18–5/22 will capture an order
+   created 5/15 that billed 5/18, and it shows under 5/15 in the table.
+*/
 function render() {
   if (!rawData) return;
   document.getElementById('status-bar').style.display = 'none';
 
-  // Bill-date source — used by charts
-  const billSource = view === 'day'  ? rawData.daily
-                   : view === 'week' ? rawData.weekly
-                   : rawData.monthly;
-  const billKey = view === 'day'  ? 'bill_day'
-                : view === 'week' ? 'bill_week'
-                : 'bill_month';
+  /* Step 1 — filter daily rows */
+  const filteredDaily = (rawData.daily || []).filter(r => {
+    const bd = r.bill_day;
+    const od = r.order_day || r.bill_day;
+    if (billFrom   && bd < billFrom)   return false;
+    if (billTo     && bd > billTo)     return false;
+    if (createFrom && od < createFrom) return false;
+    if (createTo   && od > createTo)   return false;
+    return true;
+  });
 
-  // ── Build order-create-date aggregation client-side from rawData.daily ──
-  // Each daily row carries order_day (set during import). We re-group them
-  // here so the table period key is always the order create date, not bill date.
-  const createKey = view === 'day'  ? 'order_day'
-                  : view === 'week' ? 'order_week'
-                  : 'order_month';
-
-  function clientAgg(keyFn) {
+  /* Step 2 — aggregate helper */
+  function toPeriods(rows, keyFn, periodField) {
     const m = {};
-    for (const r of (rawData.daily || [])) {
+    for (const r of rows) {
       const k = keyFn(r);
       if (!m[k]) m[k] = { orders:0, lines:0, so2p:0, sp2v:0, sv2b:0, stot:0 };
       m[k].orders += r.orders; m[k].lines += r.lines;
-      m[k].so2p   += r.avg_order_to_pick * r.lines;
-      m[k].sp2v   += r.avg_pick_to_vap   * r.lines;
-      m[k].sv2b   += r.avg_vap_to_bill   * r.lines;
-      m[k].stot   += r.avg_total         * r.lines;
+      m[k].so2p += r.avg_order_to_pick * r.lines;
+      m[k].sp2v += r.avg_pick_to_vap   * r.lines;
+      m[k].sv2b += r.avg_vap_to_bill   * r.lines;
+      m[k].stot += r.avg_total         * r.lines;
     }
-    return Object.entries(m).sort((a,b)=>a[0]<b[0]?-1:1).map(([k,g])=>({
-      [createKey]: k,
+    return Object.entries(m).sort((a,b) => a[0]<b[0]?-1:1).map(([k,g]) => ({
+      [periodField]: k,
       orders: g.orders, lines: g.lines,
       avg_order_to_pick: round2(g.so2p/g.lines),
       avg_pick_to_vap:   round2(g.sp2v/g.lines),
@@ -550,93 +505,69 @@ function render() {
     }));
   }
 
-  const createSource = view === 'day'
-    ? clientAgg(r => r.order_day || r.bill_day)
-    : view === 'week'
-    ? clientAgg(r => getWeekStart(r.order_day || r.bill_day))
-    : clientAgg(r => (r.order_day || r.bill_day).slice(0,7));
+  /* Step 3 — charts (bill date) */
+  const billKey   = view==='day' ? 'bill_day' : view==='week' ? 'bill_week' : 'bill_month';
+  const chartRows = view==='day'
+    ? toPeriods(filteredDaily, r => r.bill_day, 'bill_day')
+    : view==='week'
+    ? toPeriods(filteredDaily, r => getWeekStart(r.bill_day), 'bill_week')
+    : toPeriods(filteredDaily, r => r.bill_day.slice(0,7), 'bill_month');
 
-  // Apply bill-date filter to charts
-  let chartFiltered = (billSource || []).filter(r => {
-    const bd = r[billKey];
-    if (billFrom && bd < billFrom) return false;
-    if (billTo   && bd > billTo)   return false;
-    return true;
-  });
+  /* Step 4 — table (order create date) */
+  const createKey  = view==='day' ? 'order_day' : view==='week' ? 'order_week' : 'order_month';
+  const tableRows  = view==='day'
+    ? toPeriods(filteredDaily, r => r.order_day||r.bill_day, 'order_day')
+    : view==='week'
+    ? toPeriods(filteredDaily, r => getWeekStart(r.order_day||r.bill_day), 'order_week')
+    : toPeriods(filteredDaily, r => (r.order_day||r.bill_day).slice(0,7), 'order_month');
 
-  // Apply create-date filter (and optionally bill-date filter) to table
-  let tableFiltered = createSource.filter(r => {
-    const cd = r[createKey];
-    if (createFrom && cd < createFrom) return false;
-    if (createTo   && cd > createTo)   return false;
-    if (billFrom   && cd < billFrom)   return false;
-    if (billTo     && cd > billTo)     return false;
-    return true;
-  });
-
-  const totLines  = tableFiltered.reduce((s,r) => s+r.lines,  0);
-  const totOrders = tableFiltered.reduce((s,r) => s+r.orders, 0);
-  const wAvg = k => totLines ? tableFiltered.reduce((s,r) => s + r.lines*r[k], 0) / totLines : 0;
-  const kpis = {
-    orders: totOrders, lines: totLines,
-    pick: wAvg('avg_order_to_pick'), vap: wAvg('avg_pick_to_vap'),
-    bill: wAvg('avg_vap_to_bill'),   total: wAvg('avg_total'),
-  };
+  /* KPIs */
+  const totLines  = tableRows.reduce((s,r) => s+r.lines,  0);
+  const totOrders = tableRows.reduce((s,r) => s+r.orders, 0);
+  const wAvg = k => totLines ? tableRows.reduce((s,r) => s+r.lines*r[k], 0)/totLines : 0;
 
   document.getElementById('kpi-row').style.display = '';
-  document.getElementById('hdr-orders').textContent    = kpis.orders.toLocaleString();
-  document.getElementById('hdr-lines').textContent     = kpis.lines.toLocaleString();
-  document.getElementById('hdr-total').textContent     = hhmm(kpis.total);
-  document.getElementById('hdr-pick').textContent      = hhmm(kpis.pick);
-  document.getElementById('kpi-orders').textContent    = kpis.orders.toLocaleString();
-  document.getElementById('kpi-lines-sub').textContent = kpis.lines.toLocaleString() + ' line items';
-  document.getElementById('kpi-total').textContent     = hhmm(kpis.total);
-  document.getElementById('kpi-pick').textContent      = hhmm(kpis.pick);
-  document.getElementById('kpi-vap').textContent       = hhmm(kpis.vap);
-  document.getElementById('kpi-bill').textContent      = hhmm(kpis.bill);
+  document.getElementById('hdr-orders').textContent    = totOrders.toLocaleString();
+  document.getElementById('hdr-lines').textContent     = totLines.toLocaleString();
+  document.getElementById('hdr-total').textContent     = hhmm(wAvg('avg_total'));
+  document.getElementById('hdr-pick').textContent      = hhmm(wAvg('avg_order_to_pick'));
+  document.getElementById('kpi-orders').textContent    = totOrders.toLocaleString();
+  document.getElementById('kpi-lines-sub').textContent = totLines.toLocaleString() + ' line items';
+  document.getElementById('kpi-total').textContent     = hhmm(wAvg('avg_total'));
+  document.getElementById('kpi-pick').textContent      = hhmm(wAvg('avg_order_to_pick'));
+  document.getElementById('kpi-vap').textContent       = hhmm(wAvg('avg_pick_to_vap'));
+  document.getElementById('kpi-bill').textContent      = hhmm(wAvg('avg_vap_to_bill'));
 
   document.getElementById('charts-section').style.display = '';
   document.getElementById('table-section').style.display  = '';
 
-  updateFilterStatusBar();
-
-  buildCharts(chartFiltered.map(r => r[billKey]), chartFiltered);
-  buildTable(tableFiltered, createKey);
+  updateFilterRibbon();
+  buildCharts(chartRows.map(r => r[billKey]), chartRows);
+  buildTable(tableRows, createKey);
 }
 
-/* thin bar that echoes which filters are active */
-function updateFilterStatusBar() {
-  const bar       = document.getElementById('filter-status-bar');
-  const fsbBill   = document.getElementById('fsb-bill');
-  const fsbCreate = document.getElementById('fsb-create');
-
-  let anyActive = false;
-
+function updateFilterRibbon() {
+  const ribbon = document.getElementById('filter-ribbon');
+  const fBill  = document.getElementById('frb-bill');
+  const fCre   = document.getElementById('frb-create');
+  let any = false;
   if (billFrom || billTo) {
-    anyActive = true;
-    fsbBill.style.display = '';
-    fsbBill.textContent = `📅 Bill Date: ${billFrom || '…'} → ${billTo || '…'}`;
-  } else {
-    fsbBill.style.display = 'none';
-  }
-
+    any = true; fBill.style.display = '';
+    fBill.textContent = `📅 Bill Date: ${billFrom||'…'} → ${billTo||'…'}`;
+  } else { fBill.style.display = 'none'; }
   if (createFrom || createTo) {
-    anyActive = true;
-    fsbCreate.style.display = '';
-    fsbCreate.textContent = `🟣 Order Create: ${createFrom || '…'} → ${createTo || '…'}`;
-  } else {
-    fsbCreate.style.display = 'none';
-  }
-
-  bar.classList.toggle('visible', anyActive);
+    any = true; fCre.style.display = '';
+    fCre.textContent = `🟣 Order Create: ${createFrom||'…'} → ${createTo||'…'}`;
+  } else { fCre.style.display = 'none'; }
+  ribbon.classList.toggle('on', any);
 }
 
 /* ============================================================
-   CHARTS
+   CHARTS  (identical to original)
    ============================================================ */
 const SHARED_TOOLTIP = {
-  backgroundColor: '#1a1f2e', borderColor: '#2a3145', borderWidth: 1,
-  titleColor: '#fff', bodyColor: '#9aa3b8',
+  backgroundColor:'#1a1f2e', borderColor:'#2a3145', borderWidth:1,
+  titleColor:'#fff', bodyColor:'#9aa3b8',
 };
 
 const endLabelPlugin = {
@@ -644,25 +575,24 @@ const endLabelPlugin = {
   afterDatasetsDraw(chart) {
     const { ctx, data, chartArea } = chart;
     if (!chartArea) return;
-    const colors = ['#1a1f2e', '#1a6fc4', '#0e9e7e', '#c07a00'];
+    const colors = ['#1a1f2e','#1a6fc4','#0e9e7e','#c07a00'];
     ctx.save();
     ctx.font = 'bold 9px "Segoe UI", Arial, sans-serif';
     ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
     data.datasets.forEach((ds, di) => {
       let lastIdx = -1;
-      for (let i = ds.data.length - 1; i >= 0; i--) { if (ds.data[i] != null) { lastIdx = i; break; } }
+      for (let i = ds.data.length-1; i >= 0; i--) { if (ds.data[i] != null) { lastIdx=i; break; } }
       if (lastIdx < 0) return;
       const meta = chart.getDatasetMeta(di);
       if (!meta.visible) return;
-      const pt = meta.data[lastIdx];
-      if (!pt) return;
+      const pt = meta.data[lastIdx]; if (!pt) return;
       const label = hhmm(ds.data[lastIdx]);
       const color = colors[di];
-      const x = chartArea.right + 4, y = pt.y;
-      const w = ctx.measureText(label).width + 8, h = 14;
-      ctx.fillStyle = color + '22';
-      ctx.beginPath(); ctx.roundRect(x, y - h/2, w, h, 2); ctx.fill();
-      ctx.fillStyle = color; ctx.fillText(label, x + 4, y);
+      const x = chartArea.right+4, y = pt.y;
+      const w = ctx.measureText(label).width+8, h = 14;
+      ctx.fillStyle = color+'22';
+      ctx.beginPath(); ctx.roundRect(x, y-h/2, w, h, 2); ctx.fill();
+      ctx.fillStyle = color; ctx.fillText(label, x+4, y);
     });
     ctx.restore();
   }
@@ -677,15 +607,13 @@ const stackedLabelPlugin = {
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     const MIN_HEIGHT = 18;
     chart.data.datasets.forEach((ds, di) => {
-      const meta = chart.getDatasetMeta(di);
-      if (!meta.visible) return;
+      const meta = chart.getDatasetMeta(di); if (!meta.visible) return;
       meta.data.forEach((bar, i) => {
-        const val = ds.data[i];
-        if (!val) return;
-        const h = Math.abs(bar.height ?? (bar.base - bar.y));
+        const val = ds.data[i]; if (!val) return;
+        const h = Math.abs(bar.height ?? (bar.base-bar.y));
         if (h < MIN_HEIGHT) return;
         ctx.fillStyle = 'rgba(255,255,255,0.92)';
-        ctx.fillText(hhmm(val), bar.x, bar.y + h / 2);
+        ctx.fillText(hhmm(val), bar.x, bar.y+h/2);
       });
     });
     ctx.restore();
@@ -695,18 +623,14 @@ const stackedLabelPlugin = {
 const volumeLabelPlugin = {
   id: 'volumeLabel',
   afterDatasetsDraw(chart) {
-    const { ctx, chartArea } = chart;
-    if (!chartArea) return;
+    const { ctx, chartArea } = chart; if (!chartArea) return;
     ctx.save();
     ctx.font = '700 9px "Segoe UI", Arial, sans-serif';
     ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.fillStyle = '#3d4660';
-    const meta = chart.getDatasetMeta(0);
-    if (!meta.visible) return;
+    const meta = chart.getDatasetMeta(0); if (!meta.visible) return;
     meta.data.forEach((bar, i) => {
-      const val = chart.data.datasets[0].data[i];
-      if (!val) return;
-      const y = bar.y - 3;
-      if (y < chartArea.top + 2) return;
+      const val = chart.data.datasets[0].data[i]; if (!val) return;
+      const y = bar.y-3; if (y < chartArea.top+2) return;
       ctx.fillText(val.toLocaleString(), bar.x, y);
     });
     ctx.restore();
@@ -714,53 +638,53 @@ const volumeLabelPlugin = {
 };
 
 const BASE_SCALE = {
-  x: { ticks: { color:'#9aa3b8', maxRotation:45, autoSkip:true, maxTicksLimit:24, font:{size:9} }, grid: { color:'rgba(0,0,0,.06)' } },
-  y: { ticks: { color:'#9aa3b8', font:{size:9} }, grid: { color:'rgba(0,0,0,.06)' } }
+  x: { ticks:{color:'#9aa3b8',maxRotation:45,autoSkip:true,maxTicksLimit:24,font:{size:9}}, grid:{color:'rgba(0,0,0,.06)'} },
+  y: { ticks:{color:'#9aa3b8',font:{size:9}}, grid:{color:'rgba(0,0,0,.06)'} }
 };
 
-function dc(id) { if(charts[id]){charts[id].destroy();delete charts[id];} }
+function dc(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
 
 function buildCharts(labels, data) {
   dc('trend'); dc('stacked'); dc('volume');
 
   charts.trend = new Chart(document.getElementById('trendChart'), {
-    type: 'line', plugins: [endLabelPlugin],
-    data: { labels, datasets: [
+    type:'line', plugins:[endLabelPlugin],
+    data:{ labels, datasets:[
       { label:'Total',      data:data.map(r=>r.avg_total),         borderColor:'#1a1f2e', tension:.3, borderWidth:2,   pointRadius:3,   pointHoverRadius:5, fill:false },
       { label:'Order→Pick', data:data.map(r=>r.avg_order_to_pick), borderColor:'#1a6fc4', tension:.3, borderWidth:1.5, pointRadius:2.5, pointHoverRadius:4, fill:false },
       { label:'Pick→VAP',   data:data.map(r=>r.avg_pick_to_vap),   borderColor:'#0e9e7e', tension:.3, borderWidth:1.5, pointRadius:2.5, pointHoverRadius:4, fill:false },
       { label:'VAP→Bill',   data:data.map(r=>r.avg_vap_to_bill),   borderColor:'#c07a00', tension:.3, borderWidth:1.5, pointRadius:2.5, pointHoverRadius:4, fill:false },
     ]},
-    options: {
+    options:{
       responsive:true, maintainAspectRatio:false, animation:false,
-      layout: { padding: { right: 0 } },
-      plugins: { legend: { display: false }, tooltip: { ...SHARED_TOOLTIP, callbacks: { label: c => ` ${c.dataset.label}: ${hhmm(c.parsed.y ?? 0)}` } } },
-      scales: { x: { ...BASE_SCALE.x }, y: { ...BASE_SCALE.y, title: { display:true, text:'Hours', color:'#9aa3b8', font:{size:9} } } }
+      layout:{padding:{right:0}},
+      plugins:{ legend:{display:false}, tooltip:{...SHARED_TOOLTIP, callbacks:{label:c=>` ${c.dataset.label}: ${hhmm(c.parsed.y??0)}`}}, datalabels:{display:false} },
+      scales:{ x:{...BASE_SCALE.x}, y:{...BASE_SCALE.y, title:{display:true,text:'Hours',color:'#9aa3b8',font:{size:9}}} }
     }
   });
 
   charts.stacked = new Chart(document.getElementById('stackedChart'), {
-    type: 'bar', plugins: [stackedLabelPlugin],
-    data: { labels, datasets: [
+    type:'bar', plugins:[stackedLabelPlugin],
+    data:{ labels, datasets:[
       { label:'Order→Pick', data:data.map(r=>r.avg_order_to_pick), backgroundColor:'rgba(26,111,196,.80)',  stack:'a' },
       { label:'Pick→VAP',   data:data.map(r=>r.avg_pick_to_vap),   backgroundColor:'rgba(14,158,126,.80)', stack:'a' },
       { label:'VAP→Bill',   data:data.map(r=>r.avg_vap_to_bill),   backgroundColor:'rgba(192,122,0,.80)',  stack:'a' },
     ]},
-    options: {
+    options:{
       responsive:true, maintainAspectRatio:false, animation:false,
-      plugins: { legend: { display:true, labels:{ color:'#6b7590', boxWidth:10, font:{size:9} } }, tooltip: { ...SHARED_TOOLTIP, callbacks: { label: c => ` ${c.dataset.label}: ${hhmm(c.parsed.y ?? 0)}` } } },
-      scales: { x: { ...BASE_SCALE.x, stacked:true }, y: { ...BASE_SCALE.y, stacked:true } }
+      plugins:{ legend:{display:true, labels:{color:'#6b7590',boxWidth:10,font:{size:9}}}, tooltip:{...SHARED_TOOLTIP, callbacks:{label:c=>` ${c.dataset.label}: ${hhmm(c.parsed.y??0)}`}} },
+      scales:{ x:{...BASE_SCALE.x, stacked:true}, y:{...BASE_SCALE.y, stacked:true} }
     }
   });
 
   charts.volume = new Chart(document.getElementById('volumeChart'), {
-    type: 'bar', plugins: [volumeLabelPlugin],
-    data: { labels, datasets: [{ label:'Orders', data:data.map(r=>r.orders), backgroundColor:'rgba(204,31,45,.70)', borderColor:'#cc1f2d', borderWidth:1 }] },
-    options: {
+    type:'bar', plugins:[volumeLabelPlugin],
+    data:{ labels, datasets:[{ label:'Orders', data:data.map(r=>r.orders), backgroundColor:'rgba(204,31,45,.70)', borderColor:'#cc1f2d', borderWidth:1 }] },
+    options:{
       responsive:true, maintainAspectRatio:false, animation:false,
-      layout: { padding: { top: 16 } },
-      plugins: { legend: { display:false }, tooltip: { ...SHARED_TOOLTIP, callbacks: { label: c => ` Orders: ${c.parsed.y.toLocaleString()}` } } },
-      scales: { x: { ...BASE_SCALE.x }, y: { ...BASE_SCALE.y } }
+      layout:{padding:{top:16}},
+      plugins:{ legend:{display:false}, tooltip:{...SHARED_TOOLTIP, callbacks:{label:c=>` Orders: ${c.parsed.y.toLocaleString()}`}} },
+      scales:{ x:{...BASE_SCALE.x}, y:{...BASE_SCALE.y} }
     }
   });
 }
@@ -768,16 +692,15 @@ function buildCharts(labels, data) {
 /* ============================================================
    TABLE + DRILL-DOWN
    ============================================================ */
-let currentPeriodKey  = 'order_day';
-let currentCreateKey  = 'order_day';
+let currentPeriodKey = 'order_day';
 
 function buildTable(data, periodKey) {
   currentPeriodKey = periodKey;
-  currentCreateKey = periodKey;
   const avgTotal = rawData.kpis.avg_total;
+
   const sorted = [...data].sort((a,b) => {
-    let va = sortCol==='period' ? (a[periodKey] ?? '') : (a[sortCol] ?? 0);
-    let vb = sortCol==='period' ? (b[periodKey] ?? '') : (b[sortCol] ?? 0);
+    let va = sortCol==='period' ? (a[periodKey]??'') : (a[sortCol]??0);
+    let vb = sortCol==='period' ? (b[periodKey]??'') : (b[sortCol]??0);
     if (typeof va==='string') return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
     return sortAsc ? va-vb : vb-va;
   });
@@ -786,13 +709,12 @@ function buildTable(data, periodKey) {
   tbody.innerHTML = '';
 
   sorted.forEach((r,i) => {
-    const period  = r[periodKey];
-    // Drill-down uses the period value + periodKey; loadDrillData handles mapping back to bill_days
-    const total   = r.avg_total;
-    const pct     = total / avgTotal;
-    const pillCls = pct <= .85 ? 'pill-fast' : pct <= 1.15 ? 'pill-normal' : 'pill-slow';
-    const pillTxt = pct <= .85 ? 'Fast' : pct <= 1.15 ? 'Normal' : 'Slow';
-    const totalCls = pct > 1.15 ? 'slow-val' : pct <= .85 ? 'fast-val' : 'norm-val';
+    const period   = r[periodKey];
+    const total    = r.avg_total;
+    const pct      = total / avgTotal;
+    const pillCls  = pct<=.85 ? 'pill-fast' : pct<=1.15 ? 'pill-normal' : 'pill-slow';
+    const pillTxt  = pct<=.85 ? 'Fast' : pct<=1.15 ? 'Normal' : 'Slow';
+    const totalCls = pct>1.15 ? 'slow-val' : pct<=.85 ? 'fast-val' : 'norm-val';
 
     const tr = document.createElement('tr');
     tr.className = 'period-row';
@@ -826,16 +748,12 @@ async function toggleDrill(period, idx, periodKey) {
 
   const isOpen = drillTr.classList.contains('visible');
   if (isOpen) {
-    drillInner.classList.remove('open');
-    drillTr.classList.remove('visible');
-    icon.classList.remove('open');
-    periodRow.classList.remove('expanded');
+    drillInner.classList.remove('open'); drillTr.classList.remove('visible');
+    icon.classList.remove('open'); periodRow.classList.remove('expanded');
     return;
   }
 
-  drillTr.classList.add('visible');
-  icon.classList.add('open');
-  periodRow.classList.add('expanded');
+  drillTr.classList.add('visible'); icon.classList.add('open'); periodRow.classList.add('expanded');
 
   if (!drillCache[period]) {
     drillInner.innerHTML = '<div class="drill-loading"><span class="spinner"></span> Loading orders…</div>';
@@ -852,36 +770,33 @@ async function toggleDrill(period, idx, periodKey) {
   drillInner.classList.add('open');
 }
 
+/*
+  The table groups by order_day/week/month but Firebase stores rows under bill_day keys.
+  We find all bill_days whose order_day matches this period, fetch those buckets,
+  then filter down to rows whose order_day actually matches.
+*/
 async function loadDrillData(period, periodKey) {
-  // Firebase rows are always stored under bill_day keys
-  if (periodKey === 'bill_day') {
-    const snap = await fbGet(`${FB_ROWS}/${period.replace(/-/g,'_')}`);
-    return snap ? Object.values(snap) : [];
-  }
-
-  // Find all daily agg rows that match this period, then load their bill_day Firebase keys
-  const billDays = (rawData.daily || [])
+  const matchingBillDays = (rawData.daily || [])
     .filter(r => {
-      if (periodKey === 'bill_week')   return getWeekStart(r.bill_day) === period;
-      if (periodKey === 'bill_month')  return r.bill_day.slice(0,7) === period;
-      // order_day/week/month — match by order_day stored on daily agg rows
       const od = r.order_day || r.bill_day;
       if (periodKey === 'order_day')   return od === period;
       if (periodKey === 'order_week')  return getWeekStart(od) === period;
       if (periodKey === 'order_month') return od.slice(0,7) === period;
+      if (periodKey === 'bill_day')    return r.bill_day === period;
+      if (periodKey === 'bill_week')   return getWeekStart(r.bill_day) === period;
+      if (periodKey === 'bill_month')  return r.bill_day.slice(0,7) === period;
       return false;
     })
     .map(r => r.bill_day);
 
   const allRows = [];
-  for (const d of billDays) {
+  for (const d of matchingBillDays) {
     try {
       const snap = await fbGet(`${FB_ROWS}/${d.replace(/-/g,'_')}`);
       if (snap) allRows.push(...Object.values(snap));
     } catch(e) {}
   }
 
-  // For order-keyed lookups, filter fetched rows to only those whose order_day matches
   if (periodKey.startsWith('order_')) {
     return allRows.filter(r => {
       const od = r.order_day || r.bill_day;
@@ -905,7 +820,7 @@ function renderDrillTable(container, rows, period) {
     container.innerHTML = '<div class="drill-loading" style="color:var(--muted)">No order detail available for this period. Re-import data to enable drill-down.</div>';
     return;
   }
-  const sorted = [...rows].sort((a,b) => (b.tot||0) - (a.tot||0));
+  const sorted = [...rows].sort((a,b) => (b.tot||0)-(a.tot||0));
   const uniqueOrders = new Set(sorted.map(r=>r.order)).size;
   const avg = rawData.kpis.avg_total;
 
@@ -930,27 +845,27 @@ function renderDrillTable(container, rows, period) {
 
   const tbody = document.createElement('tbody');
   for (const r of sorted) {
-    const tot = r.tot || 0;
-    const pct = tot / avg;
-    const pillCls = pct <= .85 ? 'pill-fast' : pct <= 1.15 ? 'pill-normal' : 'pill-slow';
-    const pillTxt = pct <= .85 ? 'Fast' : pct <= 1.15 ? 'Normal' : 'Slow';
-    const tCls    = pct > 1.15 ? 'slow-val' : pct <= .85 ? 'fast-val' : 'norm-val';
+    const tot = r.tot||0;
+    const pct = tot/avg;
+    const pillCls = pct<=.85?'pill-fast':pct<=1.15?'pill-normal':'pill-slow';
+    const pillTxt = pct<=.85?'Fast':pct<=1.15?'Normal':'Slow';
+    const tCls    = pct>1.15?'slow-val':pct<=.85?'fast-val':'norm-val';
     const tr = document.createElement('tr');
     const cells = [
-      { text: r.order||'—',        style: 'font-weight:700;color:var(--text)' },
-      { text: r.sku||'—' },
-      { text: r.description||'—',  style: 'max-width:180px;overflow:hidden;text-overflow:ellipsis' },
-      { text: r.qty||'—',          cls: 'num' },
-      { text: r.pick_user||'—' },
-      { text: r.vas_user||'—' },
-      { text: r.order_dt_fmt||'—', style: 'white-space:nowrap;color:var(--muted)' },
-      { text: r.pick_dt_fmt||'—',  style: 'white-space:nowrap;color:var(--muted)' },
-      { text: r.vap_dt_fmt||'—',   style: 'white-space:nowrap;color:var(--muted)' },
-      { text: r.bill_dt_fmt||'—',  style: 'white-space:nowrap;color:var(--muted)' },
-      { text: hhmm(r.o2p||0),      cls: 'num' },
-      { text: hhmm(r.p2v||0),      cls: 'num' },
-      { text: hhmm(r.v2b||0),      cls: 'num' },
-      { text: hhmm(tot),            cls: `num ${tCls}` },
+      { text:r.order||'—',        style:'font-weight:700;color:var(--text)' },
+      { text:r.sku||'—' },
+      { text:r.description||'—',  style:'max-width:180px;overflow:hidden;text-overflow:ellipsis' },
+      { text:r.qty||'—',          cls:'num' },
+      { text:r.pick_user||'—' },
+      { text:r.vas_user||'—' },
+      { text:r.order_dt_fmt||'—', style:'white-space:nowrap;color:var(--muted)' },
+      { text:r.pick_dt_fmt||'—',  style:'white-space:nowrap;color:var(--muted)' },
+      { text:r.vap_dt_fmt||'—',   style:'white-space:nowrap;color:var(--muted)' },
+      { text:r.bill_dt_fmt||'—',  style:'white-space:nowrap;color:var(--muted)' },
+      { text:hhmm(r.o2p||0),      cls:'num' },
+      { text:hhmm(r.p2v||0),      cls:'num' },
+      { text:hhmm(r.v2b||0),      cls:'num' },
+      { text:hhmm(tot),            cls:`num ${tCls}` },
     ];
     for (const c of cells) {
       const td = document.createElement('td');
@@ -959,12 +874,12 @@ function renderDrillTable(container, rows, period) {
       td.textContent = c.text;
       tr.appendChild(td);
     }
-    const tdStatus = document.createElement('td');
+    const tdS = document.createElement('td');
     const pill = document.createElement('span');
     pill.className = `pill ${pillCls}`;
     pill.textContent = pillTxt;
-    tdStatus.appendChild(pill);
-    tr.appendChild(tdStatus);
+    tdS.appendChild(pill);
+    tr.appendChild(tdS);
     tbody.appendChild(tr);
   }
   table.appendChild(tbody);
@@ -978,7 +893,7 @@ function renderDrillTable(container, rows, period) {
    TABLE SORT
    ============================================================ */
 function sortTable(col) {
-  if (sortCol === col) sortAsc = !sortAsc; else { sortCol = col; sortAsc = true; }
+  if (sortCol===col) sortAsc=!sortAsc; else { sortCol=col; sortAsc=true; }
   if (rawData) render();
 }
 
@@ -990,18 +905,18 @@ function setView(v) {
   ['day','week','month'].forEach(x => document.getElementById('vt-'+x).classList.toggle('active', x===v));
   if (rawData) render();
 }
-
 function applyFilters() {
   billFrom   = document.getElementById('bill-from').value   || null;
   billTo     = document.getElementById('bill-to').value     || null;
   createFrom = document.getElementById('create-from').value || null;
   createTo   = document.getElementById('create-to').value   || null;
+  drillCache = {};
   if (rawData) render();
 }
-
 function clearFilters() {
-  billFrom = billTo = createFrom = createTo = null;
-  ['bill-from','bill-to','create-from','create-to'].forEach(id => document.getElementById(id).value = '');
+  billFrom=billTo=createFrom=createTo=null;
+  ['bill-from','bill-to','create-from','create-to'].forEach(id => document.getElementById(id).value='');
+  drillCache = {};
   if (rawData) render();
 }
 
@@ -1016,12 +931,12 @@ function closeImport() {
   importFile = null;
 }
 const dropZone = document.getElementById('drop-zone');
-dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragging'); });
+dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('dragging'); });
 dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragging'));
-dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragging'); if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
+dropZone.addEventListener('drop',      e => { e.preventDefault(); dropZone.classList.remove('dragging'); if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
 
-function handleFile(f) { importFile = f; setProgress('✓ ' + f.name); document.getElementById('import-btn').disabled = false; }
-function setProgress(msg) { document.getElementById('import-progress').innerHTML = msg; }
+function handleFile(f) { importFile=f; setProgress('✓ '+f.name); document.getElementById('import-btn').disabled=false; }
+function setProgress(msg) { document.getElementById('import-progress').innerHTML=msg; }
 
 async function doImport() {
   if (!importFile) return;
@@ -1029,11 +944,11 @@ async function doImport() {
   setProgress('<span class="spinner"></span> Reading Excel…');
   try {
     const rows = await readXlsx(importFile);
-    setProgress('<span class="spinner"></span> Processing ' + rows.length.toLocaleString() + ' rows from file…');
-    await new Promise(r => setTimeout(r, 30));
-    const { agg: newAgg, byDay: newByDay, cleanRows: newClean } = processRows(rows);
+    setProgress('<span class="spinner"></span> Processing ' + rows.length.toLocaleString() + ' rows…');
+    await new Promise(r => setTimeout(r,30));
+    const { agg:newAgg, byDay:newByDay, cleanRows:newClean } = processRows(rows);
 
-    setProgress('<span class="spinner"></span> Fetching existing Firebase data to merge…');
+    setProgress('<span class="spinner"></span> Fetching existing Firebase data…');
     let existingAgg = null;
     try { existingAgg = await fbGet(FB_AGG); } catch(e) {}
 
@@ -1041,48 +956,44 @@ async function doImport() {
     let skipped = 0;
 
     if (existingAgg) {
-      setProgress('<span class="spinner"></span> Loading existing order keys for deduplication…');
+      setProgress('<span class="spinner"></span> Loading existing keys for deduplication…');
       const existingKeys = new Set();
-      const existingDays = (existingAgg.daily || []).map(r => r.bill_day);
-      for (let i = 0; i < existingDays.length; i++) {
-        if (i % 20 === 0) setProgress(`<span class="spinner"></span> Reading existing data… ${i}/${existingDays.length} days`);
+      const existingDays = (existingAgg.daily||[]).map(r=>r.bill_day);
+      for (let i=0; i<existingDays.length; i++) {
+        if (i%20===0) setProgress(`<span class="spinner"></span> Reading existing data… ${i}/${existingDays.length} days`);
         try {
           const snap = await fbGet(`${FB_ROWS}/${existingDays[i].replace(/-/g,'_')}`);
-          if (snap) Object.values(snap).forEach(r => existingKeys.add(r.order + '|' + r.sku + '|' + r.bill_day));
+          if (snap) Object.values(snap).forEach(r => existingKeys.add(r.order+'|'+r.sku+'|'+r.bill_day));
         } catch(e) {}
       }
+
       const before = mergedClean.length;
-      mergedClean = mergedClean.filter(r => !existingKeys.has(r.order + '|' + r.sku + '|' + r.bill_day));
+      mergedClean = mergedClean.filter(r => !existingKeys.has(r.order+'|'+r.sku+'|'+r.bill_day));
       skipped = before - mergedClean.length;
 
       if (mergedClean.length === 0) {
-        // No new rows — but still rebuild aggregates from existing data so structural
-        // changes (e.g. new order_daily/weekly/monthly fields) are pushed to Firebase.
-        setProgress(`<span class="spinner"></span> No new rows — rebuilding aggregates from existing data (${skipped.toLocaleString()} records)…`);
-        await new Promise(r => setTimeout(r, 30));
-        const allExistingRows = [];
+        // No new rows — rebuild aggregates so order_day lands on daily rows in Firebase
+        setProgress(`<span class="spinner"></span> No new rows — rebuilding aggregates from ${skipped.toLocaleString()} existing records…`);
+        await new Promise(r => setTimeout(r,30));
+        const allExisting = [];
         for (const d of existingDays) {
           try {
             const snap = await fbGet(`${FB_ROWS}/${d.replace(/-/g,'_')}`);
-            if (snap) allExistingRows.push(...Object.values(snap));
+            if (snap) allExisting.push(...Object.values(snap));
           } catch(e) {}
         }
-        const { agg: rebuiltAgg } = buildAggAndByDay(allExistingRows);
-        rebuiltAgg.uploaded_at = new Date().toLocaleString();
+        const { agg:rebuilt } = buildAggAndByDay(allExisting);
+        rebuilt.uploaded_at = new Date().toLocaleString();
         setProgress('<span class="spinner"></span> Uploading rebuilt aggregates…');
-        await fbPut(FB_AGG, rebuiltAgg);
-        rawData = rebuiltAgg;
-        drillCache = {};
-        document.getElementById('data-info').textContent = 'Updated: ' + rebuiltAgg.uploaded_at;
+        await fbPut(FB_AGG, rebuilt);
+        rawData = rebuilt; drillCache = {};
+        document.getElementById('data-info').textContent = 'Updated: '+rebuilt.uploaded_at;
         setProgress(`✅ Aggregates rebuilt from ${skipped.toLocaleString()} existing records. No new rows added.`);
-        render();
-        setTimeout(closeImport, 3500);
-        return;
+        render(); setTimeout(closeImport, 3500); return;
       }
 
-      setProgress(`<span class="spinner"></span> ${mergedClean.length.toLocaleString()} new records (${skipped.toLocaleString()} duplicates skipped). Loading full dataset…`);
-      await new Promise(r => setTimeout(r, 30));
-      setProgress('<span class="spinner"></span> Loading full existing dataset for re-aggregation…');
+      setProgress(`<span class="spinner"></span> ${mergedClean.length.toLocaleString()} new records (${skipped.toLocaleString()} dupes skipped). Loading full dataset…`);
+      await new Promise(r => setTimeout(r,30));
       const allExistingRows = [];
       for (const d of existingDays) {
         try {
@@ -1093,38 +1004,34 @@ async function doImport() {
       mergedClean = [...allExistingRows, ...mergedClean];
     }
 
-    setProgress('<span class="spinner"></span> Building aggregates from merged dataset…');
-    await new Promise(r => setTimeout(r, 30));
-    const { agg: finalAgg, byDay: finalByDay } = buildAggAndByDay(mergedClean);
+    setProgress('<span class="spinner"></span> Building aggregates…');
+    await new Promise(r => setTimeout(r,30));
+    const { agg:finalAgg, byDay:finalByDay } = buildAggAndByDay(mergedClean);
     finalAgg.uploaded_at = new Date().toLocaleString();
 
     setProgress('<span class="spinner"></span> Uploading aggregates…');
     await fbPut(FB_AGG, finalAgg);
 
     const newDayKeys = Object.keys(newByDay);
-    setProgress(`<span class="spinner"></span> Uploading ${newDayKeys.length} day(s) of new order detail…`);
-    for (let i = 0; i < newDayKeys.length; i++) {
+    setProgress(`<span class="spinner"></span> Uploading ${newDayKeys.length} day(s) of order detail…`);
+    for (let i=0; i<newDayKeys.length; i++) {
       const d = newDayKeys[i];
       const dayKey = d.replace(/-/g,'_');
-      let existingDaySnap = null;
-      try { existingDaySnap = await fbGet(`${FB_ROWS}/${dayKey}`); } catch(e) {}
-      const merged = { ...(existingDaySnap || {}), ...newByDay[d] };
-      await fbPut(`${FB_ROWS}/${dayKey}`, merged);
-      if ((i+1) % 10 === 0 || (i+1) === newDayKeys.length)
+      let existingSnap = null;
+      try { existingSnap = await fbGet(`${FB_ROWS}/${dayKey}`); } catch(e) {}
+      await fbPut(`${FB_ROWS}/${dayKey}`, {...(existingSnap||{}), ...newByDay[d]});
+      if ((i+1)%10===0||(i+1)===newDayKeys.length)
         setProgress(`<span class="spinner"></span> Uploading detail… ${i+1}/${newDayKeys.length} days`);
     }
 
-    rawData = finalAgg;
-    drillCache = {};
-    document.getElementById('data-info').textContent = 'Updated: ' + finalAgg.uploaded_at;
-    const newMsg = skipped > 0
-      ? `✅ Done! Added ${newClean.length.toLocaleString()} new records (${skipped.toLocaleString()} duplicates skipped). Total: ${finalAgg.kpis.total_lines.toLocaleString()} lines.`
-      : `✅ Done! ${finalAgg.kpis.total_lines.toLocaleString()} total records.`;
-    setProgress(newMsg);
-    render();
-    setTimeout(closeImport, 3500);
+    rawData = finalAgg; drillCache = {};
+    document.getElementById('data-info').textContent = 'Updated: '+finalAgg.uploaded_at;
+    setProgress(skipped>0
+      ? `✅ Done! Added ${newClean.length.toLocaleString()} records (${skipped.toLocaleString()} dupes skipped). Total: ${finalAgg.kpis.total_lines.toLocaleString()} lines.`
+      : `✅ Done! ${finalAgg.kpis.total_lines.toLocaleString()} total records.`);
+    render(); setTimeout(closeImport,3500);
   } catch(e) {
-    setProgress('❌ ' + e.message);
+    setProgress('❌ '+e.message);
     document.getElementById('import-btn').disabled = false;
   }
 }
@@ -1134,9 +1041,9 @@ function readXlsx(file) {
     const reader = new FileReader();
     reader.onload = e => {
       try {
-        const wb = XLSX.read(e.target.result, { type:'array', cellDates:true });
+        const wb = XLSX.read(e.target.result, {type:'array',cellDates:true});
         const ws = wb.Sheets[wb.SheetNames[0]];
-        res(XLSX.utils.sheet_to_json(ws, { raw:false, dateNF:'yyyy-mm-dd' }));
+        res(XLSX.utils.sheet_to_json(ws, {raw:false,dateNF:'yyyy-mm-dd'}));
       } catch(err) { rej(err); }
     };
     reader.onerror = rej;
@@ -1145,31 +1052,28 @@ function readXlsx(file) {
 }
 
 function fmtDt(dt) {
-  if (!dt || isNaN(dt.getTime())) return '—';
-  const mo = dt.getMonth()+1, d = dt.getDate(), y = dt.getFullYear();
-  let h = dt.getHours(), m = dt.getMinutes();
-  const ampm = h >= 12 ? 'PM' : 'AM';
-  h = h % 12 || 12;
+  if (!dt||isNaN(dt.getTime())) return '—';
+  const mo=dt.getMonth()+1, d=dt.getDate(), y=dt.getFullYear();
+  let h=dt.getHours(), m=dt.getMinutes();
+  const ampm=h>=12?'PM':'AM'; h=h%12||12;
   return `${mo}/${d}/${y} ${h}:${String(m).padStart(2,'0')} ${ampm}`;
 }
 
 function hhmm(decimalHours) {
-  if (decimalHours == null || isNaN(decimalHours)) return '—';
-  const totalMins = Math.round(Math.abs(decimalHours) * 60);
-  const h = Math.floor(totalMins / 60);
-  const m = totalMins % 60;
-  return `${h}:${String(m).padStart(2,'0')}`;
+  if (decimalHours==null||isNaN(decimalHours)) return '—';
+  const totalMins = Math.round(Math.abs(decimalHours)*60);
+  return `${Math.floor(totalMins/60)}:${String(totalMins%60).padStart(2,'0')}`;
 }
 
 function processRows(rows) {
   const clean = [];
   for (const r of rows) {
     try {
-      const od = r['order_date']||r['order date']||'';
-      const ot = r['order_time']||r['order _time']||r['order time']||'';
-      const pd = r['pick_date']||'';  const pt = r['pick_time']||'';
-      const vd = r['vap_date']||'';   const vt = r['vap_time']||'';
-      const bd = r['bill_date']||'';  const bt = r['bill_time']||'';
+      const od=r['order_date']||r['order date']||'';
+      const ot=r['order_time']||r['order _time']||r['order time']||'';
+      const pd=r['pick_date']||'';  const pt=r['pick_time']||'';
+      const vd=r['vap_date']||'';   const vt=r['vap_time']||'';
+      const bd=r['bill_date']||'';  const bt=r['bill_time']||'';
       if (!od||!pd||!vd||!bd) continue;
       const orderDt = new Date(od+'T'+(ot||'00:00:00'));
       const pickDt  = new Date(pd+'T'+(pt||'00:00:00'));
@@ -1185,21 +1089,22 @@ function processRows(rows) {
         pick_user:    String(r['pick_user']||''),
         vas_user:     String(r['vas_user']||''),
         bill_day:     bd.slice(0,10),
-        order_day:    od.slice(0,10),   // ← NEW: stored for create-date filter
+        order_day:    od.slice(0,10),   /* stored on every raw row AND on daily agg row */
         order_dt_fmt: fmtDt(orderDt),
         pick_dt_fmt:  fmtDt(pickDt),
         vap_dt_fmt:   fmtDt(vapDt),
         bill_dt_fmt:  fmtDt(billDt),
-        o2p: round2(o2p), p2v: round2(p2v), v2b: round2(v2b), tot: round2(tot)
+        o2p:round2(o2p), p2v:round2(p2v), v2b:round2(v2b), tot:round2(tot)
       });
     } catch(e) {}
   }
   const { agg, byDay } = buildAggAndByDay(clean);
   agg.uploaded_at = new Date().toLocaleString();
-  return { agg, byDay, cleanRows: clean };
+  return { agg, byDay, cleanRows:clean };
 }
 
 function buildAggAndByDay(clean) {
+  /* byDay — keyed by bill_day for Firebase storage */
   const byDay = {};
   clean.forEach((r,i) => {
     const d = r.bill_day;
@@ -1211,21 +1116,25 @@ function buildAggAndByDay(clean) {
     const m = {};
     for (const r of clean) {
       const k = keyFn(r);
-      if (!m[k]) m[k] = { orders:new Set(), lines:0, so2p:0, sp2v:0, sv2b:0, stot:0, minOrderDay: r.order_day || r.bill_day };
+      if (!m[k]) m[k] = { orders:new Set(), lines:0, so2p:0, sp2v:0, sv2b:0, stot:0, minOrderDay:r.order_day||r.bill_day };
       m[k].orders.add(r.order);
       m[k].lines++;
-      m[k].so2p += r.o2p; m[k].sp2v += r.p2v; m[k].sv2b += r.v2b; m[k].stot += r.tot;
-      const od = r.order_day || r.bill_day;
+      m[k].so2p+=r.o2p; m[k].sp2v+=r.p2v; m[k].sv2b+=r.v2b; m[k].stot+=r.tot;
+      const od = r.order_day||r.bill_day;
       if (od < m[k].minOrderDay) m[k].minOrderDay = od;
     }
     return m;
   }
 
-  function mapToArr(m, periodKey, includeOrderDay) {
+  /*
+    Daily rows carry order_day so render() can re-group by order create date
+    entirely client-side without a separate Firebase array.
+  */
+  function mapToArr(m, periodKey, addOrderDay) {
     return Object.entries(m).sort((a,b)=>a[0]<b[0]?-1:1).map(([k,g])=>({
       [periodKey]: k,
-      ...(includeOrderDay ? { order_day: g.minOrderDay } : {}),
-      orders: g.orders.size, lines: g.lines,
+      ...(addOrderDay ? { order_day: g.minOrderDay } : {}),
+      orders:g.orders.size, lines:g.lines,
       avg_order_to_pick: round2(g.so2p/g.lines),
       avg_pick_to_vap:   round2(g.sp2v/g.lines),
       avg_vap_to_bill:   round2(g.sv2b/g.lines),
@@ -1233,11 +1142,9 @@ function buildAggAndByDay(clean) {
     }));
   }
 
-  // Bill-date aggregations — used by charts
-  // daily rows also carry order_day so client can re-group by order create date
-  const daily   = mapToArr(aggMap(r => r.bill_day),               'bill_day',  true);
-  const weekly  = mapToArr(aggMap(r => getWeekStart(r.bill_day)), 'bill_week', false);
-  const monthly = mapToArr(aggMap(r => r.bill_day.slice(0,7)),    'bill_month',false);
+  const daily   = mapToArr(aggMap(r=>r.bill_day),               'bill_day',   true);
+  const weekly  = mapToArr(aggMap(r=>getWeekStart(r.bill_day)), 'bill_week',  false);
+  const monthly = mapToArr(aggMap(r=>r.bill_day.slice(0,7)),    'bill_month', false);
 
   const n = clean.length;
   const kpis = {
@@ -1249,14 +1156,14 @@ function buildAggAndByDay(clean) {
     avg_total:         round2(clean.reduce((s,r)=>s+r.tot,0)/n),
   };
 
-  return { agg: { kpis, daily, weekly, monthly }, byDay };
+  return { agg:{ kpis, daily, weekly, monthly }, byDay };
 }
 
 function round2(n) { return Math.round(n*100)/100; }
 
 function setStatus(msg) {
   const b = document.getElementById('status-bar');
-  b.style.display = ''; b.innerHTML = msg;
+  b.style.display=''; b.innerHTML=msg;
 }
 
 if (typeof ResizeObserver !== 'undefined') {
