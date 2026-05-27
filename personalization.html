@@ -514,7 +514,7 @@ function render() {
   if (!rawData) return;
   document.getElementById('status-bar').style.display = 'none';
 
-  // Charts use bill-date aggregations (trend over ship date)
+  // Bill-date source — used by charts
   const billSource = view === 'day'  ? rawData.daily
                    : view === 'week' ? rawData.weekly
                    : rawData.monthly;
@@ -522,35 +522,55 @@ function render() {
                 : view === 'week' ? 'bill_week'
                 : 'bill_month';
 
-  // Table uses order-create-date aggregations stored as order_daily/weekly/monthly.
-  // Falls back to bill-date source for data imported before this field existed.
-  const hasOrderAgg = !!rawData.order_daily;
-  const createSource = view === 'day'  ? (rawData.order_daily   || rawData.daily)
-                     : view === 'week' ? (rawData.order_weekly  || rawData.weekly)
-                     : (rawData.order_monthly || rawData.monthly);
+  // ── Build order-create-date aggregation client-side from rawData.daily ──
+  // Each daily row carries order_day (set during import). We re-group them
+  // here so the table period key is always the order create date, not bill date.
   const createKey = view === 'day'  ? 'order_day'
                   : view === 'week' ? 'order_week'
                   : 'order_month';
-  // Field actually present on each row in createSource
-  const tablePeriodField = hasOrderAgg ? createKey : billKey;
 
-  // Filter table rows by order create date (and optionally bill date)
-  let tableFiltered = (createSource || []).filter(r => {
-    const cd = r[tablePeriodField];
-    if (createFrom && cd < createFrom) return false;
-    if (createTo   && cd > createTo)   return false;
-    // Bill date filter applies to the bill_day stored on every row
-    const bd = r.bill_day || cd;
+  function clientAgg(keyFn) {
+    const m = {};
+    for (const r of (rawData.daily || [])) {
+      const k = keyFn(r);
+      if (!m[k]) m[k] = { orders:0, lines:0, so2p:0, sp2v:0, sv2b:0, stot:0 };
+      m[k].orders += r.orders; m[k].lines += r.lines;
+      m[k].so2p   += r.avg_order_to_pick * r.lines;
+      m[k].sp2v   += r.avg_pick_to_vap   * r.lines;
+      m[k].sv2b   += r.avg_vap_to_bill   * r.lines;
+      m[k].stot   += r.avg_total         * r.lines;
+    }
+    return Object.entries(m).sort((a,b)=>a[0]<b[0]?-1:1).map(([k,g])=>({
+      [createKey]: k,
+      orders: g.orders, lines: g.lines,
+      avg_order_to_pick: round2(g.so2p/g.lines),
+      avg_pick_to_vap:   round2(g.sp2v/g.lines),
+      avg_vap_to_bill:   round2(g.sv2b/g.lines),
+      avg_total:         round2(g.stot/g.lines),
+    }));
+  }
+
+  const createSource = view === 'day'
+    ? clientAgg(r => r.order_day || r.bill_day)
+    : view === 'week'
+    ? clientAgg(r => getWeekStart(r.order_day || r.bill_day))
+    : clientAgg(r => (r.order_day || r.bill_day).slice(0,7));
+
+  // Apply bill-date filter to charts
+  let chartFiltered = (billSource || []).filter(r => {
+    const bd = r[billKey];
     if (billFrom && bd < billFrom) return false;
     if (billTo   && bd > billTo)   return false;
     return true;
   });
 
-  // Filter chart rows by bill date only
-  let chartFiltered = (billSource || []).filter(r => {
-    const bd = r[billKey];
-    if (billFrom && bd < billFrom) return false;
-    if (billTo   && bd > billTo)   return false;
+  // Apply create-date filter (and optionally bill-date filter) to table
+  let tableFiltered = createSource.filter(r => {
+    const cd = r[createKey];
+    if (createFrom && cd < createFrom) return false;
+    if (createTo   && cd > createTo)   return false;
+    if (billFrom   && cd < billFrom)   return false;
+    if (billTo     && cd > billTo)     return false;
     return true;
   });
 
@@ -580,10 +600,8 @@ function render() {
 
   updateFilterStatusBar();
 
-  // Charts still group by bill/ship date
   buildCharts(chartFiltered.map(r => r[billKey]), chartFiltered);
-  // Table groups by order CREATE date
-  buildTable(tableFiltered, tablePeriodField);
+  buildTable(tableFiltered, createKey);
 }
 
 /* thin bar that echoes which filters are active */
@@ -768,14 +786,8 @@ function buildTable(data, periodKey) {
   tbody.innerHTML = '';
 
   sorted.forEach((r,i) => {
-    const period    = r[periodKey];
-    // For drill-down Firebase lookup we need the bill_day period equivalent
-    // Each agg row carries bill_day (daily) or bill_week/bill_month; fall back gracefully
-    const billPeriod = r.bill_day || r.bill_week || r.bill_month || period;
-    const billKey    = r.bill_day   ? 'bill_day'
-                     : r.bill_week  ? 'bill_week'
-                     : r.bill_month ? 'bill_month'
-                     : periodKey;
+    const period  = r[periodKey];
+    // Drill-down uses the period value + periodKey; loadDrillData handles mapping back to bill_days
     const total   = r.avg_total;
     const pct     = total / avgTotal;
     const pillCls = pct <= .85 ? 'pill-fast' : pct <= 1.15 ? 'pill-normal' : 'pill-slow';
@@ -795,7 +807,7 @@ function buildTable(data, periodKey) {
       <td class="num ${totalCls}">${hhmm(total)}</td>
       <td><span class="pill ${pillCls}">${pillTxt}</span></td>
     `;
-    tr.addEventListener('click', () => toggleDrill(billPeriod, i, billKey));
+    tr.addEventListener('click', () => toggleDrill(period, i, periodKey));
     tbody.appendChild(tr);
 
     const drillTr = document.createElement('tr');
@@ -1042,13 +1054,34 @@ async function doImport() {
       const before = mergedClean.length;
       mergedClean = mergedClean.filter(r => !existingKeys.has(r.order + '|' + r.sku + '|' + r.bill_day));
       skipped = before - mergedClean.length;
-      setProgress(`<span class="spinner"></span> ${mergedClean.length.toLocaleString()} new records (${skipped.toLocaleString()} duplicates skipped). Re-aggregating…`);
-      await new Promise(r => setTimeout(r, 30));
+
       if (mergedClean.length === 0) {
-        setProgress(`✅ No new records found — all ${skipped.toLocaleString()} rows already exist in Firebase.`);
-        document.getElementById('import-btn').disabled = false;
+        // No new rows — but still rebuild aggregates from existing data so structural
+        // changes (e.g. new order_daily/weekly/monthly fields) are pushed to Firebase.
+        setProgress(`<span class="spinner"></span> No new rows — rebuilding aggregates from existing data (${skipped.toLocaleString()} records)…`);
+        await new Promise(r => setTimeout(r, 30));
+        const allExistingRows = [];
+        for (const d of existingDays) {
+          try {
+            const snap = await fbGet(`${FB_ROWS}/${d.replace(/-/g,'_')}`);
+            if (snap) allExistingRows.push(...Object.values(snap));
+          } catch(e) {}
+        }
+        const { agg: rebuiltAgg } = buildAggAndByDay(allExistingRows);
+        rebuiltAgg.uploaded_at = new Date().toLocaleString();
+        setProgress('<span class="spinner"></span> Uploading rebuilt aggregates…');
+        await fbPut(FB_AGG, rebuiltAgg);
+        rawData = rebuiltAgg;
+        drillCache = {};
+        document.getElementById('data-info').textContent = 'Updated: ' + rebuiltAgg.uploaded_at;
+        setProgress(`✅ Aggregates rebuilt from ${skipped.toLocaleString()} existing records. No new rows added.`);
+        render();
+        setTimeout(closeImport, 3500);
         return;
       }
+
+      setProgress(`<span class="spinner"></span> ${mergedClean.length.toLocaleString()} new records (${skipped.toLocaleString()} duplicates skipped). Loading full dataset…`);
+      await new Promise(r => setTimeout(r, 30));
       setProgress('<span class="spinner"></span> Loading full existing dataset for re-aggregation…');
       const allExistingRows = [];
       for (const d of existingDays) {
@@ -1178,17 +1211,20 @@ function buildAggAndByDay(clean) {
     const m = {};
     for (const r of clean) {
       const k = keyFn(r);
-      if (!m[k]) m[k] = { orders:new Set(), lines:0, so2p:0, sp2v:0, sv2b:0, stot:0 };
+      if (!m[k]) m[k] = { orders:new Set(), lines:0, so2p:0, sp2v:0, sv2b:0, stot:0, minOrderDay: r.order_day || r.bill_day };
       m[k].orders.add(r.order);
       m[k].lines++;
       m[k].so2p += r.o2p; m[k].sp2v += r.p2v; m[k].sv2b += r.v2b; m[k].stot += r.tot;
+      const od = r.order_day || r.bill_day;
+      if (od < m[k].minOrderDay) m[k].minOrderDay = od;
     }
     return m;
   }
 
-  function mapToArr(m, periodKey) {
+  function mapToArr(m, periodKey, includeOrderDay) {
     return Object.entries(m).sort((a,b)=>a[0]<b[0]?-1:1).map(([k,g])=>({
       [periodKey]: k,
+      ...(includeOrderDay ? { order_day: g.minOrderDay } : {}),
       orders: g.orders.size, lines: g.lines,
       avg_order_to_pick: round2(g.so2p/g.lines),
       avg_pick_to_vap:   round2(g.sp2v/g.lines),
@@ -1198,14 +1234,10 @@ function buildAggAndByDay(clean) {
   }
 
   // Bill-date aggregations — used by charts
-  const daily   = mapToArr(aggMap(r => r.bill_day),               'bill_day');
-  const weekly  = mapToArr(aggMap(r => getWeekStart(r.bill_day)), 'bill_week');
-  const monthly = mapToArr(aggMap(r => r.bill_day.slice(0,7)),    'bill_month');
-
-  // Order-create-date aggregations — used by the Period Breakdown table
-  const order_daily   = mapToArr(aggMap(r => r.order_day || r.bill_day),               'order_day');
-  const order_weekly  = mapToArr(aggMap(r => getWeekStart(r.order_day || r.bill_day)), 'order_week');
-  const order_monthly = mapToArr(aggMap(r => (r.order_day || r.bill_day).slice(0,7)),  'order_month');
+  // daily rows also carry order_day so client can re-group by order create date
+  const daily   = mapToArr(aggMap(r => r.bill_day),               'bill_day',  true);
+  const weekly  = mapToArr(aggMap(r => getWeekStart(r.bill_day)), 'bill_week', false);
+  const monthly = mapToArr(aggMap(r => r.bill_day.slice(0,7)),    'bill_month',false);
 
   const n = clean.length;
   const kpis = {
@@ -1217,7 +1249,7 @@ function buildAggAndByDay(clean) {
     avg_total:         round2(clean.reduce((s,r)=>s+r.tot,0)/n),
   };
 
-  return { agg: { kpis, daily, weekly, monthly, order_daily, order_weekly, order_monthly }, byDay };
+  return { agg: { kpis, daily, weekly, monthly }, byDay };
 }
 
 function round2(n) { return Math.round(n*100)/100; }
