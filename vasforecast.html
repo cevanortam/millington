@@ -455,6 +455,73 @@ const KNOWN_NAMES = {
   '500106': 'Bloomingdales'
 };
 
+// ─── Merged account groups: accounts listed here are combined into one
+// virtual entry for all display, charting, and table purposes.
+// virtualId: the key used internally for the merged group
+// name:       display label shown everywhere in the dashboard
+// ids:        all real account IDs that belong to this group
+const MERGED_GROUPS = [
+  {
+    virtualId: '__nordstrom_merged__',
+    name: 'Nordstrom (Direct & Retail)',
+    ids: ['500128'] // '500128' = Nordstrom Direct (KNOWN_NAMES)
+                    // Nordstrom Retail account_id will be auto-detected below
+  }
+];
+
+// ─── Auto-detect Nordstrom Retail from forecastData at runtime
+// Returns the final resolved list of merged groups (ids fully populated)
+function resolveMergedGroups() {
+  return MERGED_GROUPS.map(g => {
+    const ids = [...g.ids];
+    // Pull in any forecast account whose name contains both "nordstrom" and "retail"
+    forecastData.forEach(r => {
+      const nm = (r.account_name || '').toLowerCase();
+      if(nm.includes('nordstrom') && nm.includes('retail') && !ids.includes(r.account_id)) {
+        ids.push(r.account_id);
+      }
+    });
+    return { ...g, ids };
+  });
+}
+
+// Returns the virtualId for a real account id, or null if not merged
+function getMergedVirtualId(acctId) {
+  for(const g of resolveMergedGroups()) {
+    if(g.ids.includes(acctId)) return g.virtualId;
+  }
+  return null;
+}
+
+// Returns merged group def by virtualId, or null
+function getMergedGroup(virtualId) {
+  return resolveMergedGroups().find(g => g.virtualId === virtualId) || null;
+}
+
+// Compute shipped total for a merged group or single account within a date range
+function shippedForAcct(acctIdOrVirtual, filteredShipped) {
+  const grp = getMergedGroup(acctIdOrVirtual);
+  if(grp) {
+    return filteredShipped.filter(r => grp.ids.includes(r.account)).reduce((s,r)=>s+r.units, 0);
+  }
+  return filteredShipped.filter(r => r.account === acctIdOrVirtual).reduce((s,r)=>s+r.units, 0);
+}
+
+// Compute daily forecast for a merged group or single account
+function dailyForecastForAcct(acctIdOrVirtual, date) {
+  const grp = getMergedGroup(acctIdOrVirtual);
+  if(grp) return grp.ids.reduce((s, id) => s + dailyForecast(id, date), 0);
+  return dailyForecast(acctIdOrVirtual, date);
+}
+
+// Resolve display name for a virtual or real account id
+function resolveAcctName(acctIdOrVirtual) {
+  const grp = getMergedGroup(acctIdOrVirtual);
+  if(grp) return grp.name;
+  const fRow = forecastData.find(r => r.account_id === acctIdOrVirtual);
+  return fRow ? (fRow.account_name || acctIdOrVirtual) : (KNOWN_NAMES[acctIdOrVirtual] || acctIdOrVirtual);
+}
+
 let shippedData  = [];
 let forecastData = [];
 let gran         = 'day';
@@ -512,7 +579,19 @@ function getCustomer() { return document.getElementById('fCustomer').value; }
 function getVASAccts() {
   // Forecast sheet accounts + all hardcoded KNOWN_NAMES accounts
   const forecastAccts = forecastData.map(r => r.account_id);
-  return [...new Set([...forecastAccts, ...Object.keys(KNOWN_NAMES)])];
+  const rawAccts = [...new Set([...forecastAccts, ...Object.keys(KNOWN_NAMES)])];
+  // Replace any real ids that belong to a merged group with the virtualId
+  const resolved = [];
+  const addedVirtuals = new Set();
+  rawAccts.forEach(id => {
+    const vid = getMergedVirtualId(id);
+    if(vid) {
+      if(!addedVirtuals.has(vid)) { resolved.push(vid); addedVirtuals.add(vid); }
+    } else {
+      resolved.push(id);
+    }
+  });
+  return resolved;
 }
 function getActiveAccts() {
   const c = getCustomer();
@@ -574,8 +653,7 @@ function initFilters() {
   const sel = document.getElementById('fCustomer');
   sel.innerHTML = '<option value="ALL">All Customers</option>';
   getVASAccts().forEach(id => {
-    const fRow = forecastData.find(r => r.account_id === id);
-    const name = fRow ? (fRow.account_name || id) : (KNOWN_NAMES[id] || id);
+    const name = resolveAcctName(id);
     const opt  = document.createElement('option');
     opt.value  = id;
     opt.textContent = name + ' (' + id + ')';
@@ -605,12 +683,18 @@ function computeMain() {
   let cur = new Date(from+'T12:00:00');
   const end = new Date(to+'T12:00:00');
   while(cur<=end){ const ds=cur.toISOString().substring(0,10); if(isWorkday(ds)) workdays.push(ds); cur.setDate(cur.getDate()+1); }
-  const filteredShipped = shippedData.filter(r => r.bill_date>=from && r.bill_date<=to && activeAccts.includes(r.account));
+  const filteredShipped = shippedData.filter(r => r.bill_date>=from && r.bill_date<=to && (() => {
+    // Include row if its account belongs to any active acct (real or via merged group)
+    return activeAccts.some(a => {
+      const grp = getMergedGroup(a);
+      return grp ? grp.ids.includes(r.account) : r.account === a;
+    });
+  })());
   const forecastByKey = {}, shippedByKey = {};
   workdays.forEach(d => {
     const k = getKey(d);
     if(!forecastByKey[k]) forecastByKey[k]=0;
-    activeAccts.forEach(a => { forecastByKey[k] += dailyForecast(a, d); });
+    activeAccts.forEach(a => { forecastByKey[k] += dailyForecastForAcct(a, d); });
   });
   filteredShipped.forEach(r => {
     const k = getKey(r.bill_date);
@@ -622,12 +706,11 @@ function computeMain() {
   const totalForecast = Object.values(forecastByKey).reduce((s,v)=>s+v,0);
   const pct  = totalForecast>0 ? (totalShipped/totalForecast)*100 : null;
   const varN = totalShipped - totalForecast;
-  // Per-customer — resolve names from forecast sheet first, then KNOWN_NAMES fallback
+  // Per-customer — resolve names, supporting merged groups
   const perCust = activeAccts.map(a => {
-    const fRow = forecastData.find(f=>f.account_id===a);
-    const name = fRow ? (fRow.account_name || a) : (KNOWN_NAMES[a] || a);
-    const shipped  = filteredShipped.filter(r=>r.account===a).reduce((s,r)=>s+r.units,0);
-    const forecast = workdays.reduce((s,d)=>s+dailyForecast(a,d),0);
+    const name     = resolveAcctName(a);
+    const shipped  = shippedForAcct(a, filteredShipped);
+    const forecast = workdays.reduce((s,d)=>s+dailyForecastForAcct(a,d),0);
     return { acct:a, name, shipped, forecast, variance:shipped-forecast, pct: forecast>0?(shipped/forecast)*100:null };
   }).filter(r => r.shipped>0 || r.forecast>0);
   return { keys, shippedByKey, forecastByKey, totalShipped, totalForecast, pct, varN, perCust, from, to, activeAccts };
@@ -639,12 +722,16 @@ function computeCustByKey(acctId, from, to) {
   const end = new Date(to+'T12:00:00');
   while(cur<=end){ const ds=cur.toISOString().substring(0,10); if(isWorkday(ds)) workdays.push(ds); cur.setDate(cur.getDate()+1); }
   const fByKey={}, sByKey={};
+  const grp = getMergedGroup(acctId);
   workdays.forEach(d => {
     const k=getKey(d);
     if(!fByKey[k]) fByKey[k]=0;
-    fByKey[k]+=dailyForecast(acctId,d);
+    fByKey[k]+=dailyForecastForAcct(acctId,d);
   });
-  shippedData.filter(r=>r.bill_date>=from&&r.bill_date<=to&&r.account===acctId).forEach(r=>{
+  shippedData.filter(r=>{
+    if(r.bill_date<from||r.bill_date>to) return false;
+    return grp ? grp.ids.includes(r.account) : r.account===acctId;
+  }).forEach(r=>{
     const k=getKey(r.bill_date);
     if(!sByKey[k]) sByKey[k]=0;
     sByKey[k]+=r.units;
@@ -725,12 +812,14 @@ function renderCustCharts(data) {
     const { keys, sByKey, fByKey } = computeCustByKey(c.acct, from, to);
     const card = document.createElement('div');
     card.className = 'card';
-    card.innerHTML = `<div class="card-header" style="font-size:11px">${c.name}<span style="font-size:10px;opacity:0.7;font-weight:400">${c.acct}</span></div><div class="card-body" style="padding:8px 10px"><div class="chart-wrap" style="position:relative;height:160px"><canvas id="cc_${c.acct}"></canvas></div></div>`;
+    const safeId = c.acct.replace(/[^a-zA-Z0-9]/g, '_');
+    const grpLabel = (() => { const g = getMergedGroup(c.acct); return g ? g.ids.join(', ') : c.acct; })();
+    card.innerHTML = `<div class="card-header" style="font-size:11px">${c.name}<span style="font-size:10px;opacity:0.7;font-weight:400;margin-left:6px">${grpLabel}</span></div><div class="card-body" style="padding:8px 10px"><div class="chart-wrap" style="position:relative;height:160px"><canvas id="cc_${safeId}"></canvas></div></div>`;
     row.appendChild(card);
     requestAnimationFrame(() => {
-      const el = document.getElementById('cc_'+c.acct);
+      const el = document.getElementById('cc_'+safeId);
       if(!el) return;
-      custCharts[c.acct] = new Chart(el.getContext('2d'), {
+      custCharts[safeId] = new Chart(el.getContext('2d'), {
         type:'bar',
         data:{ labels:keys.map(keyLabel), datasets:[
           { label:'Shipped', data:keys.map(k=>sByKey[k]||0), backgroundColor:'#1e3a5f', borderWidth:0, borderRadius:2, order:2 },
@@ -760,7 +849,7 @@ function renderTable(data) {
     return `<tr>
       <td style="color:var(--text-light);font-weight:600">${i+1}</td>
       <td><strong>${c.name}</strong></td>
-      <td style="color:var(--text-mid)">${c.acct}</td>
+      <td style="color:var(--text-mid)">${(() => { const g = getMergedGroup(c.acct); return g ? g.ids.join(', ') : c.acct; })()}</td>
       <td style="text-align:right;font-weight:600">${fmt(c.shipped)}</td>
       <td style="text-align:right;color:var(--text-mid)">${c.forecast>0?fmt(c.forecast):'<span style="color:var(--text-light);font-style:italic">No forecast</span>'}</td>
       <td style="text-align:right;font-weight:600;color:${varColor}">${c.variance>=0?'+':''}${fmt(c.variance)}</td>
