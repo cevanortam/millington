@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Warehouse Order Status</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #003057;
+    --red: #C8102E;
+    --red-dark: #a00d24;
+    --white: #ffffff;
+    --off-white: #f4f6f9;
+    --light-gray: #e2e8f0;
+    --mid-gray: #94a3b8;
+    --text: #1e2d45;
+    --row-alt: #f0f4f9;
+    --c-batch-future: #6366f1;
+    --c-batch-current: #0ea5e9;
+    --c-wip: #f59e0b;
+    --c-done: #22c55e;
+    --c-hold: #ef4444;
+    --c-pick-assigned: #8b5cf6;
+    --c-confirmed: #06b6d4;
+    --c-billed: #10b981;
+    --c-truckscanned: #f97316;
+    --c-departed: #64748b;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Barlow', sans-serif;
+    background: var(--navy);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: var(--navy);
+    border-bottom: 3px solid var(--red);
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 52px;
+    flex-shrink: 0;
+    z-index: 100;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .logo-mark {
+    width: 30px; height: 30px;
+    background: var(--red);
+    clip-path: polygon(0 0, 100% 0, 100% 70%, 50% 100%, 0 70%);
+    flex-shrink: 0;
+  }
+  .header-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 18px; font-weight: 800;
+    color: var(--white); letter-spacing: 0.04em; text-transform: uppercase;
+  }
+  .header-title span { color: var(--red); }
+  .header-right { display: flex; align-items: center; gap: 16px; }
+  .last-updated { font-size: 11px; color: var(--mid-gray); font-family: 'Barlow Condensed', sans-serif; letter-spacing: 0.05em; }
+  #last-updated-val { color: #7dd3fc; font-weight: 600; }
+
+  /* ── IMPORT BAR ── */
+  .import-bar-wrap { flex-shrink: 0; background: #001e3c; border-bottom: 1px solid rgba(255,255,255,0.06); overflow: hidden; }
+  .import-bar-toggle {
+    width: 100%; padding: 0 20px; height: 36px;
+    display: flex; align-items: center; gap: 10px;
+    cursor: pointer; background: none; border: none; color: var(--white);
+    font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase; text-align: left;
+  }
+  .import-bar-toggle:hover { background: rgba(255,255,255,0.04); }
+  .toggle-chevron { margin-left: auto; transition: transform 0.2s; font-size: 10px; color: var(--mid-gray); }
+  .import-bar-toggle.open .toggle-chevron { transform: rotate(180deg); }
+  .import-bar-body {
+    max-height: 0; overflow: hidden;
+    transition: max-height 0.25s ease, padding 0.25s ease;
+    padding: 0 20px;
+  }
+  .import-bar-body.open { max-height: 60px; padding: 10px 20px; }
+  .import-bar-inner { display: flex; align-items: center; gap: 12px; }
+  .import-btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: var(--red); color: var(--white); border: none;
+    padding: 6px 16px; border-radius: 4px;
+    font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 700;
+    letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; transition: background 0.15s; white-space: nowrap;
+  }
+  .import-btn:hover { background: var(--red-dark); }
+  .import-btn svg { width: 13px; height: 13px; }
+  #file-input { display: none; }
+  .import-status { font-size: 12px; color: var(--mid-gray); font-style: italic; }
+  .import-status.success { color: #4ade80; font-style: normal; font-weight: 600; }
+  .import-status.error { color: #f87171; font-style: normal; }
+
+  /* ── MAIN ── */
+  .main {
+    background: var(--off-white);
+    flex: 1; overflow: hidden;
+    display: flex; flex-direction: column;
+    padding: 12px 16px 8px;
+  }
+
+  /* ── TABS ── */
+  .tabs { display: flex; gap: 4px; margin-bottom: 10px; flex-shrink: 0; }
+  .tab {
+    font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 700;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 6px 18px; border-radius: 4px 4px 0 0;
+    cursor: pointer; border: none; background: #d1dbe8; color: #5a7a9c; transition: all 0.15s;
+  }
+  .tab.active { background: var(--navy); color: var(--white); }
+  .tab:hover:not(.active) { background: #b8c9db; }
+
+  /* ── KPI CARDS ── */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 6px; margin-bottom: 8px; flex-shrink: 0;
+  }
+  .kpi-card {
+    background: var(--white); border-radius: 5px;
+    padding: 7px 10px; border-top: 3px solid var(--navy);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+  }
+  .kpi-label {
+    font-family: 'Barlow Condensed', sans-serif; font-size: 9px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--mid-gray); margin-bottom: 2px;
+  }
+  .kpi-value {
+    font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 800;
+    color: var(--navy); line-height: 1;
+  }
+  .kpi-sub { font-size: 9px; color: var(--mid-gray); margin-top: 1px; }
+
+  /* ── LEGEND ── */
+  .legend { display: flex; flex-wrap: nowrap; gap: 5px; margin-bottom: 8px; flex-shrink: 0; overflow-x: auto; padding-bottom: 2px; }
+  .legend-item {
+    display: flex; align-items: center; gap: 4px; flex-shrink: 0;
+    font-size: 10px; font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
+    letter-spacing: 0.05em; text-transform: uppercase; color: #4a6080;
+    cursor: pointer; padding: 3px 8px; border-radius: 20px;
+    background: var(--white); border: 1.5px solid transparent; transition: all 0.12s;
+  }
+  .legend-item.active { border-color: currentColor; }
+  .legend-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ── TABLE WRAPPER ── */
+  .table-wrap {
+    background: var(--white); border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    overflow: auto; flex: 1;
+  }
+
+  /* ── TABLE ── */
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 11px;
+    table-layout: fixed;
+  }
+
+  /* sticky double header */
+  thead tr:first-child th { top: 0; }
+  thead tr:nth-child(2) th { top: 26px; } /* height of first header row */
+
+  thead th {
+    background: var(--navy); color: var(--white);
+    font-family: 'Barlow Condensed', sans-serif; font-size: 10px; font-weight: 700;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 5px 5px; white-space: nowrap;
+    position: sticky; z-index: 2;
+    text-align: right; border-right: 1px solid rgba(255,255,255,0.06);
+    overflow: hidden;
+  }
+  .th-name-col { text-align: left !important; }
+
+  .th-group {
+    background: #001e3c !important; color: var(--white);
+    font-family: 'Barlow Condensed', sans-serif; font-size: 10px; font-weight: 800;
+    letter-spacing: 0.05em; text-transform: uppercase;
+    text-align: center !important; padding: 4px 4px !important;
+    border-right: 2px solid rgba(255,255,255,0.15) !important;
+  }
+  .g-batch-future  { border-bottom: 3px solid var(--c-batch-future) !important; }
+  .g-batch-current { border-bottom: 3px solid var(--c-batch-current) !important; }
+  .g-wip           { border-bottom: 3px solid var(--c-wip) !important; }
+  .g-done          { border-bottom: 3px solid var(--c-done) !important; }
+  .g-hold          { border-bottom: 3px solid var(--c-hold) !important; }
+  .g-pick-assigned { border-bottom: 3px solid var(--c-pick-assigned) !important; }
+  .g-confirmed     { border-bottom: 3px solid var(--c-confirmed) !important; }
+  .g-billed        { border-bottom: 3px solid var(--c-billed) !important; }
+  .g-truckscanned  { border-bottom: 3px solid var(--c-truckscanned) !important; }
+  .g-departed      { border-bottom: 3px solid var(--c-departed) !important; }
+
+  tbody tr { border-bottom: 1px solid var(--light-gray); transition: background 0.1s; }
+  tbody tr:hover { background: #ebf2fa !important; }
+  tbody tr:nth-child(even) { background: var(--row-alt); }
+  tbody tr.total-row { background: #dbe7f5 !important; font-weight: 600; border-top: 2px solid var(--navy); }
+
+  td {
+    padding: 5px 5px; text-align: right; color: var(--text);
+    border-right: 1px solid rgba(0,0,0,0.04); overflow: hidden;
+    white-space: nowrap; text-overflow: ellipsis;
+  }
+  td.name-col {
+    text-align: left; font-weight: 600; color: var(--navy);
+    position: sticky; left: 0; background: inherit; z-index: 1;
+    white-space: normal; word-break: break-word; line-height: 1.3;
+  }
+
+  .divider-left { border-left: 2px solid rgba(0,0,0,0.08) !important; }
+
+  .col-batch-future  { background-color: rgba(99,102,241,0.05); }
+  .col-batch-current { background-color: rgba(14,165,233,0.05); }
+  .col-wip           { background-color: rgba(245,158,11,0.06); }
+  .col-done          { background-color: rgba(34,197,94,0.05); }
+  .col-hold          { background-color: rgba(239,68,68,0.07); }
+  .col-pick-assigned { background-color: rgba(139,92,246,0.05); }
+  .col-confirmed     { background-color: rgba(6,182,212,0.05); }
+  .col-billed        { background-color: rgba(16,185,129,0.05); }
+  .col-truckscanned  { background-color: rgba(249,115,22,0.06); }
+  .col-departed      { background-color: rgba(100,116,139,0.06); }
+
+  td.zero { color: #c8d4e0 !important; }
+
+  .empty-state {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 60px 24px; text-align: center; color: var(--mid-gray);
+  }
+  .empty-icon { width: 56px; height: 56px; background: var(--light-gray); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
+  .empty-icon svg { width: 28px; height: 28px; }
+  .empty-title { font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 700; letter-spacing: 0.04em; color: #7a96b0; text-transform: uppercase; margin-bottom: 6px; }
+  .empty-sub { font-size: 13px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="logo-mark"></div>
+    <div class="header-title">Warehouse <span>Order Status</span></div>
+  </div>
+  <div class="header-right">
+    <div class="last-updated">Last Import: <span id="last-updated-val">—</span></div>
+  </div>
+</div>
+
+<!-- COLLAPSIBLE IMPORT BAR -->
+<div class="import-bar-wrap">
+  <button class="import-bar-toggle" id="import-toggle" onclick="toggleImportBar()">
+    <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+    Data Import
+    <span class="toggle-chevron">▼</span>
+  </button>
+  <div class="import-bar-body" id="import-body">
+    <div class="import-bar-inner">
+      <button class="import-btn" onclick="document.getElementById('file-input').click()">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+        Import Excel
+      </button>
+      <input type="file" id="file-input" accept=".xlsx,.xls" onchange="handleFile(this)">
+      <span class="import-status" id="import-status">No data loaded — import an Excel file to begin.</span>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('overview', this)">Category Overview</button>
+    <button class="tab" onclick="switchTab('customer', this)">Customer Detail</button>
+  </div>
+
+  <div class="kpi-row" id="kpi-row">
+    <div class="kpi-card"><div class="kpi-label">WIP Units</div><div class="kpi-value" id="kpi-wip-units">—</div><div class="kpi-sub">In progress</div></div>
+    <div class="kpi-card"><div class="kpi-label">WIP Orders</div><div class="kpi-value" id="kpi-wip-orders">—</div><div class="kpi-sub">In progress</div></div>
+    <div class="kpi-card"><div class="kpi-label">Done Units</div><div class="kpi-value" id="kpi-done-units">—</div><div class="kpi-sub">Completed</div></div>
+    <div class="kpi-card"><div class="kpi-label">On Hold</div><div class="kpi-value" id="kpi-hold-units">—</div><div class="kpi-sub" id="kpi-hold-sub">—</div></div>
+    <div class="kpi-card"><div class="kpi-label">Pick Assigned</div><div class="kpi-value" id="kpi-pa-units">—</div><div class="kpi-sub">Units</div></div>
+    <div class="kpi-card"><div class="kpi-label">Confirmed</div><div class="kpi-value" id="kpi-conf-units">—</div><div class="kpi-sub">Units</div></div>
+    <div class="kpi-card"><div class="kpi-label">Billed</div><div class="kpi-value" id="kpi-billed-units">—</div><div class="kpi-sub">Units</div></div>
+    <div class="kpi-card"><div class="kpi-label">Truck Scanned</div><div class="kpi-value" id="kpi-ts-units">—</div><div class="kpi-sub">Units</div></div>
+    <div class="kpi-card"><div class="kpi-label">Departed</div><div class="kpi-value" id="kpi-dep-units">—</div><div class="kpi-sub">Units</div></div>
+    <div class="kpi-card"><div class="kpi-label">Batch Future</div><div class="kpi-value" id="kpi-bf-units">—</div><div class="kpi-sub">Units staged</div></div>
+  </div>
+
+  <div class="legend" id="status-legend">
+    <span class="legend-item active" data-status="batch-future"  style="color:var(--c-batch-future)"  onclick="toggleFilter(this)"><span class="legend-dot" style="background:var(--c-batch-future)"></span>Batch Future</span>
+    <span class="legend-item active" data-status="batch-current" style="color:var(--c-batch-current)" onclick="toggleFilter(this)"><span class="legend-dot" style="background:var(--c-batch-current)"></span>Batch Current</span>
+    <span class="legend-item active" data-status="wip"           style="color:var(--c-wip)"           onclick="toggleFilter(this)"><span class="legend-dot" style="background:var(--c-wip)"></span>WIP</span>
+    <span class="legend-item active" data-status="done"          style="color:var(--c-done)"          onclick="toggleFilter(this)"><span class="legend-dot" style="background:var(--c-done)"></span>Done</span>
+    <span class="legend-item active" data-status="hold"          style="color:var(--c-hold)"          onclick="toggleFilter(this)"><span class="legend-dot" style="background:var(--c-hold)"></span>Hold</span>
+    <span class="legend-item active" data-status="pick-assigned" style="color:var(--c-pick-assigned)" onclick="toggleFilter(this)"><span class="legend-dot" style="background:var(--c-pick-assigned)"></span>Pick Assigned</span>
+    <span class="legend-item active" data-status="confirmed"     style="color:var(--c-confirmed)"     onclick="toggleFilter(this)"><span class="legend-dot" style="background:var(--c-confirmed)"></span>Confirmed</span>
+    <span class="legend-item active" data-status="billed"        style="color:var(--c-billed)"        onclick="toggleFilter(this)"><span class="legend-dot" style="background:var(--c-billed)"></span>Billed</span>
+    <span class="legend-item active" data-status="truckscanned"  style="color:var(--c-truckscanned)"  onclick="toggleFilter(this)"><span class="legend-dot" style="background:var(--c-truckscanned)"></span>Truck Scanned</span>
+    <span class="legend-item active" data-status="departed"      style="color:var(--c-departed)"      onclick="toggleFilter(this)"><span class="legend-dot" style="background:var(--c-departed)"></span>Departed</span>
+  </div>
+
+  <div class="table-wrap" id="table-wrap">
+    <div class="empty-state">
+      <div class="empty-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div>
+      <div class="empty-title">No Data Loaded</div>
+      <div class="empty-sub">Click Data Import above to load your Excel export.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let dashData = { sheet1: null, sheet2: null, lastUpdated: null };
+let currentTab = 'overview';
+let activeFilters = new Set(['batch-future','batch-current','wip','done','hold','pick-assigned','confirmed','billed','truckscanned','departed']);
+
+// ── Import bar collapse ────────────────────────────────────────────────────
+function toggleImportBar() {
+  const btn  = document.getElementById('import-toggle');
+  const body = document.getElementById('import-body');
+  btn.classList.toggle('open');
+  body.classList.toggle('open');
+}
+
+// ── File handler ───────────────────────────────────────────────────────────
+function handleFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const statusEl = document.getElementById('import-status');
+  statusEl.className = 'import-status';
+  statusEl.textContent = 'Reading file…';
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'binary' });
+      const ws1 = wb.Sheets[wb.SheetNames[0]];
+      const ws2 = wb.Sheets[wb.SheetNames[1]];
+      if (!ws1 || !ws2) throw new Error('Expected at least 2 sheets');
+
+      dashData.sheet1 = parseSheet1(ws1);
+      dashData.sheet2 = parseSheet2(ws2);
+      dashData.lastUpdated = new Date().toLocaleString();
+
+      document.getElementById('last-updated-val').textContent = dashData.lastUpdated;
+      statusEl.className = 'import-status success';
+      statusEl.textContent = `✓ Loaded ${dashData.sheet1.rows.length} categories, ${dashData.sheet2.rows.length} customer rows`;
+
+      updateKPIs();
+      renderCurrentTab();
+      saveToSheet(dashData.sheet1.rows, dashData.sheet2.rows, dashData.lastUpdated);
+
+      // Auto-collapse import bar after successful import
+      const btn  = document.getElementById('import-toggle');
+      const body = document.getElementById('import-body');
+      if (btn.classList.contains('open')) { btn.classList.remove('open'); body.classList.remove('open'); }
+    } catch(err) {
+      statusEl.className = 'import-status error';
+      statusEl.textContent = '✗ Error reading file: ' + err.message;
+      console.error(err);
+    }
+    input.value = '';
+  };
+  reader.readAsBinaryString(file);
+}
+
+// ── Parse Sheet1 ──────────────────────────────────────────────────────────
+// Row 0: group headers | Row 1: sub-col headers | Row 2: SKIP (duplicate total)
+// Row 3+: real data rows
+// Col indices confirmed via openpyxl:
+// [1]=Category [4]=BF Units [5]=BF Orders [7]=BC Units [11]=BC Orders
+// [13]=WIP Units [15]=WIP Picks [16]=WIP Cartons [17]=WIP Orders
+// [18]=Done Units [19]=Done Picks [20]=Done Cartons [21]=Done Orders
+// [23]=Hold Hots [24]=Hold Warms [25]=Hold Units [26]=Hold Picks [27]=Hold Cartons
+// [28]=PA Units [29]=PA Picks [30]=PA Cartons [31]=PA Orders
+// [32]=Conf Units [33]=Conf Picks [34]=Conf Cartons [35]=Conf Orders
+// [36]=Billed Units [37]=Billed Picks [38]=Billed Cartons [39]=Billed Orders
+// [40]=TS Units [41]=TS Picks [42]=TS Cartons [43]=TS Orders
+// [44]=Dep Units [45]=Dep Picks [46]=Dep Cartons [47]=Dep Orders
+function parseSheet1(ws) {
+  const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+  const rows = [];
+  let lastUpdated = null;
+
+  for (let i = 3; i < raw.length; i++) {   // start at 3 — skip row 2 (duplicate total)
+    const r = raw[i];
+    const rowStr = r.join(' ');
+    if (rowStr.includes('Last Updated')) {
+      const m = rowStr.match(/Last Updated:\s*([^\t]+)/);
+      if (m) lastUpdated = m[1].trim();
+      continue;
+    }
+    const cat = String(r[1] || '').trim();
+    if (!cat) continue;
+    rows.push({
+      category: cat,
+      bf_units:     num(r[4]),  bf_orders:     num(r[5]),
+      bc_units:     num(r[7]),  bc_orders:     num(r[11]),
+      wip_units:    num(r[13]), wip_picks:     num(r[15]), wip_cartons:    num(r[16]), wip_orders:    num(r[17]),
+      done_units:   num(r[18]), done_picks:    num(r[19]), done_cartons:   num(r[20]), done_orders:   num(r[21]),
+      hold_hots:    num(r[23]), hold_warms:    num(r[24]), hold_units:     num(r[25]), hold_picks:    num(r[26]), hold_cartons: num(r[27]),
+      pa_units:     num(r[28]), pa_picks:      num(r[29]), pa_cartons:     num(r[30]), pa_orders:     num(r[31]),
+      conf_units:   num(r[32]), conf_picks:    num(r[33]), conf_cartons:   num(r[34]), conf_orders:   num(r[35]),
+      billed_units: num(r[36]), billed_picks:  num(r[37]), billed_cartons: num(r[38]), billed_orders: num(r[39]),
+      ts_units:     num(r[40]), ts_picks:      num(r[41]), ts_cartons:     num(r[42]), ts_orders:     num(r[43]),
+      dep_units:    num(r[44]), dep_picks:     num(r[45]), dep_cartons:    num(r[46]), dep_orders:    num(r[47]),
+    });
+  }
+  return { rows, lastUpdated };
+}
+
+// ── Parse Sheet2 ──────────────────────────────────────────────────────────
+// Col indices: [0]=Category [1]=CustName [2]=BF Units … identical offsets
+function parseSheet2(ws) {
+  const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+  const rows = [];
+
+  for (let i = 2; i < raw.length; i++) {
+    const r = raw[i];
+    const rowStr = r.join(' ');
+    if (rowStr.includes('Last Updated')) continue;
+    const cust = String(r[1] || '').trim();
+    if (!cust) continue;
+    rows.push({
+      customer:     cust,
+      bf_units:     num(r[2]),  bf_orders:     num(r[3]),
+      bc_units:     num(r[4]),  bc_orders:     num(r[5]),
+      wip_units:    num(r[6]),  wip_picks:     num(r[7]),  wip_cartons:    num(r[8]),  wip_orders:    num(r[9]),
+      done_units:   num(r[10]), done_picks:    num(r[11]), done_cartons:   num(r[12]), done_orders:   num(r[13]),
+      hold_hots:    num(r[14]), hold_warms:    num(r[15]), hold_units:     num(r[16]), hold_picks:    num(r[17]), hold_cartons: num(r[18]),
+      pa_units:     num(r[19]), pa_picks:      num(r[20]), pa_cartons:     num(r[21]), pa_orders:     num(r[22]),
+      conf_units:   num(r[23]), conf_picks:    num(r[24]), conf_cartons:   num(r[25]), conf_orders:   num(r[26]),
+      billed_units: num(r[27]), billed_picks:  num(r[28]), billed_cartons: num(r[29]), billed_orders: num(r[30]),
+      ts_units:     num(r[31]), ts_picks:      num(r[32]), ts_cartons:     num(r[33]), ts_orders:     num(r[34]),
+      dep_units:    num(r[35]), dep_picks:     num(r[36]), dep_cartons:    num(r[37]), dep_orders:    num(r[38]),
+    });
+  }
+  return { rows };
+}
+
+function num(v) { const n = parseFloat(v); return isNaN(n) ? 0 : Math.round(n); }
+
+// ── KPIs — always pull from sheet1 totals (source of truth) ───────────────
+function updateKPIs() {
+  const src = dashData.sheet1;
+  if (!src) return;
+  const rows = src.rows;
+  const sum = f => rows.reduce((a,r) => a + (r[f]||0), 0);
+  const fmt = n => n.toLocaleString();
+  document.getElementById('kpi-wip-units').textContent    = fmt(sum('wip_units'));
+  document.getElementById('kpi-wip-orders').textContent   = fmt(sum('wip_orders'));
+  document.getElementById('kpi-done-units').textContent   = fmt(sum('done_units'));
+  document.getElementById('kpi-hold-units').textContent   = fmt(sum('hold_units'));
+  document.getElementById('kpi-hold-sub').textContent     = `${fmt(sum('hold_hots'))} hot / ${fmt(sum('hold_warms'))} warm`;
+  document.getElementById('kpi-pa-units').textContent     = fmt(sum('pa_units'));
+  document.getElementById('kpi-conf-units').textContent   = fmt(sum('conf_units'));
+  document.getElementById('kpi-billed-units').textContent = fmt(sum('billed_units'));
+  document.getElementById('kpi-ts-units').textContent     = fmt(sum('ts_units'));
+  document.getElementById('kpi-dep-units').textContent    = fmt(sum('dep_units'));
+  document.getElementById('kpi-bf-units').textContent     = fmt(sum('bf_units'));
+}
+
+// ── Tab switching ──────────────────────────────────────────────────────────
+function switchTab(tab, el) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderCurrentTab();
+}
+function renderCurrentTab() {
+  if (currentTab === 'overview') renderOverview();
+  else renderCustomer();
+}
+
+// ── Column map (shared between both views) ─────────────────────────────────
+const COL_MAP = [
+  { g:'batch-future',  h:'Units',   f:'bf_units' },
+  { g:'batch-future',  h:'Ord',     f:'bf_orders' },
+  { g:'batch-current', h:'Units',   f:'bc_units' },
+  { g:'batch-current', h:'Ord',     f:'bc_orders' },
+  { g:'wip',           h:'Units',   f:'wip_units' },
+  { g:'wip',           h:'Picks',   f:'wip_picks' },
+  { g:'wip',           h:'Ctn',     f:'wip_cartons' },
+  { g:'wip',           h:'Ord',     f:'wip_orders' },
+  { g:'done',          h:'Units',   f:'done_units' },
+  { g:'done',          h:'Picks',   f:'done_picks' },
+  { g:'done',          h:'Ctn',     f:'done_cartons' },
+  { g:'done',          h:'Ord',     f:'done_orders' },
+  { g:'hold',          h:'Hots',    f:'hold_hots' },
+  { g:'hold',          h:'Warms',   f:'hold_warms' },
+  { g:'hold',          h:'Units',   f:'hold_units' },
+  { g:'hold',          h:'Picks',   f:'hold_picks' },
+  { g:'hold',          h:'Ctn',     f:'hold_cartons' },
+  { g:'pick-assigned', h:'Units',   f:'pa_units' },
+  { g:'pick-assigned', h:'Picks',   f:'pa_picks' },
+  { g:'pick-assigned', h:'Ctn',     f:'pa_cartons' },
+  { g:'pick-assigned', h:'Ord',     f:'pa_orders' },
+  { g:'confirmed',     h:'Units',   f:'conf_units' },
+  { g:'confirmed',     h:'Picks',   f:'conf_picks' },
+  { g:'confirmed',     h:'Ctn',     f:'conf_cartons' },
+  { g:'confirmed',     h:'Ord',     f:'conf_orders' },
+  { g:'billed',        h:'Units',   f:'billed_units' },
+  { g:'billed',        h:'Picks',   f:'billed_picks' },
+  { g:'billed',        h:'Ctn',     f:'billed_cartons' },
+  { g:'billed',        h:'Ord',     f:'billed_orders' },
+  { g:'truckscanned',  h:'Units',   f:'ts_units' },
+  { g:'truckscanned',  h:'Picks',   f:'ts_picks' },
+  { g:'truckscanned',  h:'Ctn',     f:'ts_cartons' },
+  { g:'truckscanned',  h:'Ord',     f:'ts_orders' },
+  { g:'departed',      h:'Units',   f:'dep_units' },
+  { g:'departed',      h:'Picks',   f:'dep_picks' },
+  { g:'departed',      h:'Ctn',     f:'dep_cartons' },
+  { g:'departed',      h:'Ord',     f:'dep_orders' },
+];
+
+// ── Render ─────────────────────────────────────────────────────────────────
+function renderOverview() {
+  const wrap = document.getElementById('table-wrap');
+  if (!dashData.sheet1) { showEmpty(); return; }
+  wrap.innerHTML = buildTable(dashData.sheet1.rows, false);
+}
+function renderCustomer() {
+  const wrap = document.getElementById('table-wrap');
+  if (!dashData.sheet2) { showEmpty(); return; }
+  wrap.innerHTML = buildTable(dashData.sheet2.rows, true);
+}
+
+function buildTable(rows, isCustomer) {
+  const cols = COL_MAP.filter(c => activeFilters.has(c.g));
+  if (cols.length === 0) return `<div class="empty-state"><div class="empty-title">All groups hidden</div><div class="empty-sub">Toggle a status filter above.</div></div>`;
+
+  const LABEL = {
+    'batch-future':'Batch Future','batch-current':'Batch Current',
+    'wip':'WIP','done':'Done','hold':'Hold','pick-assigned':'Pick Assigned',
+    'confirmed':'Confirmed','billed':'Billed','truckscanned':'Truck Scanned','departed':'Departed'
+  };
+
+  // group spans
+  const groups = [];
+  let prev = null, cnt = 0;
+  for (const c of cols) {
+    if (c.g === prev) cnt++;
+    else { if (prev) groups.push({g:prev,n:cnt}); prev=c.g; cnt=1; }
+  }
+  if (prev) groups.push({g:prev,n:cnt});
+
+  // col widths: name col wider, data cols equal
+  const nameW = isCustomer ? 180 : 130;
+  const dataW = 44; // px per data col — 36 data cols × 44 = 1584 + 180 = 1764 fits 1920
+  const totalW = nameW + cols.length * dataW;
+
+  let colgroup = `<colgroup><col style="width:${nameW}px;min-width:${nameW}px">`;
+  for (const c of cols) colgroup += `<col style="width:${dataW}px;min-width:${dataW}px">`;
+  colgroup += '</colgroup>';
+
+  // thead row 1: group headers
+  let tr1 = `<tr><th class="th-name-col" rowspan="2" style="left:0;z-index:4;width:${nameW}px">${isCustomer ? 'Customer' : 'Category'}</th>`;
+  for (const grp of groups) tr1 += `<th class="th-group g-${grp.g}" colspan="${grp.n}">${LABEL[grp.g]}</th>`;
+  tr1 += '</tr>';
+
+  // thead row 2: sub-col headers
+  let tr2 = '<tr>';
+  let prevG = null;
+  for (const c of cols) {
+    const div = c.g !== prevG ? ' divider-left' : '';
+    tr2 += `<th class="${div}" style="top:26px">${c.h}</th>`;
+    prevG = c.g;
+  }
+  tr2 += '</tr>';
+
+  // tbody
+  const totals = {};
+  cols.forEach(c => totals[c.f] = 0);
+  let tbody = '<tbody>';
+
+  for (const row of rows) {
+    const nameVal = isCustomer ? row.customer : row.category;
+    tbody += '<tr>';
+    tbody += `<td class="name-col" title="${nameVal}">${nameVal||''}</td>`;
+    let pg = null;
+    for (const c of cols) {
+      const v = row[c.f] || 0;
+      totals[c.f] = (totals[c.f]||0) + v;
+      const div = c.g !== pg ? ' divider-left' : '';
+      const zero = v === 0 ? ' zero' : '';
+      tbody += `<td class="col-${c.g}${div}${zero}">${v===0?'–':v.toLocaleString()}</td>`;
+      pg = c.g;
+    }
+    tbody += '</tr>';
+  }
+
+  // totals row
+  tbody += '<tr class="total-row"><td class="name-col">TOTAL</td>';
+  let pg2 = null;
+  for (const c of cols) {
+    const v = totals[c.f]||0;
+    const div = c.g !== pg2 ? ' divider-left' : '';
+    tbody += `<td class="col-${c.g}${div}">${v.toLocaleString()}</td>`;
+    pg2 = c.g;
+  }
+  tbody += '</tr></tbody>';
+
+  return `<table style="width:${totalW}px">${colgroup}<thead>${tr1}${tr2}</thead>${tbody}</table>`;
+}
+
+function showEmpty() {
+  document.getElementById('table-wrap').innerHTML = `
+    <div class="empty-state">
+      <div class="empty-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div>
+      <div class="empty-title">No Data Loaded</div>
+      <div class="empty-sub">Click Data Import above to load your Excel export.</div>
+    </div>`;
+}
+
+// ── Status filter ──────────────────────────────────────────────────────────
+function toggleFilter(el) {
+  const s = el.dataset.status;
+  if (activeFilters.has(s)) { activeFilters.delete(s); el.classList.remove('active'); }
+  else { activeFilters.add(s); el.classList.add('active'); }
+  renderCurrentTab();
+}
+
+// ── Google Apps Script persistence ────────────────────────────────────────
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxu0St_TlSVGW8O4cYzo6SJMCSDSliDc4OBnszUM9VJ-itnwAwuqOnCTAcUqV_TceESCg/exec';
+
+async function saveToSheet(rows1, rows2, lastUpdated) {
+  try {
+    await fetch(GAS_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'save', lastUpdated, sheet1: rows1, sheet2: rows2 }),
+    });
+  } catch(e) { console.warn('Save failed:', e); }
+}
+
+async function loadFromSheet() {
+  try {
+    const res = await fetch(GAS_URL + '?action=load');
+    const data = await res.json();
+    if (data && data.sheet1 && data.sheet2 && data.sheet1.length) {
+      dashData.sheet1 = { rows: data.sheet1 };
+      dashData.sheet2 = { rows: data.sheet2 };
+      dashData.lastUpdated = data.lastUpdated || null;
+      document.getElementById('last-updated-val').textContent = dashData.lastUpdated || '—';
+      const st = document.getElementById('import-status');
+      st.className = 'import-status success';
+      st.textContent = `✓ Loaded from storage — ${data.sheet1.length} categories, ${data.sheet2.length} customer rows`;
+      updateKPIs();
+      renderCurrentTab();
+    }
+  } catch(e) { console.warn('Load failed:', e); }
+}
+
+loadFromSheet();
+</script>
+</body>
+</html>
