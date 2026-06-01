@@ -209,8 +209,8 @@
 
   td {
     padding: 5px 5px; text-align: right; color: var(--text);
-    border-right: 1px solid rgba(0,0,0,0.04); overflow: hidden;
-    white-space: nowrap; text-overflow: ellipsis;
+    border-right: 1px solid rgba(0,0,0,0.04);
+    white-space: nowrap;
   }
   td.name-col {
     text-align: left; font-weight: 600; color: var(--navy);
@@ -449,6 +449,14 @@ function parseSheet2(ws) {
 
 function num(v) { const n = parseFloat(v); return isNaN(n) ? 0 : Math.round(n); }
 
+// Format numbers for table cells: abbreviate large values to prevent truncation
+function fmtCell(v) {
+  if (v === 0) return '–';
+  if (v >= 1000000) return (v / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (v >= 10000)   return (v / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+  return v.toLocaleString();
+}
+
 // ── KPIs — always pull from sheet1 totals (source of truth) ───────────────
 function updateKPIs() {
   const src = dashData.sheet1;
@@ -555,7 +563,7 @@ function buildTable(rows, isCustomer) {
 
   // col widths: name col wider, data cols equal
   const nameW = isCustomer ? 180 : 130;
-  const dataW = 44; // px per data col — 36 data cols × 44 = 1584 + 180 = 1764 fits 1920
+  const dataW = 52; // px per data col — 36 data cols × 52 = 1872 + 180 = 2052; fits fine at 1920 with filters off
   const totalW = nameW + cols.length * dataW;
 
   let colgroup = `<colgroup><col style="width:${nameW}px;min-width:${nameW}px">`;
@@ -592,7 +600,7 @@ function buildTable(rows, isCustomer) {
       totals[c.f] = (totals[c.f]||0) + v;
       const div = c.g !== pg ? ' divider-left' : '';
       const zero = v === 0 ? ' zero' : '';
-      tbody += `<td class="col-${c.g}${div}${zero}">${v===0?'–':v.toLocaleString()}</td>`;
+      tbody += `<td class="col-${c.g}${div}${zero}" title="${v===0?'':v.toLocaleString()}">${fmtCell(v)}</td>`;
       pg = c.g;
     }
     tbody += '</tr>';
@@ -604,7 +612,7 @@ function buildTable(rows, isCustomer) {
   for (const c of cols) {
     const v = totals[c.f]||0;
     const div = c.g !== pg2 ? ' divider-left' : '';
-    tbody += `<td class="col-${c.g}${div}">${v.toLocaleString()}</td>`;
+    tbody += `<td class="col-${c.g}${div}" title="${v.toLocaleString()}">${fmtCell(v)}</td>`;
     pg2 = c.g;
   }
   tbody += '</tr></tbody>';
@@ -634,25 +642,35 @@ const GAS_URL = 'https://script.google.com/macros/s/AKfycbxu0St_TlSVGW8O4cYzo6SJ
 
 async function saveToSheet(rows1, rows2, lastUpdated) {
   try {
-    await fetch(GAS_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'save', lastUpdated, sheet1: rows1, sheet2: rows2 }),
-    });
+    // Send sheet1 and sheet2 as separate payloads → GAS stores in A1 and A2
+    await Promise.all([
+      fetch(GAS_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'save', target: 'sheet1', lastUpdated, data: rows1 }),
+      }),
+      fetch(GAS_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'save', target: 'sheet2', data: rows2 }),
+      }),
+    ]);
   } catch(e) { console.warn('Save failed:', e); }
 }
 
 async function loadFromSheet() {
   try {
-    const res = await fetch(GAS_URL + '?action=load');
-    const data = await res.json();
-    if (data && data.sheet1 && data.sheet2 && data.sheet1.length) {
-      dashData.sheet1 = { rows: data.sheet1 };
-      dashData.sheet2 = { rows: data.sheet2 };
-      dashData.lastUpdated = data.lastUpdated || null;
+    // Fetch sheet1 and sheet2 in parallel from separate cells
+    const [r1, r2] = await Promise.all([
+      fetch(GAS_URL + '?action=load&target=sheet1').then(r => r.json()),
+      fetch(GAS_URL + '?action=load&target=sheet2').then(r => r.json()),
+    ]);
+    if (r1 && r1.data && r2 && r2.data) {
+      dashData.sheet1 = { rows: r1.data };
+      dashData.sheet2 = { rows: r2.data };
+      dashData.lastUpdated = r1.lastUpdated || null;
       document.getElementById('last-updated-val').textContent = dashData.lastUpdated || '—';
       const st = document.getElementById('import-status');
       st.className = 'import-status success';
-      st.textContent = `✓ Loaded from storage — ${data.sheet1.length} categories, ${data.sheet2.length} customer rows`;
+      st.textContent = `✓ Loaded from storage — ${r1.data.length} categories, ${r2.data.length} customer rows`;
       updateKPIs();
       renderCurrentTab();
     }
