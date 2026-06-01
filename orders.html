@@ -449,11 +449,9 @@ function parseSheet2(ws) {
 
 function num(v) { const n = parseFloat(v); return isNaN(n) ? 0 : Math.round(n); }
 
-// Format numbers for table cells: abbreviate large values to prevent truncation
+// Format numbers for table cells: always show full value with thousands separator
 function fmtCell(v) {
   if (v === 0) return '–';
-  if (v >= 1000000) return (v / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
-  if (v >= 10000)   return (v / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
   return v.toLocaleString();
 }
 
@@ -563,7 +561,7 @@ function buildTable(rows, isCustomer) {
 
   // col widths: name col wider, data cols equal
   const nameW = isCustomer ? 180 : 130;
-  const dataW = 52; // px per data col — 36 data cols × 52 = 1872 + 180 = 2052; fits fine at 1920 with filters off
+  const dataW = 62; // px per data col — fits 6-digit numbers (e.g. 124,903) without truncation
   const totalW = nameW + cols.length * dataW;
 
   let colgroup = `<colgroup><col style="width:${nameW}px;min-width:${nameW}px">`;
