@@ -54,11 +54,11 @@
     z-index: 100;
   }
   .header-left { display: flex; align-items: center; gap: 12px; }
-  .logo-mark {
-    width: 30px; height: 30px;
-    background: var(--red);
-    clip-path: polygon(0 0, 100% 0, 100% 70%, 50% 100%, 0 70%);
+  .logo-img {
+    height: 34px;
+    width: auto;
     flex-shrink: 0;
+    object-fit: contain;
   }
   .header-title {
     font-family: 'Barlow Condensed', sans-serif;
@@ -67,8 +67,8 @@
   }
   .header-title span { color: var(--red); }
   .header-right { display: flex; align-items: center; gap: 16px; }
-  .last-updated { font-size: 11px; color: var(--mid-gray); font-family: 'Barlow Condensed', sans-serif; letter-spacing: 0.05em; }
-  #last-updated-val { color: #7dd3fc; font-weight: 600; }
+  .last-updated { font-size: 14px; color: var(--mid-gray); font-family: 'Barlow Condensed', sans-serif; letter-spacing: 0.05em; }
+  #last-updated-val { color: #7dd3fc; font-weight: 700; font-size: 15px; }
 
   /* ── IMPORT BAR ── */
   .import-bar-wrap { flex-shrink: 0; background: #001e3c; border-bottom: 1px solid rgba(255,255,255,0.06); overflow: hidden; }
@@ -248,7 +248,7 @@
 <!-- HEADER -->
 <div class="header">
   <div class="header-left">
-    <div class="logo-mark"></div>
+    <img class="logo-img" src="https://www.freelogovectors.net/wp-content/uploads/2022/07/ceva-logistics-logo-freelogovectors.net_.png" alt="CEVA Logistics">
     <div class="header-title">Warehouse <span>Order Status</span></div>
   </div>
   <div class="header-right">
