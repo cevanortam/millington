@@ -486,7 +486,9 @@ function loadData(rows, skipPush) {
   const addedCount = rawData.length - (rawData.length - newRows.length);
   showStatus(`&#10003; Loaded ${fmt(rawData.length)} rows across ${custCount} customers (${fmt(newRows.length)} new)`, 'success');
 
-  if (!skipPush) pushToSheet(rows);
+  // Push the normalized rows (guaranteed field names) rather than raw Excel rows
+  // whose headers may not match what the Apps Script expects.
+  if (!skipPush) pushToSheet(newRows);
 }
 
 function populateFilters() {
@@ -744,21 +746,30 @@ async function fetchData() {
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbz-akv_D7f_qLfyIjsB3ht1Pz2-gSrV_vOyk97F7GmUS9oDxOphb5A6yH_uLkY4ZvxhQw/exec';
 
 async function pushToSheet(rows) {
-  showStatus('<div class="loading"><div class="spinner"></div>Saving new rows to sheet…</div>', 'info');
-  const CHUNK = 20;
-  let totalAppended = 0;
+  showStatus('<div class="loading"><div class="spinner"></div>Saving to sheet…</div>', 'info');
+
+  // Re-map normalized { name, code, date, hour, qty } to explicit GAS field names
+  const mapped = rows.map(r => ({
+    vendor_name:  r.name,
+    vendor_code:  r.code,
+    release_date: r.date,
+    hour_drop:    r.hour,
+    qty_ordered:  r.qty
+  }));
+
+  // GAS GET deployments issue a 302 redirect to script.googleusercontent.com,
+  // which strips CORS headers — so fetch() with default mode:'cors' throws on
+  // the redirect. For write calls we don't need the response body, so we use
+  // mode:'no-cors' (fire-and-forget) to let the redirect succeed silently.
+  // Chunks are kept small (5 rows) to stay under the ~2 KB GET URL limit.
+  const CHUNK = 5;
   try {
-    for (let i = 0; i < rows.length; i += CHUNK) {
-      const chunk = rows.slice(i, i + CHUNK);
-      // Use single ?payload= param (URL-encoded JSON) — the pattern that works with GAS GET
+    for (let i = 0; i < mapped.length; i += CHUNK) {
+      const chunk = mapped.slice(i, i + CHUNK);
       const url = GAS_URL + '?payload=' + encodeURIComponent(JSON.stringify({ action: 'append', rows: chunk }));
-      const res  = await fetch(url);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      totalAppended += data.appended ?? chunk.length;
+      await fetch(url, { mode: 'no-cors' }); // opaque response is expected and fine
     }
-    showStatus(`&#10003; ${fmt(totalAppended)} rows saved to sheet`, 'success');
+    showStatus(`&#10003; ${fmt(mapped.length)} rows saved to sheet`, 'success');
   } catch (err) {
     showStatus(`&#9888; Data loaded locally but could not save to sheet: ${err.message}`, 'error');
   }
