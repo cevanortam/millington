@@ -31,6 +31,7 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: var(--font); background: var(--gray-100); color: var(--gray-900); min-height: 100vh; font-size: 14px; }
 
+  /* ── HEADER ── */
   header {
     background: var(--navy); color: var(--white);
     padding: 0 24px; height: 58px;
@@ -39,9 +40,7 @@
     position: sticky; top: 0; z-index: 200;
   }
   .header-left { display: flex; align-items: center; gap: 14px; }
-  .logo-block {
-    display: flex; align-items: center; height: 36px; flex-shrink: 0;
-  }
+  .logo-block  { display: flex; align-items: center; height: 36px; flex-shrink: 0; }
   .header-title { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
   .header-sub   { font-size: 11px; color: var(--navy-light); margin-top: 2px; }
   .header-right { display: flex; align-items: center; gap: 8px; }
@@ -61,6 +60,7 @@
   .file-wrap { position: relative; overflow: hidden; display: inline-block; }
   .file-wrap input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; font-size: 100px; }
 
+  /* ── FILTER BAR ── */
   .filter-bar {
     background: var(--white); border-bottom: 1px solid var(--gray-200);
     padding: 10px 24px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
@@ -74,7 +74,6 @@
   }
   .filter-bar select:focus,
   .filter-bar input[type=date]:focus { border-color: var(--navy-mid); }
-
   .fbtn {
     padding: 5px 13px; border-radius: var(--radius);
     font-size: 12.5px; font-weight: 600; cursor: pointer;
@@ -82,12 +81,14 @@
     border: 1.5px solid var(--gray-300); background: var(--gray-50); color: var(--gray-700);
   }
   .fbtn:hover { background: var(--gray-200); }
-  .fbtn.navy { background: var(--navy); color: var(--white); border-color: var(--navy); }
+  .fbtn.navy  { background: var(--navy); color: var(--white); border-color: var(--navy); }
   .fbtn.navy:hover { background: var(--navy-mid); }
   .filter-sep { width: 1px; height: 24px; background: var(--gray-200); }
 
+  /* ── MAIN ── */
   main { padding: 20px 24px; }
 
+  /* ── EMPTY STATE ── */
   .empty-state {
     background: var(--white); border: 1.5px dashed var(--gray-300);
     border-radius: 10px; display: flex; flex-direction: column;
@@ -99,15 +100,17 @@
   .empty-state p  { font-size: 13px; color: var(--gray-700); max-width: 380px; line-height: 1.6; }
   .empty-actions  { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 6px; }
 
+  /* ── ALERTS ── */
   .alert {
     padding: 10px 16px; border-radius: var(--radius);
     font-size: 13px; margin-bottom: 16px;
     display: flex; align-items: center; gap: 8px; border-left: 4px solid;
   }
-  .alert.error   { background: var(--red-dim);  border-color: var(--red);   color: #7a0a1a; }
-  .alert.success { background: #edf7ee;          border-color: #2d8a3c;      color: #1b5e25; }
-  .alert.info    { background: var(--navy-pale); border-color: var(--navy);  color: var(--navy); }
+  .alert.error   { background: var(--red-dim);  border-color: var(--red);  color: #7a0a1a; }
+  .alert.success { background: #edf7ee;          border-color: #2d8a3c;     color: #1b5e25; }
+  .alert.info    { background: var(--navy-pale); border-color: var(--navy); color: var(--navy); }
 
+  /* ── KPI CARDS ── */
   .kpi-row {
     display: grid; grid-template-columns: repeat(4, 1fr);
     gap: 14px; margin-bottom: 20px;
@@ -129,6 +132,7 @@
   .kpi-card.accent .kpi-value { color: var(--red); }
   .kpi-sub { font-size: 11px; color: var(--gray-500); margin-top: 5px; }
 
+  /* ── CHARTS ── */
   .charts-row {
     display: grid; grid-template-columns: 1fr 1fr;
     gap: 14px; margin-bottom: 20px;
@@ -144,6 +148,7 @@
   }
   .chart-card-body { padding: 14px 16px 16px; }
 
+  /* ── DETAIL PANEL ── */
   .detail-panel {
     background: var(--white); border: 1.5px solid var(--navy);
     border-radius: var(--radius); box-shadow: var(--shadow-md);
@@ -164,10 +169,12 @@
   .close-btn:hover { background: rgba(255,255,255,0.28); }
   .detail-body { padding: 20px 20px 18px; }
 
+  /* ── SECTION HEADERS ── */
   .section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-  .section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--navy); }
-  .section-line  { flex: 1; height: 1px; background: var(--gray-200); }
+  .section-label  { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--navy); }
+  .section-line   { flex: 1; height: 1px; background: var(--gray-200); }
 
+  /* ── CUSTOMER CARDS ── */
   .customer-grid {
     display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
     gap: 12px; margin-bottom: 20px;
@@ -179,17 +186,12 @@
     transition: border-color 0.15s, box-shadow 0.15s, transform 0.12s;
     box-shadow: var(--shadow);
   }
-  .customer-card:hover {
-    border-left-color: var(--navy); box-shadow: var(--shadow-md); transform: translateY(-1px);
-  }
+  .customer-card:hover { border-left-color: var(--navy); box-shadow: var(--shadow-md); transform: translateY(-1px); }
   .customer-card.active {
     border-left-color: var(--red); border-color: var(--navy);
     box-shadow: 0 0 0 2px var(--navy-light), var(--shadow-md);
   }
-  .cust-top {
-    display: flex; align-items: flex-start;
-    justify-content: space-between; margin-bottom: 12px; gap: 8px;
-  }
+  .cust-top  { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; gap: 8px; }
   .cust-name { font-size: 13.5px; font-weight: 700; color: var(--navy); line-height: 1.3; }
   .cust-code { font-size: 11px; color: var(--gray-500); margin-top: 2px; }
   .rank-badge {
@@ -199,15 +201,12 @@
     border: 1px solid var(--navy-light);
   }
   .cust-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .cust-stat {
-    background: var(--gray-50); border: 1px solid var(--gray-200);
-    border-radius: 4px; padding: 8px 10px;
-  }
+  .cust-stat  { background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 4px; padding: 8px 10px; }
   .cust-stat-lbl {
     font-size: 9.5px; font-weight: 700; text-transform: uppercase;
     letter-spacing: 0.06em; color: var(--gray-500); margin-bottom: 3px;
   }
-  .cust-stat-val { font-size: 20px; font-weight: 800; letter-spacing: -0.03em; color: var(--navy); }
+  .cust-stat-val     { font-size: 20px; font-weight: 800; letter-spacing: -0.03em; color: var(--navy); }
   .cust-stat-val.red { color: var(--red); }
   .cust-footer { margin-top: 10px; font-size: 10.5px; color: var(--gray-500); }
   .click-hint {
@@ -215,13 +214,11 @@
     font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
     opacity: 0; transition: opacity 0.15s;
   }
-  .customer-card:hover .click-hint { opacity: 1; }
-  .customer-card.active .click-hint { opacity: 1; color: var(--red); }
+  .customer-card:hover .click-hint        { opacity: 1; }
+  .customer-card.active .click-hint       { opacity: 1; color: var(--red); }
 
-  .table-card {
-    background: var(--white); border: 1px solid var(--gray-200);
-    border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 24px;
-  }
+  /* ── DAILY TABLE ── */
+  .table-card { background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 24px; }
   .table-card-header {
     background: var(--navy-pale); border-bottom: 1px solid var(--navy-light);
     padding: 10px 18px; display: flex; align-items: center; justify-content: space-between;
@@ -235,16 +232,14 @@
     padding: 9px 14px; background: var(--gray-50);
     border-bottom: 1px solid var(--gray-200); white-space: nowrap;
   }
-  tbody td { padding: 9px 14px; border-bottom: 1px solid var(--gray-100); color: var(--gray-700); }
+  tbody td              { padding: 9px 14px; border-bottom: 1px solid var(--gray-100); color: var(--gray-700); }
   tbody tr:last-child td { border-bottom: none; }
-  tbody tr:hover td { background: var(--navy-pale); }
-  tbody td:first-child { font-weight: 600; color: var(--navy); }
+  tbody tr:hover td     { background: var(--navy-pale); }
+  tbody td:first-child  { font-weight: 600; color: var(--navy); }
   .no-data { text-align: center; color: var(--gray-500); font-size: 13px; padding: 36px; }
 
-  .loading {
-    display: flex; align-items: center; gap: 10px;
-    font-size: 13px; color: var(--navy); font-weight: 500; padding: 14px 0;
-  }
+  /* ── SPINNER ── */
+  .loading { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--navy); font-weight: 500; padding: 14px 0; }
   .spinner {
     width: 16px; height: 16px;
     border: 2px solid var(--navy-light); border-top-color: var(--navy);
@@ -252,25 +247,27 @@
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 
+  /* ── RESPONSIVE ── */
   @media (max-width: 900px) {
     .kpi-row    { grid-template-columns: repeat(2, 1fr); }
     .charts-row { grid-template-columns: 1fr; }
   }
   @media (max-width: 580px) {
-    main { padding: 14px; }
+    main        { padding: 14px; }
     .filter-bar { padding: 10px 14px; }
-    header { padding: 0 14px; }
+    header      { padding: 0 14px; }
   }
 </style>
 </head>
 <body>
 
+<!-- ── HEADER ── -->
 <header>
   <div class="header-left">
     <div class="logo-block">
       <img src="https://www.freelogovectors.net/wp-content/uploads/2022/07/ceva-logistics-logo-freelogovectors.net_.png"
            alt="CEVA Logistics" height="36"
-           style="filter: brightness(0) invert(1); height:36px; width:auto; display:block;">
+           style="filter:brightness(0) invert(1);height:36px;width:auto;display:block;">
     </div>
     <div>
       <div class="header-title">Orders Dropped Dashboard</div>
@@ -286,6 +283,7 @@
   </div>
 </header>
 
+<!-- ── FILTER BAR ── -->
 <div class="filter-bar" id="filterBar" style="display:none;">
   <label>Date:</label>
   <input type="date" id="filterStart">
@@ -299,9 +297,11 @@
   <span id="rowCount" style="font-size:11px;color:var(--gray-500);margin-left:4px;"></span>
 </div>
 
+<!-- ── MAIN CONTENT ── -->
 <main>
   <div id="statusMsg"></div>
 
+  <!-- Empty state -->
   <div id="emptyState" class="empty-state">
     <div class="empty-icon">📦</div>
     <h2>No Data Loaded</h2>
@@ -315,8 +315,10 @@
     </div>
   </div>
 
+  <!-- Dashboard (hidden until data loads) -->
   <div id="dashboard" style="display:none;">
 
+    <!-- KPI row -->
     <div class="kpi-row">
       <div class="kpi-card">
         <div class="kpi-label">Total Orders Dropped</div>
@@ -340,11 +342,10 @@
       </div>
     </div>
 
+    <!-- Charts -->
     <div class="charts-row">
       <div class="chart-card">
-        <div class="chart-card-header">
-          <div class="chart-card-title">Orders Dropped by Day</div>
-        </div>
+        <div class="chart-card-header"><div class="chart-card-title">Orders Dropped by Day</div></div>
         <div class="chart-card-body">
           <div style="position:relative;height:220px;">
             <canvas id="chartOrders" role="img" aria-label="Orders dropped by day"></canvas>
@@ -352,9 +353,7 @@
         </div>
       </div>
       <div class="chart-card">
-        <div class="chart-card-header">
-          <div class="chart-card-title">Units Dropped by Day</div>
-        </div>
+        <div class="chart-card-header"><div class="chart-card-title">Units Dropped by Day</div></div>
         <div class="chart-card-body">
           <div style="position:relative;height:220px;">
             <canvas id="chartUnits" role="img" aria-label="Units dropped by day"></canvas>
@@ -363,6 +362,7 @@
       </div>
     </div>
 
+    <!-- Customer hourly detail panel -->
     <div id="detailPanel" class="detail-panel" style="display:none;">
       <div class="detail-header">
         <div>
@@ -378,6 +378,7 @@
       </div>
     </div>
 
+    <!-- Customer breakdown grid -->
     <div class="section-header">
       <div class="section-label">Customer Breakdown</div>
       <div class="section-line"></div>
@@ -385,6 +386,7 @@
     </div>
     <div class="customer-grid" id="customerGrid"></div>
 
+    <!-- Daily summary table -->
     <div class="table-card">
       <div class="table-card-header">
         <div class="table-card-title">Daily Summary</div>
@@ -406,15 +408,38 @@
       </div>
     </div>
 
-  </div>
+  </div><!-- /dashboard -->
 </main>
 
 <script>
-// ── NAME NORMALIZATION ─────────────────────────────────────────────────────────
-// Strips extra whitespace and standardizes punctuation variants so that
+// ═══════════════════════════════════════════════════════════════════════════════
+// CONFIGURATION — paste your new /exec URL here after deploying the Apps Script
+// ═══════════════════════════════════════════════════════════════════════════════
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbz0S3vO7xCfKkC59wFgD_5ZQeblZN_GJB0IOdABkY5YWSYbBxdPS-1aIMpg1CEGTKzlBQ/exec';
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════════════════════
+let rawData = [], filteredData = [], charts = {}, activeCustomer = null;
+const $ = id => document.getElementById(id);
+const fmt = n => Number(n).toLocaleString();
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// STATUS BAR
+// ═══════════════════════════════════════════════════════════════════════════════
+function showStatus(msg, type = '') {
+  const el = $('statusMsg');
+  if (!msg) { el.innerHTML = ''; return; }
+  el.innerHTML = `<div class="alert ${type}">${msg}</div>`;
+  if (type === 'success') setTimeout(() => { el.innerHTML = ''; }, 4000);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DATA NORMALIZATION
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Standardizes vendor name casing and punctuation variants:
 // "BEDJET  LLC", "BEDJET, LLC" → "BEDJET, LLC"
-// "AIRTHINGS AMERICA  INC", "AIRTHINGS AMERICA, INC" → "AIRTHINGS AMERICA, INC."
-// etc.
 function normalizeName(raw) {
   if (!raw) return '';
   let s = raw.trim().replace(/\s{2,}/g, ' ').toUpperCase();
@@ -425,41 +450,41 @@ function normalizeName(raw) {
   return s;
 }
 
-let rawData = [], filteredData = [], charts = {}, activeCustomer = null;
-const $ = id => document.getElementById(id);
-const fmt = n => Number(n).toLocaleString();
-
-function showStatus(msg, type = '') {
-  const el = $('statusMsg');
-  if (!msg) { el.innerHTML = ''; return; }
-  el.innerHTML = `<div class="alert ${type}">${msg}</div>`;
-  if (type === 'success') setTimeout(() => el.innerHTML = '', 3500);
-}
-
+// Parses any date format (Excel serial, YYYY-MM-DD, M/D/YYYY) → "YYYY-MM-DD"
 function parseDate(v) {
   if (!v) return null;
   if (typeof v === 'number') {
+    // Excel date serial
     const d = new Date((v - 25569) * 86400 * 1000);
     return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
   }
   const s = String(v).trim().replace(/^'/, '');
   if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
   const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
-  if (m) { let y = parseInt(m[3]); if (y < 100) y += 2000; return `${y}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`; }
+  if (m) {
+    let y = parseInt(m[3]);
+    if (y < 100) y += 2000;
+    return `${y}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`;
+  }
   return s.slice(0, 10);
 }
 
+// Accepts a raw row from either Excel (any header format) or the sheet (lowercase underscored headers)
+// Returns a clean normalized object: { name, code, date, hour, qty }
 function normalizeRow(row) {
   const lc = {};
-  Object.entries(row).forEach(([k, v]) => lc[k.trim().toLowerCase()] = v);
+  Object.entries(row).forEach(([k, v]) => lc[k.trim().toLowerCase().replace(/\s+/g, '_')] = v);
   const name = normalizeName(String(lc['vendor_name'] || lc['customer'] || ''));
   const code  = String(lc['vendor_code'] || '').trim().replace(/^'/, '');
   const date  = parseDate(lc['release_date'] || lc['date'] || '');
   const hour  = parseInt(String(lc['hour_drop'] || lc['hour'] || '0').replace(/^'/, '')) || 0;
-  const qty   = parseFloat(lc['qty_ordered'] || lc['quantity'] || 0) || 0;
+  const qty   = parseFloat(String(lc['qty_ordered'] || lc['quantity'] || '0').replace(/^'/, '')) || 0;
   return { name, code, date, hour, qty };
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// LOAD DATA (called from both file import and sheet fetch)
+// ═══════════════════════════════════════════════════════════════════════════════
 function loadData(rows, skipPush) {
   const newRows = rows.map(normalizeRow).filter(r => r.name && r.date);
   if (!newRows.length) {
@@ -467,52 +492,129 @@ function loadData(rows, skipPush) {
     return;
   }
 
-  // Append new rows to existing data, then deduplicate by composite key
-  const combined = [...rawData, ...newRows];
-  const seen = new Set();
-  rawData = combined.filter(r => {
-    const key = `${r.name}|${r.code}|${r.date}|${r.hour}|${r.qty}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+  // Merge with existing in-memory data (no dedup — duplicate rows are valid)
+  rawData = [...rawData, ...newRows];
 
   populateFilters();
   applyFilters();
-  $('emptyState').style.display  = 'none';
-  $('dashboard').style.display   = 'block';
-  $('filterBar').style.display   = 'flex';
-  const custCount = [...new Set(rawData.map(r => r.name))].length;
-  const addedCount = rawData.length - (rawData.length - newRows.length);
-  showStatus(`&#10003; Loaded ${fmt(rawData.length)} rows across ${custCount} customers (${fmt(newRows.length)} new)`, 'success');
+  $('emptyState').style.display = 'none';
+  $('dashboard').style.display  = 'block';
+  $('filterBar').style.display  = 'flex';
 
-  // Push the normalized rows (guaranteed field names) rather than raw Excel rows
-  // whose headers may not match what the Apps Script expects.
+  const custCount = new Set(rawData.map(r => r.name)).size;
+  showStatus(`&#10003; ${fmt(rawData.length)} rows across ${custCount} customers`, 'success');
+
+  // Write new rows to the sheet (only on file import, not on fetch)
   if (!skipPush) pushToSheet(newRows);
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// FETCH FROM SHEET (GET — reads only, no CORS issue)
+// ═══════════════════════════════════════════════════════════════════════════════
+async function fetchData() {
+  showStatus('<div class="loading"><div class="spinner"></div>Loading data from sheet…</div>', 'info');
+  try {
+    const res = await fetch(GAS_URL, { method: 'GET' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    if (json.error) throw new Error(json.error);
+    const data = Array.isArray(json) ? json : (json.data || []);
+    if (!data.length) {
+      showStatus('Sheet is empty. Import an Excel file to get started.', 'info');
+      return;
+    }
+    rawData = []; // sheet is the source of truth — reset local data before loading
+    loadData(data, true); // skipPush = true, rows already live in the sheet
+  } catch (err) {
+    showStatus(`Could not load data: ${err.message}`, 'error');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PUSH TO SHEET (POST — avoids the GET redirect/CORS problem entirely)
+// ═══════════════════════════════════════════════════════════════════════════════
+async function pushToSheet(normalizedRows) {
+  showStatus('<div class="loading"><div class="spinner"></div>Saving to sheet…</div>', 'info');
+
+  // Map normalized { name, code, date, hour, qty } → explicit GAS field names
+  const mapped = normalizedRows.map(r => ({
+    vendor_name:  r.name,
+    vendor_code:  r.code,
+    release_date: r.date,
+    hour_drop:    r.hour,
+    qty_ordered:  r.qty
+  }));
+
+  // Send in chunks of 50 rows per POST. POSTing JSON directly to doPost avoids
+  // all GET redirect / URL-length / CORS issues that plagued the previous approach.
+  const CHUNK = 50;
+  let totalAppended = 0;
+
+  try {
+    for (let i = 0; i < mapped.length; i += CHUNK) {
+      const chunk   = mapped.slice(i, i + CHUNK);
+      const payload = JSON.stringify({ action: 'append', rows: chunk });
+
+      const res = await fetch(GAS_URL, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body:    'payload=' + encodeURIComponent(payload)
+      });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      totalAppended += data.appended ?? chunk.length;
+    }
+    showStatus(`&#10003; ${fmt(totalAppended)} rows saved to sheet`, 'success');
+  } catch (err) {
+    showStatus(`&#9888; Loaded locally but could not save to sheet: ${err.message}`, 'error');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// FILE IMPORT (Excel / CSV)
+// ═══════════════════════════════════════════════════════════════════════════════
+function handleFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb   = XLSX.read(e.target.result, { type: 'array', cellDates: false });
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
+      loadData(rows); // skipPush is undefined → will push to sheet
+    } catch (err) {
+      showStatus('Failed to parse file: ' + err.message, 'error');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// FILTERS
+// ═══════════════════════════════════════════════════════════════════════════════
 function populateFilters() {
   const today = new Date();
-  today.setHours(0,0,0,0);
-
+  today.setHours(0, 0, 0, 0);
   const thirtyDaysAgo = new Date(today);
   thirtyDaysAgo.setDate(today.getDate() - 30);
-
   const yesterday = new Date(today);
   yesterday.setDate(today.getDate() - 1);
-
   const toISO = d => d.toISOString().slice(0, 10);
 
   $('filterStart').value = toISO(thirtyDaysAgo);
   $('filterEnd').value   = toISO(yesterday);
 
   const custs = [...new Set(rawData.map(r => r.name))].sort();
-  const sel   = $('filterCustomer');
-  sel.innerHTML = '<option value="">All Customers</option>' + custs.map(c => `<option>${c}</option>`).join('');
+  $('filterCustomer').innerHTML =
+    '<option value="">All Customers</option>' +
+    custs.map(c => `<option value="${c.replace(/"/g,'&quot;')}">${c}</option>`).join('');
 }
 
 function applyFilters() {
-  const start = $('filterStart').value, end = $('filterEnd').value, cust = $('filterCustomer').value;
+  const start = $('filterStart').value;
+  const end   = $('filterEnd').value;
+  const cust  = $('filterCustomer').value;
   filteredData = rawData.filter(r => {
     if (start && r.date < start) return false;
     if (end   && r.date > end)   return false;
@@ -531,6 +633,9 @@ function resetFilters() {
   renderAll();
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// RENDER ENGINE
+// ═══════════════════════════════════════════════════════════════════════════════
 function renderAll() {
   const totalOrders = filteredData.length;
   const totalUnits  = filteredData.reduce((s, r) => s + r.qty, 0);
@@ -540,9 +645,9 @@ function renderAll() {
   $('kpiOrders').textContent    = fmt(totalOrders);
   $('kpiOrdersSub').textContent = `across ${dates.length} day(s)`;
   $('kpiUnits').textContent     = fmt(Math.round(totalUnits));
-  $('kpiUnitsSub').textContent  = `in selected date range`;
+  $('kpiUnitsSub').textContent  = 'in selected date range';
   $('kpiCustomers').textContent = custs.length;
-  $('kpiCustSub').textContent   = `with orders in range`;
+  $('kpiCustSub').textContent   = 'with orders in range';
   $('kpiAvg').textContent       = totalOrders ? (totalUnits / totalOrders).toFixed(1) : '0';
   $('rowCount').textContent     = `${fmt(filteredData.length)} rows`;
 
@@ -551,17 +656,7 @@ function renderAll() {
   renderDailyTable();
 }
 
-function groupByDate(data, valFn) {
-  const map = {};
-  data.forEach(r => { map[r.date] = (map[r.date] || 0) + valFn(r); });
-  const keys = Object.keys(map).sort();
-  return { labels: keys, values: keys.map(k => map[k]) };
-}
-
-function destroyChart(key) {
-  if (charts[key]) { charts[key].destroy(); delete charts[key]; }
-}
-
+// ── Chart helpers ──────────────────────────────────────────────────────────────
 const TT = {
   backgroundColor: '#003057', titleColor: '#fff',
   bodyColor: '#ccd9e8', borderColor: 'rgba(255,255,255,0.15)',
@@ -571,6 +666,17 @@ const SCALES = {
   x: { ticks: { color: '#6c757d', font: { size: 10 }, maxRotation: 45, autoSkip: true, maxTicksLimit: 14 }, grid: { color: 'rgba(0,0,0,0.05)' } },
   y: { ticks: { color: '#6c757d', font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.06)' }, beginAtZero: true }
 };
+
+function destroyChart(key) {
+  if (charts[key]) { charts[key].destroy(); delete charts[key]; }
+}
+
+function groupByDate(data, valFn) {
+  const map = {};
+  data.forEach(r => { map[r.date] = (map[r.date] || 0) + valFn(r); });
+  const keys = Object.keys(map).sort();
+  return { labels: keys, values: keys.map(k => map[k]) };
+}
 
 function renderByDayCharts() {
   const o = groupByDate(filteredData, () => 1);
@@ -590,20 +696,21 @@ function renderByDayCharts() {
   });
 }
 
+// ── Customer cards ─────────────────────────────────────────────────────────────
 function renderCustomerCards() {
   const map = {};
   filteredData.forEach(r => {
-    if (!map[r.name]) map[r.name] = { name: r.name, code: r.code, orders: 0, units: 0, dates: new Set(), hours: {} };
+    if (!map[r.name]) map[r.name] = { name: r.name, code: r.code, orders: 0, units: 0, dates: new Set() };
     map[r.name].orders++;
     map[r.name].units += r.qty;
     map[r.name].dates.add(r.date);
-    map[r.name].hours[r.hour] = (map[r.name].hours[r.hour] || 0) + 1;
   });
 
   const sorted = Object.values(map).sort((a, b) => b.orders - a.orders);
-  $('customerGrid').innerHTML = sorted.map((c, i) => `
-    <div class="customer-card ${activeCustomer === c.name ? 'active' : ''}"
-         onclick="showDetail('${c.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')">
+  $('customerGrid').innerHTML = sorted.map((c, i) => {
+    const safeName = c.name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    return `
+    <div class="customer-card ${activeCustomer === c.name ? 'active' : ''}" onclick="showDetail('${safeName}')">
       <div class="cust-top">
         <div>
           <div class="cust-name">${c.name}</div>
@@ -621,14 +728,13 @@ function renderCustomerCards() {
           <div class="cust-stat-val red">${fmt(Math.round(c.units))}</div>
         </div>
       </div>
-      <div class="cust-footer">
-        &#128197; ${c.dates.size} active day(s) &nbsp;&middot;&nbsp; ~${c.orders ? Math.round(c.units / c.orders) : 0} units/order
-      </div>
+      <div class="cust-footer">&#128197; ${c.dates.size} active day(s) &nbsp;&middot;&nbsp; ~${c.orders ? Math.round(c.units / c.orders) : 0} units/order</div>
       <div class="click-hint">&#9654; View hourly breakdown</div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
+// ── Hourly detail panel ────────────────────────────────────────────────────────
 function showDetail(custName) {
   activeCustomer = custName;
   renderCustomerCards();
@@ -638,12 +744,12 @@ function showDetail(custName) {
   custData.forEach(r => { hourMap[r.hour] = (hourMap[r.hour] || 0) + 1; });
 
   const hours  = Array.from({ length: 24 }, (_, i) => i);
-  const labels = hours.map(h => h === 0 ? '12am' : h < 12 ? `${h}am` : h === 12 ? '12pm' : `${h-12}pm`);
+  const labels = hours.map(h => h === 0 ? '12am' : h < 12 ? `${h}am` : h === 12 ? '12pm' : `${h - 12}pm`);
   const vals   = hours.map(h => hourMap[h] || 0);
   const maxVal = Math.max(...vals);
 
   $('detailName').textContent = custName;
-  $('detailSub').textContent  = `${fmt(custData.length)} orders · ${fmt(Math.round(custData.reduce((s,r) => s + r.qty, 0)))} units`;
+  $('detailSub').textContent  = `${fmt(custData.length)} orders · ${fmt(Math.round(custData.reduce((s, r) => s + r.qty, 0)))} units`;
   $('detailPanel').style.display = 'block';
 
   destroyChart('hourly');
@@ -660,7 +766,10 @@ function showDetail(custName) {
     },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { ...TT, callbacks: { label: ctx => ` ${ctx.raw} order${ctx.raw !== 1 ? 's' : ''}` } } },
+      plugins: {
+        legend: { display: false },
+        tooltip: { ...TT, callbacks: { label: ctx => ` ${ctx.raw} order${ctx.raw !== 1 ? 's' : ''}` } }
+      },
       scales: {
         x: { ticks: { color: '#6c757d', font: { size: 10 }, maxRotation: 45 }, grid: { color: 'rgba(0,0,0,0.05)' } },
         y: { ticks: { color: '#6c757d', font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.06)' }, beginAtZero: true }
@@ -678,6 +787,7 @@ function closeDetail() {
   renderCustomerCards();
 }
 
+// ── Daily summary table ────────────────────────────────────────────────────────
 function renderDailyTable() {
   const map = {};
   filteredData.forEach(r => {
@@ -699,6 +809,7 @@ function renderDailyTable() {
     : '<tr><td colspan="5" class="no-data">No data in selected range.</td></tr>';
 }
 
+// ── CSV export ─────────────────────────────────────────────────────────────────
 function exportCSV() {
   const map = {};
   filteredData.forEach(r => {
@@ -707,79 +818,29 @@ function exportCSV() {
     map[r.date].units += r.qty;
     map[r.date].custs.add(r.name);
   });
-  const rows = [['Date','Orders Dropped','Units Dropped','Customers','Avg Units/Order'],
-    ...Object.entries(map).sort((a,b)=>a[0].localeCompare(b[0])).map(([d,v])=>[d,v.orders,Math.round(v.units),v.custs.size,(v.units/v.orders).toFixed(1)])];
-  const blob = new Blob([rows.map(r=>r.join(',')).join('\n')], { type: 'text/csv' });
-  const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: 'orders_dropped.csv' });
-  a.click(); URL.revokeObjectURL(a.href);
+  const rows = [
+    ['Date', 'Orders Dropped', 'Units Dropped', 'Customers', 'Avg Units/Order'],
+    ...Object.entries(map)
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([d, v]) => [d, v.orders, Math.round(v.units), v.custs.size, (v.units / v.orders).toFixed(1)])
+  ];
+  const blob = new Blob([rows.map(r => r.join(',')).join('\n')], { type: 'text/csv' });
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(blob),
+    download: 'orders_dropped.csv'
+  });
+  a.click();
+  URL.revokeObjectURL(a.href);
 }
 
-function handleFile(file) {
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    try {
-      const wb   = XLSX.read(e.target.result, { type: 'array', cellDates: false });
-      const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
-      loadData(rows);
-    } catch (err) { showStatus('Failed to parse file: ' + err.message, 'error'); }
-  };
-  reader.readAsArrayBuffer(file);
-}
-
-async function fetchData() {
-  showStatus('<div class="loading"><div class="spinner"></div>Loading data…</div>', 'info');
-  try {
-    const res  = await fetch(GAS_URL + '?payload=' + encodeURIComponent(JSON.stringify({ action: 'getAll' })));
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const json = await res.json();
-    if (json.error) throw new Error(json.error);
-    const data = Array.isArray(json) ? json : (json.data || []);
-    if (!data.length) throw new Error('No data returned');
-    rawData = []; // clear before loading from sheet (authoritative source)
-    loadData(data, true); // skipPush = true, data already lives in the sheet
-  } catch (err) {
-    showStatus(`Could not load data: ${err.message}`, 'error');
-  }
-}
-
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbz-akv_D7f_qLfyIjsB3ht1Pz2-gSrV_vOyk97F7GmUS9oDxOphb5A6yH_uLkY4ZvxhQw/exec';
-
-async function pushToSheet(rows) {
-  showStatus('<div class="loading"><div class="spinner"></div>Saving to sheet…</div>', 'info');
-
-  // Re-map normalized { name, code, date, hour, qty } to explicit GAS field names
-  const mapped = rows.map(r => ({
-    vendor_name:  r.name,
-    vendor_code:  r.code,
-    release_date: r.date,
-    hour_drop:    r.hour,
-    qty_ordered:  r.qty
-  }));
-
-  // GAS GET deployments issue a 302 redirect to script.googleusercontent.com,
-  // which strips CORS headers — so fetch() with default mode:'cors' throws on
-  // the redirect. For write calls we don't need the response body, so we use
-  // mode:'no-cors' (fire-and-forget) to let the redirect succeed silently.
-  // Chunks are kept small (5 rows) to stay under the ~2 KB GET URL limit.
-  const CHUNK = 5;
-  try {
-    for (let i = 0; i < mapped.length; i += CHUNK) {
-      const chunk = mapped.slice(i, i + CHUNK);
-      const url = GAS_URL + '?payload=' + encodeURIComponent(JSON.stringify({ action: 'append', rows: chunk }));
-      await fetch(url, { mode: 'no-cors' }); // opaque response is expected and fine
-    }
-    showStatus(`&#10003; ${fmt(mapped.length)} rows saved to sheet`, 'success');
-  } catch (err) {
-    showStatus(`&#9888; Data loaded locally but could not save to sheet: ${err.message}`, 'error');
-  }
-}
-
+// ═══════════════════════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════════════════════
 $('fileInput').addEventListener('change',  e => handleFile(e.target.files[0]));
 $('fileInput2').addEventListener('change', e => handleFile(e.target.files[0]));
 $('refreshBtn').addEventListener('click', fetchData);
 
-// Auto-load on page open
+// Auto-load from sheet on page open
 fetchData();
 </script>
 </body>
