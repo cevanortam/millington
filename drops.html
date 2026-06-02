@@ -745,20 +745,28 @@ const GAS_URL = 'https://script.google.com/macros/s/AKfycbz-akv_D7f_qLfyIjsB3ht1
 
 async function pushToSheet(rows) {
   showStatus('<div class="loading"><div class="spinner"></div>Saving new rows to sheet…</div>', 'info');
-  const CHUNK = 50; // send 50 rows per request to stay within URL length limits
+  const CHUNK = 10; // keep chunks small to stay under GAS query string limits
   let totalAppended = 0;
   try {
     for (let i = 0; i < rows.length; i += CHUNK) {
       const chunk = rows.slice(i, i + CHUNK);
-      const params = new URLSearchParams({
-        action: 'append',
-        rows: JSON.stringify(chunk)
-      });
-      const res = await fetch(GAS_URL + '?' + params.toString(), { method: 'GET' });
+      // Encode each row field individually so no single param blows the URL limit
+      const params = new URLSearchParams({ action: 'append' });
+      chunk.forEach((r, idx) => params.set('r' + idx, JSON.stringify(r)));
+      params.set('count', chunk.length);
+
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 15000);
+      let res;
+      try {
+        res = await fetch(GAS_URL + '?' + params.toString(), { method: 'GET', signal: controller.signal });
+      } finally {
+        clearTimeout(timer);
+      }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
-      if (json.error) throw new Error(json.error);
-      totalAppended += json.appended ?? chunk.length;
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      totalAppended += data.appended ?? chunk.length;
     }
     showStatus(`&#10003; ${fmt(totalAppended)} rows saved to sheet`, 'success');
   } catch (err) {
