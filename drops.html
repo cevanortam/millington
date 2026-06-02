@@ -460,19 +460,33 @@ function normalizeRow(row) {
   return { name, code, date, hour, qty };
 }
 
-function loadData(rows) {
-  rawData = rows.map(normalizeRow).filter(r => r.name && r.date);
-  if (!rawData.length) {
+function loadData(rows, skipPush) {
+  const newRows = rows.map(normalizeRow).filter(r => r.name && r.date);
+  if (!newRows.length) {
     showStatus('No valid rows found. Check column names: vendor_name, vendor_code, release_date, hour_drop, qty_ordered.', 'error');
     return;
   }
+
+  // Append new rows to existing data, then deduplicate by composite key
+  const combined = [...rawData, ...newRows];
+  const seen = new Set();
+  rawData = combined.filter(r => {
+    const key = `${r.name}|${r.code}|${r.date}|${r.hour}|${r.qty}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
   populateFilters();
   applyFilters();
   $('emptyState').style.display  = 'none';
   $('dashboard').style.display   = 'block';
   $('filterBar').style.display   = 'flex';
   const custCount = [...new Set(rawData.map(r => r.name))].length;
-  showStatus(`&#10003; Loaded ${fmt(rawData.length)} rows across ${custCount} customers`, 'success');
+  const addedCount = rawData.length - (rawData.length - newRows.length);
+  showStatus(`&#10003; Loaded ${fmt(rawData.length)} rows across ${custCount} customers (${fmt(newRows.length)} new)`, 'success');
+
+  if (!skipPush) pushToSheet(rows);
 }
 
 function populateFilters() {
@@ -714,15 +728,41 @@ function handleFile(file) {
 async function fetchData() {
   showStatus('<div class="loading"><div class="spinner"></div>Loading data…</div>', 'info');
   try {
-    const res  = await fetch('https://script.google.com/macros/s/AKfycbz-akv_D7f_qLfyIjsB3ht1Pz2-gSrV_vOyk97F7GmUS9oDxOphb5A6yH_uLkY4ZvxhQw/exec?action=getAll');
+    const res  = await fetch(GAS_URL + '?action=getAll');
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
     if (json.error) throw new Error(json.error);
     const data = Array.isArray(json) ? json : (json.data || []);
     if (!data.length) throw new Error('No data returned');
-    loadData(data);
+    rawData = []; // clear before loading from sheet (authoritative source)
+    loadData(data, true); // skipPush = true, data already lives in the sheet
   } catch (err) {
     showStatus(`Could not load data: ${err.message}`, 'error');
+  }
+}
+
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbz-akv_D7f_qLfyIjsB3ht1Pz2-gSrV_vOyk97F7GmUS9oDxOphb5A6yH_uLkY4ZvxhQw/exec';
+
+async function pushToSheet(rows) {
+  showStatus('<div class="loading"><div class="spinner"></div>Saving new rows to sheet…</div>', 'info');
+  const CHUNK = 50; // send 50 rows per request to stay within URL length limits
+  let totalAppended = 0;
+  try {
+    for (let i = 0; i < rows.length; i += CHUNK) {
+      const chunk = rows.slice(i, i + CHUNK);
+      const params = new URLSearchParams({
+        action: 'append',
+        rows: JSON.stringify(chunk)
+      });
+      const res = await fetch(GAS_URL + '?' + params.toString(), { method: 'GET' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      if (json.error) throw new Error(json.error);
+      totalAppended += json.appended ?? chunk.length;
+    }
+    showStatus(`&#10003; ${fmt(totalAppended)} rows saved to sheet`, 'success');
+  } catch (err) {
+    showStatus(`&#9888; Data loaded locally but could not save to sheet: ${err.message}`, 'error');
   }
 }
 
