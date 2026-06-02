@@ -728,7 +728,7 @@ function handleFile(file) {
 async function fetchData() {
   showStatus('<div class="loading"><div class="spinner"></div>Loading data…</div>', 'info');
   try {
-    const res  = await fetch(GAS_URL + '?action=getAll');
+    const res  = await fetch(GAS_URL + '?payload=' + encodeURIComponent(JSON.stringify({ action: 'getAll' })));
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
     if (json.error) throw new Error(json.error);
