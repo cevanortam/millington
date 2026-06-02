@@ -745,24 +745,14 @@ const GAS_URL = 'https://script.google.com/macros/s/AKfycbz-akv_D7f_qLfyIjsB3ht1
 
 async function pushToSheet(rows) {
   showStatus('<div class="loading"><div class="spinner"></div>Saving new rows to sheet…</div>', 'info');
-  const CHUNK = 10; // keep chunks small to stay under GAS query string limits
+  const CHUNK = 20;
   let totalAppended = 0;
   try {
     for (let i = 0; i < rows.length; i += CHUNK) {
       const chunk = rows.slice(i, i + CHUNK);
-      // Encode each row field individually so no single param blows the URL limit
-      const params = new URLSearchParams({ action: 'append' });
-      chunk.forEach((r, idx) => params.set('r' + idx, JSON.stringify(r)));
-      params.set('count', chunk.length);
-
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 15000);
-      let res;
-      try {
-        res = await fetch(GAS_URL + '?' + params.toString(), { method: 'GET', signal: controller.signal });
-      } finally {
-        clearTimeout(timer);
-      }
+      // Use single ?payload= param (URL-encoded JSON) — the pattern that works with GAS GET
+      const url = GAS_URL + '?payload=' + encodeURIComponent(JSON.stringify({ action: 'append', rows: chunk }));
+      const res  = await fetch(url);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
