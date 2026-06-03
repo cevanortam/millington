@@ -232,6 +232,7 @@
   .badge-hold { background: var(--red-light); color: var(--red); }
   .badge-process { background: var(--gold-light); color: #7a4f00; }
   .badge-open { background: var(--navy-light); color: var(--navy); }
+  .badge-vas-complete { background: var(--purple-light); color: var(--purple); }
 
   .overdue-row td { background: #fff5f5; }
   .overdue-row:hover td { background: #ffeaea; }
@@ -461,6 +462,7 @@
       <option value="IN PROCESS">In Process</option>
       <option value="HOLD">Hold</option>
       <option value="OPEN">Open</option>
+      <option value="VAS COMPLETE">VAS Complete</option>
     </select>
     <select onchange="filterOrders()" id="filterOpen">
       <option value="">All Orders</option>
@@ -620,6 +622,7 @@
       <option value="IN PROCESS">In Process</option>
       <option value="HOLD">Hold</option>
       <option value="OPEN">Open</option>
+      <option value="VAS COMPLETE">VAS Complete</option>
     </select>
     <select onchange="renderMetrics()" id="m_filterOpen">
       <option value="">All Orders</option>
@@ -928,6 +931,7 @@
                 <option value="IN PROCESS">IN PROCESS</option>
                 <option value="HOLD">HOLD</option>
                 <option value="OPEN">OPEN</option>
+                <option value="VAS COMPLETE">VAS COMPLETE</option>
               </select>
             </div>
           </div>
@@ -1554,6 +1558,7 @@ function renderTable() {
           <option value="IN PROCESS"${o.routed_status==='IN PROCESS'?' selected':''}>IN PROCESS</option>
           <option value="HOLD"${o.routed_status==='HOLD'?' selected':''}>HOLD</option>
           <option value="OPEN"${o.routed_status==='OPEN'?' selected':''}>OPEN</option>
+          <option value="VAS COMPLETE"${o.routed_status==='VAS COMPLETE'?' selected':''}>VAS COMPLETE</option>
         </select>
       </td>
       <td><input type="text" class="date-paste" placeholder="MM/DD/YYYY" value="${fmtDateDisplay(o.ship_date)}" onchange="updateDateField(${absIdx},'ship_date',this)" onpaste="handleDatePaste(event,${absIdx},'ship_date',this)"></td>
@@ -1613,6 +1618,7 @@ function badgeClass(s) {
   if(u==='ROUTED') return 'badge-routed';
   if(u==='HOLD') return 'badge-hold';
   if(u==='IN PROCESS') return 'badge-process';
+  if(u==='VAS COMPLETE') return 'badge-vas-complete';
   return 'badge-open';
 }
 
