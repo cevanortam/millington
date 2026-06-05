@@ -411,7 +411,7 @@ input[type="file"] { display: none; }
 
 // Current Day — Google Sheets CSV (same URL as productivity.html)
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQSCLwK71k52Yc_Sfnz3qzycsuHKn23n7ywFNEWzowh2jYCpfS23jpwz0po4E3b_OdLt6fkNAN-JEVU/pub?gid=0&single=true&output=csv';
-const REFRESH_MS = 5 * 60 * 1000;  // 5-minute auto-refresh
+const REFRESH_MS = 5 * 60 * 1000;  // 5-minute full page reload
 const CIRCUMFERENCE = 2 * Math.PI * 18; // ring circumference
 
 // PD + MTD — Google Apps Script (single Sheet, two tabs)
@@ -453,7 +453,7 @@ const state = {
 let cdRawRows    = [];  // CSV rows before processing
 let allNames     = [];  // all names across all tabs for autocomplete
 let countdownSec = REFRESH_MS / 1000;
-let countdownInterval, refreshTimer;
+let countdownInterval;
 let uploadOpen   = false;
 let lastUploaded = { pd: null, mtd: null };
 
@@ -530,8 +530,35 @@ function tickRing() {
 }
 
 // ════════════════════════════════════════════════════════════════
-//  CURRENT DAY  — CSV auto-refresh
+//  CURRENT DAY  — CSV fetch + full-page reload on 5-min interval
 // ════════════════════════════════════════════════════════════════
+
+// Wall-clock time the page should reload (set once at script parse time)
+const RELOAD_AT = Date.now() + REFRESH_MS;
+
+// Arms a reload that survives timer throttling and background tabs.
+// Called once after the first successful CD fetch.
+let reloadScheduled = false;
+function scheduleReload() {
+    if (reloadScheduled) return;
+    reloadScheduled = true;
+
+    // Primary: 10-second interval that checks wall-clock time.
+    // Immune to setTimeout/setInterval throttling because it re-checks
+    // Date.now() on every tick rather than relying on drift-free timing.
+    setInterval(() => {
+        if (Date.now() >= RELOAD_AT) location.reload();
+    }, 10000);
+
+    // Fallback: when the tab comes back to the foreground after being
+    // backgrounded for a long time, fire immediately if overdue.
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && Date.now() >= RELOAD_AT) {
+            location.reload();
+        }
+    });
+}
+
 function fetchCurrentDay() {
     return new Promise(resolve => {
         fetch(CSV_URL + '&t=' + Date.now(), { mode: 'cors' })
@@ -546,8 +573,7 @@ function fetchCurrentDay() {
                         processCDRows(rows);
                         setSyncUI('ok', new Date().toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit'}));
                         startCountdown();
-                        clearTimeout(refreshTimer);
-                        refreshTimer = setTimeout(() => fetchCurrentDay(), REFRESH_MS);
+                        scheduleReload(); // arm the full-page reload
                         resolve();
                     }
                 });
