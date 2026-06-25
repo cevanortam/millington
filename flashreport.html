@@ -218,7 +218,7 @@
 <!-- ═══ HEADER ═══ -->
 <header class="header">
   <div class="header-left">
-    <img src="https://www.freelogovectors.net/wp-content/uploads/2022/07/ceva-logistics-logo-freelogovectors.net_.png"
+    <img src="https://www.cevalogistics.com/_ipx/w_1920&f_webp/images-spx/x_large_picture/CEVA_Black.jpg"
          alt="CEVA Logistics" class="header-logo" onerror="this.style.display='none'">
     <div class="header-divider"></div>
     <div>
@@ -315,6 +315,16 @@
     <div class="kpi-grid" id="kpiGrid"></div>
     <div class="chart-section" id="chartSection">
       <div class="empty-state"><p>No data to display</p><small>Enter data in the Data Input tab to see charts here.</small></div>
+    </div>
+
+    <!-- Notes & Comments section for text-type metrics -->
+    <div id="textNotesSection" style="display:none;margin-top:32px;">
+      <div class="section-header">
+        <div class="section-accent"></div>
+        <h2>Notes &amp; Comments</h2>
+        <div class="section-line"></div>
+      </div>
+      <div id="textNotesGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:20px;"></div>
     </div>
   </div>
 
@@ -481,7 +491,25 @@ async function pullFromSheet() {
       }
       return { id:dateStr, date:dateStr, values:e.values };
     });
-    if (data.headers) data.headers.forEach(h => { if (!c.metrics.find(m=>m.name===h)) c.metrics.push({id:uid(),name:h,type:'whole'}); });
+    if (data.headers) {
+      const brandNewHeaders = [];
+      data.headers.forEach(h => {
+        const hTrim  = h.trim();
+        const hLower = hTrim.toLowerCase();
+        // 1. Exact match — nothing to do
+        if (c.metrics.find(m => m.name === hTrim)) return;
+        // 2. Case-insensitive / whitespace match — rename local metric to sheet's spelling
+        //    so future data lookups (keyed by header) bind correctly
+        const fuzzy = c.metrics.find(m => m.name.trim().toLowerCase() === hLower);
+        if (fuzzy) { fuzzy.name = hTrim; return; }
+        // 3. Truly new header — append and flag
+        c.metrics.push({ id:uid(), name:hTrim, type:'whole' });
+        brandNewHeaders.push(hTrim);
+      });
+      if (brandNewHeaders.length) {
+        showToast(`New column(s) from sheet: ${brandNewHeaders.join(', ')} — set type in Settings`, 'success');
+      }
+    }
     saveLocal();
     renderMetricList();
     renderInputMetrics();
@@ -501,18 +529,44 @@ async function reloadAllFromSheet() {
     const sheetCustomers = (data.customers || []).filter(c => c.name !== 'Sheet1' && c.headers.length > 0);
     if (!sheetCustomers.length) { showToast('No customer data found', 'error'); return; }
 
-    // Preserve any locally-set metric types where names match
-    const savedTypes = {};
-    allCustomers.forEach(c => { c.metrics.forEach(m => { savedTypes[c.customerName + '||' + m.name] = m.type; }); });
+    allCustomers = sheetCustomers.map(sc => {
+      // Find the matching local customer to preserve its metric order + types
+      const localCx = allCustomers.find(lc =>
+        lc.customerName.trim().toLowerCase() === sc.name.trim().toLowerCase()
+      );
+      const sheetHeaders = sc.headers.map(h => h.trim());
 
-    allCustomers = sheetCustomers.map(c => ({
-      id: uid(),
-      customerName: c.name,
-      reportTitle: '',
-      facility: '',
-      metrics: c.headers.map(h => ({ id: uid(), name: h, type: savedTypes[c.name + '||' + h] || 'whole' })),
-      entries: []
-    }));
+      let metrics;
+      if (localCx) {
+        // Start with the locally-ordered metrics that still exist in the sheet
+        const preserved = localCx.metrics
+          .map(m => {
+            const mLower = m.name.trim().toLowerCase();
+            const canonical = sheetHeaders.find(h => h.toLowerCase() === mLower);
+            if (!canonical) return null; // metric no longer in sheet — drop it
+            return { id: m.id, name: canonical, type: m.type, target: m.target };
+          })
+          .filter(Boolean);
+        // Append any sheet headers that weren't in local metrics
+        const preservedLower = preserved.map(m => m.name.toLowerCase());
+        const appended = sheetHeaders
+          .filter(h => !preservedLower.includes(h.toLowerCase()))
+          .map(h => ({ id: uid(), name: h, type: 'whole' }));
+        metrics = [...preserved, ...appended];
+      } else {
+        // No local state to preserve — fall back to sheet order, all 'whole'
+        metrics = sheetHeaders.map(h => ({ id: uid(), name: h, type: 'whole' }));
+      }
+
+      return {
+        id: localCx ? localCx.id : uid(),
+        customerName: sc.name,
+        reportTitle:  localCx?.reportTitle  || '',
+        facility:     localCx?.facility     || '',
+        metrics,
+        entries: []
+      };
+    });
     activeId = allCustomers[0].id;
     saveLocal();
     closeSettingsModal();
@@ -664,7 +718,20 @@ function renderMetricList() {
   el.innerHTML = c.metrics.map((m,i) => `
     <div class="metric-item" style="grid-template-columns:1fr auto auto auto auto;">
       <span class="metric-item-name">${esc(m.name)}</span>
-      <span class="metric-type-badge badge-${m.type}">${shortType(m.type)}</span>
+
+      <!-- ── Inline type selector (replaces static badge) ── -->
+      <select
+        onchange="setMetricType('${m.id}',this.value)"
+        title="Change metric type"
+        style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;border:1.5px solid var(--gray-200);background:var(--white);cursor:pointer;color:var(--gray-700);font-family:var(--font);outline:none;transition:border-color 0.15s;"
+        onfocus="this.style.borderColor='var(--red)'"
+        onblur="this.style.borderColor='var(--gray-200)'">
+        <option value="whole"   ${m.type==='whole'   ?'selected':''}>Whole #</option>
+        <option value="decimal" ${m.type==='decimal' ?'selected':''}>Decimal</option>
+        <option value="percent" ${m.type==='percent' ?'selected':''}>Percent %</option>
+        <option value="text"    ${m.type==='text'    ?'selected':''}>Text</option>
+      </select>
+
       <div style="display:flex;align-items:center;gap:4px;">
         <span style="font-size:11px;color:var(--gray-500);white-space:nowrap;">Target:</span>
         ${m.type==='text'
@@ -695,6 +762,20 @@ function setMetricTarget(id, value) {
   m.target = (value===''||isNaN(parsed)) ? undefined : parsed;
   saveLocal();
   renderSummary();
+}
+
+// Change the data type of an existing metric without deleting and re-adding
+function setMetricType(id, type) {
+  const c = cx(); if (!c) return;
+  const m = c.metrics.find(m=>m.id===id); if (!m) return;
+  m.type = type;
+  if (type === 'text') m.target = undefined; // text metrics have no numeric target
+  saveLocal();
+  renderMetricList();   // refresh the target field (N/A vs input)
+  renderInputMetrics();
+  renderEntriesTable();
+  renderSummary();
+  showToast(`"${m.name}" → ${type}`, 'success');
 }
 
 async function addMetric() {
@@ -734,17 +815,41 @@ function renderInputMetrics() {
     area.innerHTML = '<div class="empty-state"><p>No metrics configured</p><small>Click ⚙ settings under the customer name to add metrics.</small></div>';
     return;
   }
-  area.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--gray-200);border-radius:8px;overflow:hidden;background:var(--white);">${c.metrics.map((m,idx)=>`
-    <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--gray-100);${idx%2===0&&idx===c.metrics.length-1?'border-right:none;':''}${idx%2===0?'border-right:1px solid var(--gray-100);':''}">
-      <div>
-        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:var(--gray-500);margin-bottom:6px;">${esc(m.name)}</div>
-        ${m.type==='text'
-          ?`<textarea id="inp-${m.id}" placeholder="—" style="width:100%;font-size:18px;font-weight:600;color:var(--navy);border:none;outline:none;font-family:var(--font);background:transparent;resize:none;height:36px;line-height:1.4;overflow:hidden;"></textarea>`
-          :`<input id="inp-${m.id}" type="number" step="${m.type==='whole'?'1':'0.01'}" placeholder="—" inputmode="decimal" style="width:100%;font-size:22px;font-weight:700;color:var(--navy);border:none;outline:none;font-family:var(--font-cond);background:transparent;letter-spacing:0.5px;">`
-        }
+  const numMetrics  = c.metrics.filter(m => m.type !== 'text');
+  const textMetrics = c.metrics.filter(m => m.type === 'text');
+
+  const numBlock = numMetrics.length ? `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--gray-200);border-radius:8px;overflow:hidden;background:var(--white);">
+      ${numMetrics.map((m,idx)=>`
+        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--gray-100);${idx%2===0&&idx===numMetrics.length-1?'border-right:none;':''}${idx%2===0?'border-right:1px solid var(--gray-100);':''}">
+          <div>
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:var(--gray-500);margin-bottom:6px;">${esc(m.name)}</div>
+            <input id="inp-${m.id}" type="number" step="${m.type==='whole'?'1':'0.01'}" placeholder="—" inputmode="decimal" style="width:100%;font-size:22px;font-weight:700;color:var(--navy);border:none;outline:none;font-family:var(--font-cond);background:transparent;letter-spacing:0.5px;">
+          </div>
+          <span style="font-size:11px;font-weight:700;padding:3px 7px;border-radius:4px;text-transform:uppercase;align-self:flex-start;margin-top:2px;${m.type==='percent'?'background:#e8f0fe;color:#1a4a8a':m.type==='decimal'?'background:var(--warn-bg);color:var(--warn)':'background:var(--success-bg);color:var(--success)'}">${m.type==='percent'?'%':m.type==='decimal'?'0.0':'#'}</span>
+        </div>`).join('')}
+    </div>` : '';
+
+  const textBlock = textMetrics.length ? `
+    <div style="margin-top:${numMetrics.length?'20px':'0'};">
+      <div class="section-header" style="margin-bottom:12px;">
+        <div class="section-accent"></div>
+        <h2 style="font-size:14px;">Notes &amp; Comments</h2>
+        <div class="section-line"></div>
       </div>
-      <span style="font-size:11px;font-weight:700;padding:3px 7px;border-radius:4px;text-transform:uppercase;align-self:flex-start;margin-top:2px;${m.type==='percent'?'background:#e8f0fe;color:#1a4a8a':m.type==='decimal'?'background:var(--warn-bg);color:var(--warn)':m.type==='text'?'background:#f3e8ff;color:#6b21a8':'background:var(--success-bg);color:var(--success)'}">${m.type==='percent'?'%':m.type==='decimal'?'0.0':m.type==='text'?'TXT':'#'}</span>
-    </div>`).join('')}</div>`;
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px;">
+        ${textMetrics.map(m=>`
+          <div style="background:var(--white);border:1.5px solid var(--gray-200);border-radius:8px;padding:16px;transition:border-color 0.15s;" onfocusin="this.style.borderColor='var(--navy)'" onfocusout="this.style.borderColor='var(--gray-200)'">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:var(--gray-500);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
+              <span>${esc(m.name)}</span>
+              <span style="background:#f3e8ff;color:#6b21a8;padding:2px 7px;border-radius:4px;">TXT</span>
+            </div>
+            <textarea id="inp-${m.id}" placeholder="Enter text…" style="width:100%;font-size:14px;font-weight:500;color:var(--navy);border:none;outline:none;font-family:var(--font);background:transparent;resize:vertical;min-height:72px;line-height:1.5;"></textarea>
+          </div>`).join('')}
+      </div>
+    </div>` : '';
+
+  area.innerHTML = numBlock + textBlock;
 }
 
 function typeHint(t) {
@@ -978,18 +1083,18 @@ function renderSummary() {
   const labels = entries.map(e=>e.label||fmtDate(e.date));
   const COLORS=['#003057','#C8102E','#1a6ba0','#e05a1a','#0f6e56','#7c3aad','#b85c00','#1e7a3a'];
 
-  // KPI cards — always show previous working day value from raw entries
-  kpi.innerHTML=c.metrics.map(m=>{
-    const v=rawLatest.values[m.name];
-    if (m.type==='text') return `<div class="kpi-card" style="border-top-color:#6b21a8;">
-      <div class="kpi-label">${esc(m.name)}</div>
-      <div style="font-size:14px;font-weight:500;color:var(--navy);line-height:1.4;margin-top:4px;">${v!==undefined?esc(String(v)):'—'}</div>
-      </div>`;
+  // KPI cards — always show previous working day value from raw entries (numeric metrics only)
+  const numericMetrics = c.metrics.filter(m => m.type !== 'text');
+  kpi.innerHTML = numericMetrics.map(m => {
+    const v = rawLatest.values[m.name];
     return `<div class="kpi-card">
       <div class="kpi-label">${esc(m.name)}</div>
-      <div class="kpi-value">${fmtVal(v,m.type)}</div>
+      <div class="kpi-value">${fmtVal(v, m.type)}</div>
       </div>`;
   }).join('');
+  // Hide the KPI header row if there are no numeric metrics
+  const kpiHdrRow = document.getElementById('kpiHeaderRow');
+  if (kpiHdrRow) kpiHdrRow.style.display = numericMetrics.length ? '' : 'none';
 
   // Restore collapse state after re-render
   const kpiGrid = document.getElementById('kpiGrid');
@@ -1002,20 +1107,8 @@ function renderSummary() {
     if (kpiHdr) kpiHdr.style.marginBottom = '16px';
   }
 
-  // Chart cards
-  cs.innerHTML=c.metrics.map((m,i)=>{
-    if (m.type==='text') {
-      const rows=[...rawEntries].reverse().map(e=>{
-        const v=e.values[m.name];
-        return v!==undefined?`<tr><td class="date-cell">${fmtDate(e.date)}</td><td style="padding:10px 14px;color:var(--gray-700);">${esc(String(v))}</td></tr>`:'';
-      }).filter(Boolean).join('');
-      return `<div class="chart-card">
-        <div class="chart-card-header"><span class="chart-card-title">${esc(m.name)}</span></div>
-        <div class="table-wrapper"><table>
-          <thead><tr><th style="width:140px;">Date</th><th>Entry</th></tr></thead>
-          <tbody>${rows||'<tr><td colspan="2" class="no-data">No entries yet.</td></tr>'}</tbody>
-        </table></div></div>`;
-    }
+  // Chart cards — numeric metrics only
+  cs.innerHTML=c.metrics.filter(m=>m.type!=='text').map((m,i)=>{
     const avg = avgOf(rawEntries, m.name);
     const avgLabel = avg !== null ? `Avg: ${fmtVal(avg, m.type)}` : '';
     const hasTarget = m.target !== undefined && m.target !== null && !isNaN(m.target);
@@ -1032,12 +1125,47 @@ function renderSummary() {
       <div style="position:relative;width:100%;height:240px;">
         <canvas id="ch-${m.id}" role="img" aria-label="${esc(m.name)} over time"></canvas>
       </div></div>`;
-  }).join('');
+  }).join('') || '<div class="empty-state"><p>No numeric metrics to display</p><small>Add numeric metrics in Settings to see charts here.</small></div>';
+
+  // ── Notes & Comments — text-type metrics get their own section ──
+  const textMetrics = c.metrics.filter(m => m.type === 'text');
+  const notesSection = document.getElementById('textNotesSection');
+  const notesGrid    = document.getElementById('textNotesGrid');
+  if (notesSection && notesGrid) {
+    if (textMetrics.length && rawEntries.length) {
+      notesSection.style.display = '';
+      notesGrid.innerHTML = textMetrics.map(m => {
+        const latestVal = rawLatest?.values[m.name];
+        const rows = [...rawEntries].reverse().map(e => {
+          const v = e.values[m.name];
+          return v !== undefined && v !== ''
+            ? `<tr>
+                <td class="date-cell" style="white-space:nowrap;">${fmtDate(e.date)}</td>
+                <td style="padding:10px 14px;color:var(--gray-700);line-height:1.5;">${esc(String(v))}</td>
+               </tr>`
+            : '';
+        }).filter(Boolean).join('');
+        return `<div class="chart-card">
+          <div class="chart-card-header">
+            <span class="chart-card-title">${esc(m.name)}</span>
+            ${latestVal !== undefined && latestVal !== ''
+              ? `<span class="chart-avg-badge" style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(String(latestVal))}">Latest: ${esc(String(latestVal))}</span>`
+              : ''}
+          </div>
+          <div class="table-wrapper"><table>
+            <thead><tr><th style="width:140px;">Date</th><th>Entry</th></tr></thead>
+            <tbody>${rows || '<tr><td colspan="2" class="no-data">No entries yet.</td></tr>'}</tbody>
+          </table></div>
+        </div>`;
+      }).join('');
+    } else {
+      notesSection.style.display = 'none';
+    }
+  }
 
   setTimeout(()=>{
     Chart.register(ChartDataLabels);
-    c.metrics.forEach((m,i)=>{
-      if (m.type==='text') return;
+    c.metrics.filter(m=>m.type!=='text').forEach((m,i)=>{
       const canvas=document.getElementById(`ch-${m.id}`); if(!canvas) return;
       const data=entries.map(e=>e.values[m.name]!==undefined?+e.values[m.name]:null);
       const avg=avgOf(rawEntries,m.name);
