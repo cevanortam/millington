@@ -335,6 +335,27 @@
   .metric-value.purple { color: var(--purple); }
   .metric-sub { font-size: 13px; color: var(--gray-400); margin-top: 8px; }
 
+  /* Clickable metric cards -> drill into table below */
+  .metric-card.clickable-metric { cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; position: relative; }
+  .metric-card.clickable-metric:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+  .metric-card.clickable-metric:after {
+    content: '🔍 Click to view orders'; position: absolute; bottom: 8px; right: 12px;
+    font-size: 10px; color: var(--gray-300); font-weight: 600; letter-spacing: 0.3px;
+    opacity: 0; transition: opacity 0.15s;
+  }
+  .metric-card.clickable-metric:hover:after { opacity: 1; }
+  .metric-card.metric-selected { outline: 3px solid var(--gold); outline-offset: -3px; }
+
+  /* Metric drill-down table */
+  #metricSelectionPanel .table-header .clear-selection-btn {
+    background: rgba(255,255,255,0.12); color: white; border: 1px solid rgba(255,255,255,0.3);
+    padding: 4px 10px; border-radius: var(--radius); font-family: var(--font); font-size: 12px;
+    font-weight: 600; cursor: pointer; transition: all 0.15s;
+  }
+  #metricSelectionPanel .table-header .clear-selection-btn:hover { background: rgba(255,255,255,0.22); }
+  #metricSelectionBody tr:hover { background: var(--gray-100); }
+  #metricSelectionBody td { padding: 8px 10px; border-bottom: 1px solid var(--gray-200); }
+
   .metrics-section-title {
     font-family: var(--font-condensed); font-size: 14px; font-weight: 700; letter-spacing: 0.5px;
     color: var(--navy); text-transform: uppercase; margin: 0 0 12px;
@@ -718,18 +739,39 @@
 
   <!-- Row 1: 4 cards, centered -->
   <div style="display:flex;justify-content:center;gap:14px;margin-bottom:14px;" id="metricsRow1">
-    <div class="metric-card" style="flex:0 1 calc(20% - 11px);min-width:160px"><div class="metric-label">Open Orders</div><div class="metric-value red" id="m-open">—</div><div class="metric-sub">No ship date</div></div>
-    <div class="metric-card gold-accent" style="flex:0 1 calc(20% - 11px);min-width:160px"><div class="metric-label">Open Units</div><div class="metric-value gold" id="m-units">—</div><div class="metric-sub">Units on open orders</div></div>
-    <div class="metric-card gold-accent" style="flex:0 1 calc(20% - 11px);min-width:160px"><div class="metric-label">On Hold</div><div class="metric-value gold" id="m-hold">—</div><div class="metric-sub">Current holds</div></div>
-    <div class="metric-card" style="flex:0 1 calc(20% - 11px);min-width:160px"><div class="metric-label">Routed Today</div><div class="metric-value" id="m-routed-today">—</div><div class="metric-sub">Shipped today</div></div>
+    <div class="metric-card clickable-metric" id="mcard-open" style="flex:0 1 calc(20% - 11px);min-width:160px" onclick="selectMetric('open',this)"><div class="metric-label">Open Orders</div><div class="metric-value red" id="m-open">—</div><div class="metric-sub">No ship date</div></div>
+    <div class="metric-card gold-accent clickable-metric" id="mcard-units" style="flex:0 1 calc(20% - 11px);min-width:160px" onclick="selectMetric('units',this)"><div class="metric-label">Open Units</div><div class="metric-value gold" id="m-units">—</div><div class="metric-sub">Units on open orders</div></div>
+    <div class="metric-card gold-accent clickable-metric" id="mcard-hold" style="flex:0 1 calc(20% - 11px);min-width:160px" onclick="selectMetric('hold',this)"><div class="metric-label">On Hold</div><div class="metric-value gold" id="m-hold">—</div><div class="metric-sub">Current holds</div></div>
+    <div class="metric-card clickable-metric" id="mcard-routed-today" style="flex:0 1 calc(20% - 11px);min-width:160px" onclick="selectMetric('routed-today',this)"><div class="metric-label">Routed Today</div><div class="metric-value" id="m-routed-today">—</div><div class="metric-sub">Shipped today</div></div>
   </div>
   <!-- Row 2: 5 cards full width -->
-  <div class="metrics-grid" id="metricsCards" style="margin-bottom:28px;">
-    <div class="metric-card gold-accent"><div class="metric-label">Due Within 48 hrs</div><div class="metric-value gold" id="m-due48">—</div><div class="metric-sub">Open, route-by &lt; 48 hours</div></div>
-    <div class="metric-card red-accent"><div class="metric-label">Due Within 24 hrs</div><div class="metric-value red" id="m-due24">—</div><div class="metric-sub">Open, route-by &lt; 24 hours</div></div>
-    <div class="metric-card red-accent"><div class="metric-label">Overdue</div><div class="metric-value red" id="m-overdue">—</div><div class="metric-sub">Past route-by date</div></div>
-    <div class="metric-card green-accent"><div class="metric-label">Avg Close Time</div><div class="metric-value green" id="m-avgclose">—</div><div class="metric-sub" id="m-avgclose-sub">Days waived to ship</div></div>
-    <div class="metric-card green-accent"><div class="metric-label">Closed This Week</div><div class="metric-value green" id="m-week">—</div><div class="metric-sub">Orders with ship date this week</div></div>
+  <div class="metrics-grid" id="metricsCards" style="margin-bottom:20px;">
+    <div class="metric-card gold-accent clickable-metric" id="mcard-due48" onclick="selectMetric('due48',this)"><div class="metric-label">Due Within 48 hrs</div><div class="metric-value gold" id="m-due48">—</div><div class="metric-sub">Open, route-by &lt; 48 hours</div></div>
+    <div class="metric-card red-accent clickable-metric" id="mcard-due24" onclick="selectMetric('due24',this)"><div class="metric-label">Due Within 24 hrs</div><div class="metric-value red" id="m-due24">—</div><div class="metric-sub">Open, route-by &lt; 24 hours</div></div>
+    <div class="metric-card red-accent clickable-metric" id="mcard-overdue" onclick="selectMetric('overdue',this)"><div class="metric-label">Overdue</div><div class="metric-value red" id="m-overdue">—</div><div class="metric-sub">Past route-by date</div></div>
+    <div class="metric-card green-accent clickable-metric" id="mcard-avgclose" onclick="selectMetric('avgclose',this)"><div class="metric-label">Avg Close Time</div><div class="metric-value green" id="m-avgclose">—</div><div class="metric-sub" id="m-avgclose-sub">Days waived to ship</div></div>
+    <div class="metric-card green-accent clickable-metric" id="mcard-week" onclick="selectMetric('week',this)"><div class="metric-label">Closed This Week</div><div class="metric-value green" id="m-week">—</div><div class="metric-sub">Orders with ship date this week</div></div>
+  </div>
+
+  <!-- Metric drill-down table: shows orders behind whichever number was clicked above -->
+  <div class="table-wrap" id="metricSelectionPanel" style="display:none;margin-bottom:24px;">
+    <div class="table-header">
+      <div class="title" id="metricSelectionTitle">Selected Metric</div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span class="count" id="metricSelectionCount"></span>
+        <button class="clear-selection-btn" onclick="clearMetricSelection()">✕ Clear</button>
+      </div>
+    </div>
+    <div style="max-height:440px;overflow:auto;">
+      <table class="orders-table" style="font-size:12.5px;">
+        <thead>
+          <tr>
+            <th>DN/SO</th><th>Customer</th><th>Waived Date</th><th>Route By</th><th>Ship Date</th><th>Units</th><th>Status</th><th>Non-Ctrl</th>
+          </tr>
+        </thead>
+        <tbody id="metricSelectionBody"></tbody>
+      </table>
+    </div>
   </div>
 
   <!-- ===== Controllable vs Non-Controllable Visual ===== -->
@@ -976,6 +1018,8 @@ let editBuffer = {};
 let routeWindowHours = 0;
 let metricsRouteWindowHours = 0;
 let ctrlNcDonutChart = null;
+let selectedMetricKey = null;
+let metricSets = {};
 
 // ============================================================
 // INIT
@@ -1879,10 +1923,26 @@ function renderMetrics() {
   const openUnits = open.reduce((s,o)=>s+(parseInt(o.units)||0),0);
 
   let avgDays='—';
+  const closedWithDiff = closed.filter(o=>o.waived_date&&o.ship_date&&(new Date(o.ship_date)-new Date(o.waived_date))/86400000>=0);
   if(closed.length>0){
-    const diffs=closed.filter(o=>o.waived_date&&o.ship_date).map(o=>(new Date(o.ship_date)-new Date(o.waived_date))/86400000).filter(d=>d>=0);
-    if(diffs.length>0) avgDays=(diffs.reduce((a,b)=>a+b,0)/diffs.length).toFixed(1);
+    if(closedWithDiff.length>0){
+      const diffs=closedWithDiff.map(o=>(new Date(o.ship_date)-new Date(o.waived_date))/86400000);
+      avgDays=(diffs.reduce((a,b)=>a+b,0)/diffs.length).toFixed(1);
+    }
   }
+
+  // Store the order sets behind each metric card so a click can drill into the exact list
+  metricSets = {
+    open: open,
+    units: open,
+    hold: onHold,
+    'routed-today': routedToday,
+    due48: due48,
+    due24: due24,
+    overdue: overdue,
+    avgclose: closedWithDiff,
+    week: closedWeek
+  };
 
   document.getElementById('m-open').textContent=open.length;
   document.getElementById('m-units').textContent=openUnits.toLocaleString();
@@ -1995,6 +2055,74 @@ function renderMetrics() {
       <td style="${!o.route_by_date?'':(new Date(o.route_by_date)<today?'color:var(--red);font-weight:600':'')}">${o.route_by_date?new Date(o.route_by_date).toLocaleDateString(undefined,{month:'numeric',day:'numeric',year:'numeric'}):'—'}</td>
       <td style="font-weight:600">${o.units?parseInt(o.units).toLocaleString():'—'}</td>
       <td><span class="aging-tag" style="${tagStyle}">${daysOpen} days</span></td>
+      <td>${esc(o.routed_status||'—')}</td>
+      <td style="text-align:center">${isNC?'<span class="nc-badge">Yes</span>':'<span style="color:var(--gray-300);font-size:11px">No</span>'}</td>
+    </tr>`;
+  }).join('');
+
+  renderMetricSelectionTable();
+}
+
+// ============================================================
+// METRIC DRILL-DOWN (click a number at the top of Metrics page
+// to filter the table below to just those orders)
+// ============================================================
+const METRIC_LABELS = {
+  open: 'Open Orders',
+  units: 'Open Orders (by Units)',
+  hold: 'On Hold',
+  'routed-today': 'Routed Today',
+  due48: 'Due Within 48 hrs',
+  due24: 'Due Within 24 hrs',
+  overdue: 'Overdue',
+  avgclose: 'Closed Orders — Avg Close Time',
+  week: 'Closed This Week'
+};
+
+function selectMetric(key, cardEl) {
+  // Clicking the already-selected card again clears the selection
+  selectedMetricKey = (selectedMetricKey === key) ? null : key;
+  document.querySelectorAll('.metric-card.clickable-metric').forEach(c => c.classList.remove('metric-selected'));
+  if (selectedMetricKey && cardEl) cardEl.classList.add('metric-selected');
+  renderMetricSelectionTable();
+  if (selectedMetricKey) {
+    document.getElementById('metricSelectionPanel')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+function clearMetricSelection() {
+  selectedMetricKey = null;
+  document.querySelectorAll('.metric-card.clickable-metric').forEach(c => c.classList.remove('metric-selected'));
+  renderMetricSelectionTable();
+}
+
+function renderMetricSelectionTable() {
+  const panel = document.getElementById('metricSelectionPanel');
+  if (!panel) return;
+  if (!selectedMetricKey) { panel.style.display = 'none'; return; }
+
+  const list = metricSets[selectedMetricKey] || [];
+  panel.style.display = 'block';
+  document.getElementById('metricSelectionTitle').textContent = METRIC_LABELS[selectedMetricKey] || 'Selected Metric';
+  document.getElementById('metricSelectionCount').textContent = list.length + (list.length === 1 ? ' order' : ' orders');
+
+  if (!list.length) {
+    document.getElementById('metricSelectionBody').innerHTML =
+      `<tr><td colspan="8" style="text-align:center;color:var(--gray-400);padding:20px;">No orders match this metric.</td></tr>`;
+    return;
+  }
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  document.getElementById('metricSelectionBody').innerHTML = list.map(o => {
+    const isNC = parseBool(o.non_controllable);
+    const overdueRouteBy = o.route_by_date && !o.ship_date && new Date(o.route_by_date) < today;
+    return `<tr>
+      <td style="font-weight:600;color:var(--navy)">${esc(o.dn_so)}${isNC?'<br><span class="nc-badge">Non-Ctrl</span>':''}</td>
+      <td>${esc(o.customer||'—')}</td>
+      <td>${o.waived_date?new Date(o.waived_date).toLocaleDateString(undefined,{month:'numeric',day:'numeric',year:'numeric'}):'—'}</td>
+      <td style="${overdueRouteBy?'color:var(--red);font-weight:600':''}">${o.route_by_date?new Date(o.route_by_date).toLocaleDateString(undefined,{month:'numeric',day:'numeric',year:'numeric'}):'—'}</td>
+      <td>${o.ship_date?new Date(o.ship_date).toLocaleDateString(undefined,{month:'numeric',day:'numeric',year:'numeric'}):'—'}</td>
+      <td style="font-weight:600">${o.units?parseInt(o.units).toLocaleString():'—'}</td>
       <td>${esc(o.routed_status||'—')}</td>
       <td style="text-align:center">${isNC?'<span class="nc-badge">Yes</span>':'<span style="color:var(--gray-300);font-size:11px">No</span>'}</td>
     </tr>`;
