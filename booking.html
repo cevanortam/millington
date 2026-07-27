@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Millington Room Booking</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap');
+
+:root{
+  --navy-deep:#00204E;
+  --navy:#003057;
+  --red:#C8102E;
+  --grizzlies:#FDB927;  /* Grizzlies Gold */
+  --tigers:#003DA5;     /* Tiger Blue */
+  --obeya:#2AA8A0;
+  --bg:#F4F6F8;
+  --panel:#FFFFFF;
+  --text:#1B2733;
+  --text-muted:#5B6B7A;
+  --border:#E1E6EB;
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;}
+
+h1,h2,h3{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.03em;margin:0;}
+
+.app{max-width:1180px;margin:0 auto;padding:0 20px 40px;}
+
+/* ---------- Top bar ---------- */
+.topbar{
+  background:linear-gradient(135deg,var(--navy-deep),var(--navy));
+  color:#fff;
+  margin:0 -20px 22px;
+  padding:22px 28px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:14px;
+  border-bottom:4px solid var(--red);
+}
+.brand{display:flex;align-items:center;gap:14px;}
+.brand-logo{height:34px;width:auto;display:block;}
+.brand-div{width:1px;height:22px;background:rgba(255,255,255,.3);}
+.topbar h1{font-size:26px;font-weight:600;color:#fff;}
+
+.topbar-controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+
+.btn-book{
+  background:#fff;color:var(--navy-deep);border:none;
+  font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;
+  letter-spacing:.03em;text-transform:uppercase;
+  padding:10px 18px;border-radius:6px;cursor:pointer;
+  display:flex;align-items:center;gap:6px;
+  transition:transform .12s, box-shadow .12s;
+}
+.btn-book:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.25);}
+.btn-book .plus{color:var(--red);font-weight:700;}
+
+.view-toggle{display:flex;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);border-radius:6px;overflow:hidden;}
+.view-toggle button{
+  background:transparent;border:none;color:#fff;padding:8px 14px;font-family:'Barlow',sans-serif;
+  font-weight:600;font-size:13px;cursor:pointer;opacity:.75;
+}
+.view-toggle button.active{background:var(--red);opacity:1;}
+
+.date-picker{display:flex;align-items:center;gap:8px;}
+.date-picker button{
+  background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.25);
+  color:#fff;
+  width:34px;height:34px;
+  border-radius:6px;
+  font-size:16px;
+  cursor:pointer;
+  transition:background .15s;
+}
+.date-picker button:hover{background:rgba(255,255,255,.25);}
+.date-picker input[type=date]{
+  background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.25);
+  color:#fff;
+  padding:7px 10px;
+  border-radius:6px;
+  font-family:'Barlow',sans-serif;
+  font-size:14px;
+  color-scheme:dark;
+}
+#todayBtn{
+  width:auto !important;
+  padding:0 12px;
+  font-family:'Barlow',sans-serif;
+  font-weight:600;
+  font-size:13px;
+}
+
+/* ---------- Room cards ---------- */
+.rooms-row{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:14px;
+  margin-bottom:22px;
+}
+.room-card{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-left:6px solid var(--room-color,var(--red));
+  border-radius:8px;
+  padding:16px 18px;
+  cursor:pointer;
+  transition:transform .12s, box-shadow .12s;
+  position:relative;
+}
+.room-card:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,32,78,.1);}
+.room-card.active{
+  box-shadow:0 6px 18px rgba(0,32,78,.18);
+  outline:2px solid var(--room-color,var(--red));
+  outline-offset:-1px;
+}
+.room-card-top{display:flex;align-items:center;justify-content:space-between;}
+.room-icon{font-size:22px;}
+.room-name{font-size:19px;font-weight:600;margin-top:6px;}
+.room-sub{font-size:11.5px;color:var(--text-muted);margin-top:1px;font-weight:500;}
+.room-status{
+  display:flex;align-items:center;gap:6px;
+  margin-top:8px;
+  font-size:13px;
+  font-weight:600;
+  color:var(--text-muted);
+}
+.status-dot{width:9px;height:9px;border-radius:50%;background:#2E9E5B;flex:none;}
+.status-dot.busy{background:var(--red);animation:none;}
+.status-dot.free{animation:pulse 1.8s infinite;}
+@keyframes pulse{
+  0%{box-shadow:0 0 0 0 rgba(46,158,91,.5);}
+  70%{box-shadow:0 0 0 7px rgba(46,158,91,0);}
+  100%{box-shadow:0 0 0 0 rgba(46,158,91,0);}
+}
+
+/* ---------- Main grid ---------- */
+.main-grid{
+  display:grid;
+  grid-template-columns:1fr 300px;
+  gap:18px;
+  align-items:start;
+}
+@media (max-width:820px){
+  .main-grid{grid-template-columns:1fr;}
+  .rooms-row{grid-template-columns:1fr;}
+}
+
+.timeline-panel, .agenda-panel{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:18px 20px;
+}
+.timeline-header{margin-bottom:14px;display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:6px;}
+.timeline-header h2{font-size:20px;color:var(--navy);}
+.hint{font-size:12.5px;color:var(--text-muted);}
+
+/* ---- Day view ---- */
+.timeline-wrap{display:flex;border-top:1px solid var(--border);position:relative;}
+.timeline-hours{width:56px;flex:none;}
+.hour-label{
+  height:60px;
+  font-size:11.5px;
+  color:var(--text-muted);
+  font-weight:600;
+  transform:translateY(-6px);
+  padding-right:8px;
+  text-align:right;
+}
+.timeline{
+  position:relative;
+  flex:1;
+  border-left:1px solid var(--border);
+  user-select:none;
+  cursor:crosshair;
+}
+.slot-line{
+  position:absolute;left:0;right:0;height:60px;
+  border-bottom:1px solid var(--border);
+}
+.slot-line:nth-child(odd){background:rgba(0,48,87,.015);}
+.half-line{position:absolute;left:0;right:0;border-bottom:1px dashed rgba(0,0,0,.06);height:30px;}
+.now-line{
+  position:absolute;left:0;right:0;height:2px;background:var(--red);z-index:5;
+}
+.now-line::before{
+  content:'';position:absolute;left:-5px;top:-4px;width:10px;height:10px;
+  border-radius:50%;background:var(--red);
+}
+.drag-selection{
+  position:absolute;left:4px;right:4px;
+  background:rgba(200,16,46,.18);
+  border:1.5px dashed var(--red);
+  border-radius:5px;
+  pointer-events:none;
+  z-index:6;
+}
+.booking-block{
+  position:absolute;left:6px;right:6px;
+  border-radius:6px;
+  padding:6px 9px;
+  font-size:12.5px;
+  overflow:hidden;
+  cursor:pointer;
+  box-shadow:0 2px 6px rgba(0,0,0,.15);
+  z-index:4;
+}
+.booking-block b{display:block;font-size:13px;font-weight:600;}
+.booking-block span{opacity:.85;font-size:11px;}
+
+/* ---- Week view ---- */
+.week-wrap{display:flex;border-top:1px solid var(--border);position:relative;overflow-x:auto;}
+.week-hours{width:50px;flex:none;padding-top:38px;}
+.week-days{display:flex;flex:1;min-width:560px;}
+.week-day-col{flex:1;min-width:78px;border-left:1px solid var(--border);position:relative;}
+.week-day-header{
+  height:38px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-size:12px;font-weight:600;color:var(--text-muted);border-bottom:1px solid var(--border);
+  position:sticky;top:0;background:#fff;
+}
+.week-day-header.is-today{color:var(--red);}
+.week-day-body{position:relative;cursor:pointer;}
+.week-booking{
+  position:absolute;left:3px;right:3px;border-radius:4px;padding:3px 5px;font-size:10px;
+  overflow:hidden;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.15);z-index:4;line-height:1.25;
+}
+.week-booking b{display:block;font-size:10.5px;font-weight:700;}
+
+/* ---------- Tooltip ---------- */
+.drag-tooltip{
+  position:fixed;pointer-events:none;z-index:100;
+  background:var(--navy-deep);color:#fff;
+  padding:7px 11px;border-radius:6px;font-size:12.5px;font-weight:600;
+  box-shadow:0 6px 16px rgba(0,0,0,.3);
+  white-space:nowrap;
+  border-left:3px solid var(--red);
+  display:none;
+}
+
+/* ---------- Agenda ---------- */
+.agenda-panel h2{font-size:17px;color:var(--navy);margin-bottom:12px;}
+.agenda-item{
+  display:flex;gap:10px;align-items:flex-start;
+  padding:9px 0;
+  border-bottom:1px solid var(--border);
+  cursor:pointer;
+}
+.agenda-item:last-child{border-bottom:none;}
+.agenda-chip{width:8px;border-radius:4px;align-self:stretch;flex:none;}
+.agenda-time{font-size:12px;color:var(--text-muted);font-weight:600;white-space:nowrap;}
+.agenda-room{font-size:11.5px;color:var(--text-muted);}
+.agenda-name{font-size:13.5px;font-weight:600;}
+.agenda-empty{color:var(--text-muted);font-size:13px;padding:6px 0;}
+
+/* ---------- Modal ---------- */
+.modal-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,32,78,.55);
+  align-items:center;justify-content:center;z-index:50;padding:16px;
+}
+.modal-overlay.show{display:flex;}
+.modal{
+  background:#fff;border-radius:10px;padding:22px 24px;width:100%;max-width:400px;
+  box-shadow:0 20px 50px rgba(0,0,0,.3);
+}
+.modal h3{color:var(--navy);font-size:20px;margin-bottom:4px;}
+.modal-time{color:var(--red);font-weight:600;font-size:14px;margin-bottom:14px;}
+.modal label{display:block;font-size:12.5px;font-weight:600;color:var(--text-muted);margin:10px 0 4px;text-transform:uppercase;letter-spacing:.03em;}
+.modal input, .modal select{
+  width:100%;padding:9px 10px;border:1px solid var(--border);border-radius:6px;
+  font-family:'Barlow',sans-serif;font-size:14px;background:#fff;color:var(--text);
+}
+.modal input:focus, .modal select:focus{outline:2px solid var(--navy);outline-offset:1px;}
+.modal-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.modal-error{color:var(--red);font-size:12.5px;margin-top:10px;display:none;}
+.modal-suggestions{margin-top:10px;display:none;}
+.modal-suggestions .suggest-label{font-size:12px;color:var(--text-muted);font-weight:600;display:block;margin-bottom:6px;}
+.suggestion-chip{
+  display:inline-flex;align-items:center;gap:5px;
+  margin:0 6px 6px 0;padding:6px 12px;border-radius:20px;
+  border:1.5px solid var(--navy);color:var(--navy);
+  font-size:12.5px;font-weight:600;cursor:pointer;background:#fff;
+  font-family:'Barlow',sans-serif;
+}
+.suggestion-chip:hover{background:var(--navy);color:#fff;}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed;}
+.btn-primary:disabled:hover{background:var(--red);}
+.modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;}
+.btn-primary,.btn-ghost,.btn-danger{
+  border:none;border-radius:6px;padding:9px 16px;font-family:'Barlow',sans-serif;
+  font-weight:600;font-size:13.5px;cursor:pointer;
+}
+.btn-primary{background:var(--red);color:#fff;}
+.btn-primary:hover{background:#a80d24;}
+.btn-ghost{background:var(--bg);color:var(--text);}
+.btn-ghost:hover{background:var(--border);}
+.btn-danger{background:#fff;color:var(--red);border:1.5px solid var(--red);}
+.btn-danger:hover{background:var(--red);color:#fff;}
+.modal p{font-size:14px;margin:4px 0;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <img class="brand-logo" src="https://www.cevalogistics.com/_ipx/w_3840&f_webp/images-spx/x_large_picture/CEVA_WhiteRed.png" alt="CEVA">
+      <span class="brand-div"></span>
+      <h1>Millington Room Booking</h1>
+    </div>
+    <div class="topbar-controls">
+      <button class="btn-book" id="bookTopBtn"><span class="plus">+</span> Book a Room</button>
+      <div class="view-toggle">
+        <button data-view="day" id="dayViewBtn" class="active">Day</button>
+        <button data-view="week" id="weekViewBtn">Week</button>
+      </div>
+      <div class="date-picker">
+        <button id="prevDay">‹</button>
+        <input type="date" id="dateInput">
+        <button id="nextDay">›</button>
+        <button id="todayBtn">Today</button>
+      </div>
+    </div>
+  </header>
+
+  <section class="rooms-row" id="roomsRow"></section>
+
+  <main class="main-grid">
+    <div class="timeline-panel">
+      <div class="timeline-header">
+        <h2 id="timelineRoomName"></h2>
+        <div class="hint" id="viewHint">Click and drag to select a time, then confirm your booking.</div>
+      </div>
+      <div id="viewContainer"></div>
+    </div>
+
+    <aside class="agenda-panel">
+      <h2 id="agendaTitle">Today's Agenda</h2>
+      <div id="agendaList"></div>
+    </aside>
+  </main>
+</div>
+
+<div class="drag-tooltip" id="dragTooltip"></div>
+
+<!-- Book modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3 id="modalHeading">Book a Room</h3>
+    <label>Room</label>
+    <select id="modalRoomSelect"></select>
+    <div class="modal-row">
+      <div>
+        <label>Date</label>
+        <input type="date" id="modalDateInput">
+      </div>
+      <div></div>
+    </div>
+    <div class="modal-row">
+      <div>
+        <label>Start</label>
+        <select id="modalStartSelect"></select>
+      </div>
+      <div>
+        <label>End</label>
+        <select id="modalEndSelect"></select>
+      </div>
+    </div>
+    <label>Booked by</label>
+    <input id="bookName" placeholder="Your name">
+    <label>Purpose</label>
+    <input id="bookPurpose" placeholder="e.g. Weekly ops review">
+    <div class="modal-error" id="modalError"></div>
+    <div class="modal-suggestions" id="modalSuggestions"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="cancelModal">Cancel</button>
+      <button class="btn-primary" id="confirmModal">Confirm Booking</button>
+    </div>
+  </div>
+</div>
+
+<!-- Detail modal -->
+<div class="modal-overlay" id="detailOverlay">
+  <div class="modal">
+    <div id="detailView">
+      <h3 id="detailRoomName"></h3>
+      <div class="modal-time" id="detailTime"></div>
+      <p><strong id="detailName"></strong></p>
+      <p id="detailPurpose"></p>
+      <div class="modal-actions">
+        <button class="btn-ghost" id="closeDetail">Close</button>
+        <button class="btn-danger" id="deleteBooking">Cancel Booking</button>
+      </div>
+    </div>
+    <div id="confirmCancelView" style="display:none;">
+      <h3>Cancel This Booking?</h3>
+      <p>This will remove <strong id="confirmCancelName"></strong>'s booking and can't be undone.</p>
+      <div class="modal-actions">
+        <button class="btn-ghost" id="keepBooking">Keep Booking</button>
+        <button class="btn-danger" id="confirmCancelBtn">Yes, Cancel Booking</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const ROOMS = [
+  { id:'grizzlies', name:'Grizzlies Room',    sub:'Memphis Grizzlies',  icon:'🐻', hex:'#FDB927', text:'#0B1A33' },
+  { id:'tigers',    name:'Tigers Room (HR)',  sub:'Memphis Tigers',     icon:'🐯', hex:'#003DA5', text:'#FFFFFF' },
+  { id:'obeya',     name:'Obeya Room',        sub:'Lean visual room',   icon:'📊', hex:'#2AA8A0', text:'#FFFFFF' },
+];
+const OPEN_HOUR = 0;   // 12 AM
+const CLOSE_HOUR = 24;  // 12 AM (next day)
+const PX_PER_HOUR = 60;
+const API_BASE = 'https://script.google.com/macros/s/AKfycbzDCdBSlnE60gUaHAX_-P-xtvHskRk1A7wM03mmWOZvPOvsSR8bIdGXMnf5xL39iybS/exec';
+
+let bookings = [];
+let selectedRoom = ROOMS[0].id;
+let selectedDate = isoDate(new Date());
+let viewMode = 'day';
+let drag = null; // {startMin, curMin}
+
+const $ = (id) => document.getElementById(id);
+
+function isoDate(d){
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function pad(n){ return String(n).padStart(2,'0'); }
+function minsToLabel(mins){
+  let h = Math.floor(mins/60), m = mins%60;
+  const ap = h>=12 ? 'PM':'AM';
+  let h12 = h%12; if(h12===0) h12=12;
+  return `${h12}:${pad(m)} ${ap}`;
+}
+function labelForHour(h){
+  return h>=24 ? '12 AM' : minsToLabel(h*60);
+}
+function roomById(id){ return ROOMS.find(r=>r.id===id); }
+function uid(){ return 'b'+Date.now()+Math.random().toString(36).slice(2,7); }
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function formatDateLong(iso){
+  const [y,m,d] = iso.split('-').map(Number);
+  const dt = new Date(y,m-1,d);
+  return dt.toLocaleDateString(undefined, {weekday:'short', month:'short', day:'numeric'});
+}
+function formatDateShort(iso){
+  const [y,m,d] = iso.split('-').map(Number);
+  const dt = new Date(y,m-1,d);
+  return { wd: dt.toLocaleDateString(undefined,{weekday:'short'}), md: `${m}/${d}` };
+}
+function getWeekDates(iso){
+  const [y,m,d] = iso.split('-').map(Number);
+  const dt = new Date(y,m-1,d);
+  const dow = dt.getDay();
+  const sun = new Date(dt);
+  sun.setDate(dt.getDate()-dow);
+  const days = [];
+  for(let i=0;i<7;i++){
+    const dd = new Date(sun);
+    dd.setDate(sun.getDate()+i);
+    days.push(isoDate(dd));
+  }
+  return days;
+}
+
+async function loadBookings(){
+  try{
+    const res = await fetch(API_BASE);
+    const data = await res.json();
+    bookings = Array.isArray(data) ? data : [];
+  }catch(e){
+    console.error('Load error', e);
+  }
+}
+// Apps Script web apps don't handle CORS preflight requests, so POSTs use
+// text/plain (a "simple request") instead of application/json — the body is
+// still valid JSON and is parsed as such on the server side.
+async function addBookingRemote(booking){
+  try{
+    const res = await fetch(API_BASE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action:'add', booking })
+    });
+    return await res.json();
+  }catch(e){
+    console.error('Add error', e);
+    return { success:false, error:'network' };
+  }
+}
+async function deleteBookingRemote(id){
+  try{
+    const res = await fetch(API_BASE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action:'delete', id })
+    });
+    return await res.json();
+  }catch(e){
+    console.error('Delete error', e);
+    return { success:false, error:'network' };
+  }
+}
+
+function bookingsFor(roomId, date){
+  return bookings.filter(b=>b.room===roomId && b.date===date).sort((a,b)=>a.start-b.start);
+}
+function overlaps(aStart,aEnd,bStart,bEnd){
+  return aStart < bEnd && bStart < aEnd;
+}
+function minToY(mins){
+  return (mins - OPEN_HOUR*60)/60*PX_PER_HOUR;
+}
+function yToMin(y){
+  let mins = OPEN_HOUR*60 + (y/PX_PER_HOUR*60);
+  mins = Math.round(mins/15)*15;
+  return Math.min(Math.max(mins, OPEN_HOUR*60), CLOSE_HOUR*60);
+}
+
+/* ---------------- Rooms row ---------------- */
+function renderRoomsRow(){
+  const row = $('roomsRow');
+  row.innerHTML = '';
+  const now = new Date();
+  const nowMin = now.getHours()*60 + now.getMinutes();
+  const isToday = selectedDate === isoDate(now);
+
+  ROOMS.forEach(room=>{
+    const dayBookings = bookingsFor(room.id, selectedDate);
+    let statusText = 'Available all day';
+    let busy = false;
+    if(isToday){
+      const current = dayBookings.find(b=> nowMin>=b.start && nowMin<b.end);
+      if(current){
+        busy = true;
+        statusText = `In use until ${minsToLabel(current.end)}`;
+      } else {
+        const next = dayBookings.find(b=> b.start>nowMin);
+        statusText = next ? `Free — next booking ${minsToLabel(next.start)}` : 'Available for the rest of today';
+      }
+    } else if(dayBookings.length){
+      statusText = `${dayBookings.length} booking${dayBookings.length>1?'s':''} scheduled`;
+    }
+
+    const card = document.createElement('div');
+    card.className = 'room-card' + (room.id===selectedRoom ? ' active':'');
+    card.style.setProperty('--room-color', room.hex);
+    card.innerHTML = `
+      <div class="room-card-top">
+        <span class="room-icon">${room.icon}</span>
+      </div>
+      <div class="room-name">${room.name}</div>
+      <div class="room-sub">${room.sub}</div>
+      <div class="room-status"><span class="status-dot ${busy?'busy':'free'}"></span>${statusText}</div>
+    `;
+    card.addEventListener('click', ()=>{ selectedRoom = room.id; renderAll(); });
+    row.appendChild(card);
+  });
+}
+
+/* ---------------- Day view ---------------- */
+function renderDayView(){
+  const room = roomById(selectedRoom);
+  const container = $('viewContainer');
+  container.innerHTML = `
+    <div class="timeline-wrap">
+      <div class="timeline-hours" id="timelineHours"></div>
+      <div class="timeline" id="timeline"></div>
+    </div>
+  `;
+  const hours = $('timelineHours');
+  for(let h=OPEN_HOUR; h<=CLOSE_HOUR; h++){
+    const lab = document.createElement('div');
+    lab.className = 'hour-label';
+    lab.style.height = (h===CLOSE_HOUR? '0px':'60px');
+    lab.textContent = labelForHour(h);
+    hours.appendChild(lab);
+  }
+
+  const totalHeight = (CLOSE_HOUR-OPEN_HOUR)*PX_PER_HOUR;
+  const tl = $('timeline');
+  tl.style.height = totalHeight+'px';
+
+  for(let h=0; h<(CLOSE_HOUR-OPEN_HOUR); h++){
+    const line = document.createElement('div');
+    line.className = 'slot-line';
+    line.style.top = (h*PX_PER_HOUR)+'px';
+    tl.appendChild(line);
+    const half = document.createElement('div');
+    half.className = 'half-line';
+    half.style.top = (h*PX_PER_HOUR+30)+'px';
+    tl.appendChild(half);
+  }
+
+  const now = new Date();
+  if(selectedDate === isoDate(now)){
+    const nowMin = now.getHours()*60+now.getMinutes();
+    if(nowMin >= OPEN_HOUR*60 && nowMin <= CLOSE_HOUR*60){
+      const nl = document.createElement('div');
+      nl.className = 'now-line';
+      nl.style.top = minToY(nowMin)+'px';
+      tl.appendChild(nl);
+    }
+  }
+
+  bookingsFor(selectedRoom, selectedDate).forEach(b=>{
+    const block = document.createElement('div');
+    block.className = 'booking-block';
+    block.style.top = minToY(b.start)+'px';
+    block.style.height = Math.max((b.end-b.start)/60*PX_PER_HOUR - 2, 18)+'px';
+    block.style.background = room.hex;
+    block.style.color = room.text;
+    block.innerHTML = `<b>${escapeHtml(b.name)}</b><span>${minsToLabel(b.start)} – ${minsToLabel(b.end)}${b.purpose? ' · '+escapeHtml(b.purpose):''}</span>`;
+    block.addEventListener('click', (e)=>{ e.stopPropagation(); openDetail(b); });
+    tl.appendChild(block);
+  });
+
+  attachDragHandlers(tl);
+}
+
+let activeTl = null;
+let activeSelDiv = null;
+
+function attachDragHandlers(tl){
+  activeTl = tl;
+  const onDown = (e)=>{
+    if(e.target.classList.contains('booking-block')){ drag = null; return; }
+    const rect = tl.getBoundingClientRect();
+    const y = e.clientY - rect.top;
+    const startMin = yToMin(y);
+    drag = { startMin, curMin: startMin+30 };
+    activeSelDiv = document.createElement('div');
+    activeSelDiv.className = 'drag-selection';
+    tl.appendChild(activeSelDiv);
+    updateSelDiv();
+    showDragTooltip(e);
+    e.preventDefault();
+  };
+  tl.addEventListener('mousedown', onDown);
+}
+function updateSelDiv(){
+  if(!drag || !activeSelDiv) return;
+  const s = Math.min(drag.startMin, drag.curMin);
+  const e = Math.max(drag.startMin, drag.curMin);
+  activeSelDiv.style.top = minToY(s)+'px';
+  activeSelDiv.style.height = Math.max((e-s)/60*PX_PER_HOUR,4)+'px';
+}
+function showDragTooltip(e){
+  const s = Math.min(drag.startMin, drag.curMin);
+  const e2 = Math.max(drag.startMin, drag.curMin);
+  $('dragTooltip').textContent = `${formatDateLong(selectedDate)} · ${minsToLabel(s)} – ${minsToLabel(e2)}`;
+  $('dragTooltip').style.display = 'block';
+  positionTooltip(e);
+}
+function onGlobalMouseMove(e){
+  if(!drag || !activeTl) return;
+  const rect = activeTl.getBoundingClientRect();
+  const y = e.clientY - rect.top;
+  let m = yToMin(y);
+  drag.curMin = Math.max(m, drag.startMin+15);
+  updateSelDiv();
+  showDragTooltip(e);
+}
+function onGlobalMouseUp(){
+  if(!drag) return;
+  const start = Math.min(drag.startMin, drag.curMin);
+  const end = Math.max(drag.startMin, drag.curMin);
+  if(activeSelDiv) activeSelDiv.remove();
+  activeSelDiv = null;
+  hideTooltip();
+  drag = null;
+  if(end-start >= 15){
+    openBookModal({room:selectedRoom, date:selectedDate, start, end});
+  }
+}
+function positionTooltip(e){
+  const tooltip = $('dragTooltip');
+  const pad = 16;
+  let x = e.clientX + 14;
+  let y = e.clientY - 34;
+  const tw = tooltip.offsetWidth || 160;
+  if(x + tw > window.innerWidth - pad) x = e.clientX - tw - 14;
+  if(y < pad) y = e.clientY + 18;
+  tooltip.style.left = x+'px';
+  tooltip.style.top = y+'px';
+}
+function hideTooltip(){
+  $('dragTooltip').style.display = 'none';
+}
+
+/* ---------------- Week view ---------------- */
+function renderWeekView(){
+  const room = roomById(selectedRoom);
+  const weekDates = getWeekDates(selectedDate);
+  const todayIso = isoDate(new Date());
+  const container = $('viewContainer');
+  container.innerHTML = `
+    <div class="week-wrap">
+      <div class="week-hours" id="weekHours"></div>
+      <div class="week-days" id="weekDays"></div>
+    </div>
+  `;
+  const hours = $('weekHours');
+  for(let h=OPEN_HOUR; h<=CLOSE_HOUR; h++){
+    const lab = document.createElement('div');
+    lab.className = 'hour-label';
+    lab.style.height = (h===CLOSE_HOUR? '0px':'60px');
+    lab.textContent = labelForHour(h);
+    hours.appendChild(lab);
+  }
+
+  const totalHeight = (CLOSE_HOUR-OPEN_HOUR)*PX_PER_HOUR;
+  const daysWrap = $('weekDays');
+
+  weekDates.forEach(dateIso=>{
+    const { wd, md } = formatDateShort(dateIso);
+    const isToday = dateIso === todayIso;
+    const col = document.createElement('div');
+    col.className = 'week-day-col';
+
+    const header = document.createElement('div');
+    header.className = 'week-day-header' + (isToday? ' is-today':'');
+    header.innerHTML = `<div>${wd}</div><div>${md}</div>`;
+    header.addEventListener('click', ()=>{ selectedDate = dateIso; viewMode='day'; syncViewToggle(); $('dateInput').value = selectedDate; renderAll(); });
+    col.appendChild(header);
+
+    const body = document.createElement('div');
+    body.className = 'week-day-body';
+    body.style.height = totalHeight+'px';
+    for(let h=0; h<(CLOSE_HOUR-OPEN_HOUR); h++){
+      const line = document.createElement('div');
+      line.className = 'slot-line';
+      line.style.top = (h*PX_PER_HOUR)+'px';
+      body.appendChild(line);
+    }
+    if(isToday){
+      const now = new Date();
+      const nowMin = now.getHours()*60+now.getMinutes();
+      if(nowMin >= OPEN_HOUR*60 && nowMin <= CLOSE_HOUR*60){
+        const nl = document.createElement('div');
+        nl.className = 'now-line';
+        nl.style.top = minToY(nowMin)+'px';
+        body.appendChild(nl);
+      }
+    }
+    bookingsFor(selectedRoom, dateIso).forEach(b=>{
+      const block = document.createElement('div');
+      block.className = 'week-booking';
+      block.style.top = minToY(b.start)+'px';
+      block.style.height = Math.max((b.end-b.start)/60*PX_PER_HOUR - 2, 15)+'px';
+      block.style.background = room.hex;
+      block.style.color = room.text;
+      block.innerHTML = `<b>${escapeHtml(b.name)}</b>${minsToLabel(b.start)}–${minsToLabel(b.end)}`;
+      block.addEventListener('click', (e)=>{ e.stopPropagation(); openDetail(b); });
+      body.appendChild(block);
+    });
+    body.addEventListener('click', (e)=>{
+      if(e.target === body || e.target.classList.contains('slot-line')){
+        selectedDate = dateIso; viewMode='day'; syncViewToggle(); $('dateInput').value = selectedDate; renderAll();
+      }
+    });
+    col.appendChild(body);
+    daysWrap.appendChild(col);
+  });
+}
+
+function syncViewToggle(){
+  $('dayViewBtn').classList.toggle('active', viewMode==='day');
+  $('weekViewBtn').classList.toggle('active', viewMode==='week');
+  $('viewHint').textContent = viewMode==='day'
+    ? 'Click and drag to select a time, then confirm your booking.'
+    : 'Click any day to jump into its day view, or click a booking for details.';
+}
+
+/* ---------------- Agenda ---------------- */
+function renderAgenda(){
+  const now = new Date();
+  const list = $('agendaList');
+  list.innerHTML = '';
+
+  if(viewMode==='day'){
+    $('agendaTitle').textContent = (selectedDate===isoDate(now) ? "Today's Agenda" : "Agenda");
+    const all = bookings.filter(b=>b.date===selectedDate).sort((a,b)=>a.start-b.start);
+    if(!all.length){
+      list.innerHTML = '<div class="agenda-empty">No bookings scheduled for this day.</div>';
+      return;
+    }
+    all.forEach(b=> list.appendChild(agendaItem(b)));
+  } else {
+    $('agendaTitle').textContent = 'This Week';
+    const weekDates = getWeekDates(selectedDate);
+    const all = bookings.filter(b=>weekDates.includes(b.date)).sort((a,b)=> (a.date+String(a.start).padStart(4,'0')).localeCompare(b.date+String(b.start).padStart(4,'0')));
+    if(!all.length){
+      list.innerHTML = '<div class="agenda-empty">No bookings scheduled this week.</div>';
+      return;
+    }
+    all.forEach(b=> list.appendChild(agendaItem(b, true)));
+  }
+}
+function agendaItem(b, showDate){
+  const room = roomById(b.room);
+  const item = document.createElement('div');
+  item.className = 'agenda-item';
+  item.innerHTML = `
+    <div class="agenda-chip" style="background:${room.hex}"></div>
+    <div>
+      <div class="agenda-time">${showDate? formatDateLong(b.date)+' · ':''}${minsToLabel(b.start)} – ${minsToLabel(b.end)}</div>
+      <div class="agenda-name">${escapeHtml(b.name)}</div>
+      <div class="agenda-room">${room.icon} ${room.name}${b.purpose? ' · '+escapeHtml(b.purpose):''}</div>
+    </div>
+  `;
+  item.addEventListener('click', ()=>{ selectedRoom=b.room; selectedDate=b.date; viewMode='day'; syncViewToggle(); $('dateInput').value=selectedDate; renderAll(); openDetail(b); });
+  return item;
+}
+
+/* ---------------- Book modal ---------------- */
+function timeSlots(startInclusive, endInclusive){
+  const arr = [];
+  for(let m=startInclusive; m<=endInclusive; m+=15) arr.push(m);
+  return arr;
+}
+function populateRoomSelect(selected){
+  const sel = $('modalRoomSelect');
+  sel.innerHTML = ROOMS.map(r=>`<option value="${r.id}" ${r.id===selected?'selected':''}>${r.icon} ${r.name}</option>`).join('');
+}
+function populateStartSelect(selected){
+  const sel = $('modalStartSelect');
+  const opts = timeSlots(OPEN_HOUR*60, CLOSE_HOUR*60-15);
+  sel.innerHTML = opts.map(m=>`<option value="${m}" ${m===selected?'selected':''}>${minsToLabel(m)}</option>`).join('');
+}
+function populateEndSelect(startVal, selected){
+  const sel = $('modalEndSelect');
+  const opts = timeSlots(startVal+15, CLOSE_HOUR*60);
+  let sel2 = opts.includes(selected) ? selected : opts[0];
+  sel.innerHTML = opts.map(m=>`<option value="${m}" ${m===sel2?'selected':''}>${minsToLabel(m)}</option>`).join('');
+}
+function checkModalConflict(){
+  const room = $('modalRoomSelect').value;
+  const date = $('modalDateInput').value;
+  const start = parseInt($('modalStartSelect').value,10);
+  const end = parseInt($('modalEndSelect').value,10);
+  const conflict = bookingsFor(room,date).some(b=>overlaps(start,end,b.start,b.end));
+  const err = $('modalError');
+  const suggestBox = $('modalSuggestions');
+  const confirmBtn = $('confirmModal');
+
+  if(conflict){
+    const thisRoom = roomById(room);
+    err.textContent = `${thisRoom.name} is already booked during this time. Choose an open room below, or pick a different time.`;
+    err.style.display = 'block';
+    confirmBtn.disabled = true;
+
+    const freeRooms = ROOMS.filter(r => r.id!==room && !bookingsFor(r.id,date).some(b=>overlaps(start,end,b.start,b.end)));
+    if(freeRooms.length){
+      suggestBox.innerHTML = '<span class="suggest-label">Open at this time:</span>' +
+        freeRooms.map(r=>`<button type="button" class="suggestion-chip" data-room="${r.id}">${r.icon} ${r.name}</button>`).join('');
+      suggestBox.style.display = 'block';
+      suggestBox.querySelectorAll('.suggestion-chip').forEach(chip=>{
+        chip.addEventListener('click', ()=>{
+          $('modalRoomSelect').value = chip.dataset.room;
+          checkModalConflict();
+        });
+      });
+    } else {
+      suggestBox.innerHTML = '<span class="suggest-label">Every room is booked during this time — please choose a different time.</span>';
+      suggestBox.style.display = 'block';
+    }
+  } else {
+    err.style.display = 'none';
+    suggestBox.style.display = 'none';
+    suggestBox.innerHTML = '';
+    confirmBtn.disabled = false;
+  }
+}
+
+function openBookModal({room, date, start, end}){
+  closeDetail();
+  populateRoomSelect(room);
+  $('modalDateInput').value = date;
+  populateStartSelect(start!=null ? start : nearestDefaultStart());
+  const startVal = parseInt($('modalStartSelect').value,10);
+  populateEndSelect(startVal, end!=null ? end : startVal+30);
+  $('bookName').value = '';
+  $('bookPurpose').value = '';
+  checkModalConflict();
+  $('modalOverlay').classList.add('show');
+  setTimeout(()=>$('bookName').focus(), 50);
+}
+function nearestDefaultStart(){
+  const now = new Date();
+  let mins = now.getHours()*60 + now.getMinutes();
+  mins = Math.ceil(mins/30)*30;
+  if(mins < OPEN_HOUR*60) mins = OPEN_HOUR*60;
+  if(mins > CLOSE_HOUR*60-30) mins = OPEN_HOUR*60;
+  return mins;
+}
+function closeBookModal(){
+  $('modalOverlay').classList.remove('show');
+}
+
+$('modalRoomSelect').addEventListener('change', checkModalConflict);
+$('modalDateInput').addEventListener('change', checkModalConflict);
+$('modalStartSelect').addEventListener('change', ()=>{
+  const startVal = parseInt($('modalStartSelect').value,10);
+  const endVal = parseInt($('modalEndSelect').value,10);
+  populateEndSelect(startVal, endVal);
+  checkModalConflict();
+});
+$('modalEndSelect').addEventListener('change', checkModalConflict);
+
+$('confirmModal').addEventListener('click', async ()=>{
+  const name = $('bookName').value.trim();
+  if(!name){
+    const err = $('modalError');
+    err.textContent = 'Please enter who is booking this room.';
+    err.style.display = 'block';
+    $('bookName').focus();
+    return;
+  }
+  const room = $('modalRoomSelect').value;
+  const date = $('modalDateInput').value;
+  const start = parseInt($('modalStartSelect').value,10);
+  const end = parseInt($('modalEndSelect').value,10);
+
+  // Guard against another user booking this exact slot while the modal was open.
+  await loadBookings();
+  if(bookingsFor(room,date).some(b=>overlaps(start,end,b.start,b.end))){
+    checkModalConflict();
+    return;
+  }
+
+  const purpose = $('bookPurpose').value.trim();
+  const newBooking = { id: uid(), room, date, start, end, name, purpose, createdAt: Date.now() };
+
+  const confirmBtn = $('confirmModal');
+  confirmBtn.disabled = true;
+  confirmBtn.textContent = 'Saving…';
+  const result = await addBookingRemote(newBooking);
+  confirmBtn.textContent = 'Confirm Booking';
+
+  if(!result.success){
+    await loadBookings();
+    checkModalConflict();
+    if(result.error !== 'conflict'){
+      const err = $('modalError');
+      err.textContent = 'Could not save the booking — check your connection and try again.';
+      err.style.display = 'block';
+      confirmBtn.disabled = false;
+    }
+    return;
+  }
+
+  bookings.push(newBooking);
+  closeBookModal();
+  selectedRoom = room; selectedDate = date; $('dateInput').value = date;
+  renderAll();
+});
+$('cancelModal').addEventListener('click', closeBookModal);
+$('modalOverlay').addEventListener('click', (e)=>{ if(e.target.id==='modalOverlay') closeBookModal(); });
+
+$('bookTopBtn').addEventListener('click', ()=>{
+  openBookModal({ room: selectedRoom, date: selectedDate, start:null, end:null });
+});
+
+/* ---------------- Detail modal ---------------- */
+let detailBooking = null;
+function openDetail(b){
+  closeBookModal();
+  detailBooking = b;
+  const room = roomById(b.room);
+  $('detailRoomName').textContent = room.name;
+  $('detailRoomName').style.color = room.hex==='#FDB927' ? '#8a6d00' : room.hex;
+  $('detailTime').textContent = `${formatDateLong(b.date)} · ${minsToLabel(b.start)} – ${minsToLabel(b.end)}`;
+  $('detailName').textContent = b.name;
+  $('detailPurpose').textContent = b.purpose || '';
+  $('detailView').style.display = 'block';
+  $('confirmCancelView').style.display = 'none';
+  $('detailOverlay').classList.add('show');
+}
+function closeDetail(){
+  $('detailOverlay').classList.remove('show');
+  detailBooking = null;
+}
+$('closeDetail').addEventListener('click', closeDetail);
+$('detailOverlay').addEventListener('click', (e)=>{ if(e.target.id==='detailOverlay') closeDetail(); });
+
+$('deleteBooking').addEventListener('click', ()=>{
+  if(!detailBooking) return;
+  $('confirmCancelName').textContent = detailBooking.name;
+  $('detailView').style.display = 'none';
+  $('confirmCancelView').style.display = 'block';
+});
+$('keepBooking').addEventListener('click', ()=>{
+  $('confirmCancelView').style.display = 'none';
+  $('detailView').style.display = 'block';
+});
+$('confirmCancelBtn').addEventListener('click', async ()=>{
+  if(!detailBooking) return;
+  const btn = $('confirmCancelBtn');
+  btn.disabled = true;
+  btn.textContent = 'Cancelling…';
+  await deleteBookingRemote(detailBooking.id);
+  bookings = bookings.filter(b=>b.id!==detailBooking.id);
+  btn.disabled = false;
+  btn.textContent = 'Yes, Cancel Booking';
+  closeDetail();
+  renderAll();
+});
+
+/* ---------------- Date & view controls ---------------- */
+$('dateInput').value = selectedDate;
+$('dateInput').addEventListener('change', (e)=>{ selectedDate = e.target.value; renderAll(); });
+$('prevDay').addEventListener('click', ()=> shiftDate(viewMode==='week' ? -7 : -1));
+$('nextDay').addEventListener('click', ()=> shiftDate(viewMode==='week' ? 7 : 1));
+$('todayBtn').addEventListener('click', ()=>{ selectedDate = isoDate(new Date()); $('dateInput').value = selectedDate; renderAll(); });
+function shiftDate(delta){
+  const [y,m,d] = selectedDate.split('-').map(Number);
+  const dt = new Date(y,m-1,d);
+  dt.setDate(dt.getDate()+delta);
+  selectedDate = isoDate(dt);
+  $('dateInput').value = selectedDate;
+  renderAll();
+}
+$('dayViewBtn').addEventListener('click', ()=>{ viewMode='day'; syncViewToggle(); renderAll(); });
+$('weekViewBtn').addEventListener('click', ()=>{ viewMode='week'; syncViewToggle(); renderAll(); });
+
+/* ---------------- Init ---------------- */
+function renderAll(){
+  renderRoomsRow();
+  const room = roomById(selectedRoom);
+  $('timelineRoomName').textContent = viewMode==='day' ? room.name : `${room.name} · Week`;
+  $('timelineRoomName').style.color = room.hex==='#FDB927' ? '#8a6d00' : room.hex;
+  if(viewMode==='day') renderDayView(); else renderWeekView();
+  renderAgenda();
+}
+
+(async function init(){
+  syncViewToggle();
+  window.addEventListener('mousemove', onGlobalMouseMove);
+  window.addEventListener('mouseup', onGlobalMouseUp);
+  await loadBookings();
+  renderAll();
+  setInterval(async ()=>{
+    await loadBookings();
+    renderAll();
+  }, 20000);
+})();
+</script>
+</body>
+</html>
