@@ -1,0 +1,2158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IFF Scoreboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+
+:root{
+  --bg:#12151b; --panel:#1a1f27; --panel-alt:#212832; --border:#2c333e; --border-soft:#242b35;
+  --text:#e9ecf1; --muted:#8a94a3; --muted-dim:#5f6875;
+  --amber:#f2a93b; --amber-deep:#c9821a; --blue:#5b93ff; --red:#e4572e; --green:#46b378; --teal:#3ec9c9;
+  --mono:'IBM Plex Mono','Consolas',monospace; --disp:'Oswald','Segoe UI Semibold',sans-serif; --sans:'Inter','Segoe UI',sans-serif;
+  --sap:#7fb8ff; --ops:#0a2f6b;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{background:radial-gradient(1100px 500px at 85% -10%, rgba(242,169,59,0.06), transparent 60%), var(--bg); color:var(--text); font-family:var(--sans); min-height:100vh;}
+::-webkit-scrollbar{width:10px;height:10px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:6px;}
+
+/* ---------- Topbar ---------- */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 22px;border-bottom:1px solid var(--border);background:linear-gradient(180deg, var(--panel), rgba(26,31,39,0.85));position:sticky;top:0;z-index:60;backdrop-filter:blur(6px);flex-wrap:wrap;}
+.brand{display:flex;align-items:center;gap:12px;}
+.brand .logo-badge{height:38px;width:38px;border-radius:8px;background:linear-gradient(160deg,#ffc266,var(--amber));display:flex;align-items:center;justify-content:center;flex:none;font-family:var(--disp);font-weight:700;font-size:15px;letter-spacing:0.5px;color:#1a1305;}
+.brand h1{font-family:var(--disp);font-weight:600;letter-spacing:0.3px;font-size:19px;margin:0;text-transform:uppercase;}
+.brand p{margin:0;font-size:11.5px;color:var(--muted);font-family:var(--mono);letter-spacing:0.4px;}
+.topbar-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.pill{font-family:var(--mono);font-size:11px;letter-spacing:0.5px;padding:5px 10px;border-radius:20px;border:1px solid var(--border);color:var(--muted);white-space:nowrap;display:inline-flex;align-items:center;gap:6px;}
+.pill .dot{width:6px;height:6px;border-radius:50%;background:var(--muted-dim);flex:none;}
+.pill.ok{border-color:rgba(70,179,120,0.5);color:var(--green);}
+.pill.ok .dot{background:var(--green);}
+.pill.warn{border-color:rgba(228,87,46,0.5);color:var(--red);}
+.pill.warn .dot{background:var(--red);}
+
+.btn{font-family:var(--sans);font-weight:600;font-size:12.5px;letter-spacing:0.2px;border-radius:7px;padding:8px 13px;border:1px solid var(--border);background:var(--panel-alt);color:var(--text);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:all .12s ease;white-space:nowrap;}
+.btn:hover{border-color:var(--muted-dim);transform:translateY(-1px);}
+.btn:active{transform:translateY(0);}
+.btn.primary{background:linear-gradient(180deg,#ffc266,var(--amber));border-color:var(--amber-deep);color:#1a1305;}
+.btn.primary:hover{filter:brightness(1.05);}
+.btn.ghost{background:transparent;}
+.btn.sm{padding:6px 10px;font-size:11.5px;}
+.btn:disabled{opacity:0.4;cursor:not-allowed;transform:none;}
+input[type=file]{display:none;}
+
+/* ---------- Tabs ---------- */
+.tabbar{display:flex;gap:6px;padding:12px 22px 0;border-bottom:1px solid var(--border);background:var(--panel);}
+.tab-btn{font-family:var(--disp);font-size:12.5px;text-transform:uppercase;letter-spacing:0.6px;font-weight:600;color:var(--muted);background:transparent;border:none;border-bottom:2px solid transparent;padding:10px 6px 12px;cursor:pointer;display:flex;align-items:center;gap:7px;}
+.tab-btn:hover{color:var(--text);}
+.tab-btn.active{color:var(--amber);border-bottom-color:var(--amber);}
+.tab-btn .cnt{font-family:var(--mono);font-size:10px;background:var(--panel-alt);border:1px solid var(--border);border-radius:10px;padding:1px 7px;color:var(--muted);}
+.tab-btn.active .cnt{color:var(--amber);border-color:var(--amber-deep);}
+
+.workspace{padding:20px 22px 80px;max-width:1900px;margin:0 auto;}
+.workspace.wide-view{max-width:none;}
+.view{display:none;}
+.view.active{display:block;}
+
+/* ---------- Stat row ---------- */
+.stat-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(108px,1fr));gap:8px;margin-bottom:18px;}
+.stat{background:var(--panel);border:1px solid var(--border);border-radius:9px;padding:11px 10px;text-align:center;cursor:pointer;transition:border-color .12s ease;}
+.stat:hover{border-color:var(--muted-dim);}
+.stat.active{border-color:var(--amber-deep);background:rgba(242,169,59,0.05);}
+.stat .n{font-family:var(--mono);font-size:20px;font-weight:600;color:var(--amber);}
+.stat .l{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px;margin-top:3px;}
+
+/* ---------- Cards ---------- */
+.card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px;}
+.card h2{font-family:var(--disp);font-size:13px;text-transform:uppercase;letter-spacing:0.6px;margin:0 0 4px;color:var(--text);font-weight:600;display:flex;align-items:center;gap:8px;justify-content:space-between;}
+.card p.hint{font-size:12px;color:var(--muted);line-height:1.5;margin:0 0 12px;}
+
+/* ---------- Staging Map ---------- */
+.map-legend{display:flex;flex-wrap:wrap;gap:14px;font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:14px;}
+.map-legend .item{display:flex;align-items:center;gap:6px;}
+.map-legend .sw{width:11px;height:11px;border-radius:3px;flex:none;border:1px solid rgba(255,255,255,0.15);}
+
+.zone-section{margin-bottom:30px;}
+.zone-section-head{display:flex;align-items:baseline;gap:12px;justify-content:space-between;cursor:pointer;user-select:none;padding-bottom:10px;margin-bottom:14px;border-bottom:1px solid var(--border);}
+.zone-section-head:hover h2{color:var(--amber);}
+.zone-section-head h2{font-family:var(--disp);font-size:20px;text-transform:uppercase;letter-spacing:0.5px;margin:0;font-weight:700;color:var(--text);transition:color .12s ease;}
+.zone-section-head .zh-right{display:flex;align-items:center;gap:10px;}
+.zone-section-head .zh-sub{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap;}
+.zone-section-head .zh-counts{display:flex;gap:6px;flex-wrap:wrap;}
+.zone-chip{font-family:var(--mono);font-size:9.5px;padding:2px 7px;border-radius:10px;border:1px solid var(--border);color:var(--muted);white-space:nowrap;}
+.zone-section-head .caret{font-size:13px;color:var(--muted);transition:transform .15s ease;flex:none;}
+.zone-section.collapsed .caret{transform:rotate(-90deg);}
+.zone-section.collapsed .zone-card-grid{display:none;}
+
+.zone-card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;}
+.lane-card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:13px 14px;cursor:pointer;transition:transform .1s ease,border-color .12s ease;border-top:3px solid var(--border);}
+.lane-card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(0,0,0,0.35);border-color:var(--muted-dim);}
+.lane-card.st-none{border-top-color:var(--border);}
+.lane-card.st-error{border-top-color:var(--red);}
+.lane-card.st-printed{border-top-color:var(--blue);}
+.lane-card.st-picking{border-top-color:var(--amber);}
+.lane-card.st-packed{border-top-color:#e0954f;}
+.lane-card.st-loaded{border-top-color:var(--teal);}
+.lane-card.st-invoiced{border-top-color:var(--green);}
+.lane-card.empty{background:var(--panel-alt);border-style:dashed;}
+.lane-card.unassigned{border-style:dashed;}
+.lane-card .lc-head{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:9px;}
+.lane-card .lc-code{font-family:var(--disp);font-size:14px;font-weight:700;letter-spacing:0.4px;}
+.lane-card.empty .lc-code{color:var(--muted);}
+.lane-card .lc-rows{display:flex;flex-direction:column;gap:6px;}
+.lane-card .lc-row .lc-label{font-family:var(--mono);font-size:8.5px;text-transform:uppercase;letter-spacing:0.4px;color:var(--muted-dim);}
+.lane-card .lc-row .lc-value{font-family:var(--sans);font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.lane-card.empty .lc-empty-msg{font-size:12px;color:var(--muted-dim);text-align:center;padding:14px 0 4px;}
+
+/* ---------- Badges / status colors ---------- */
+.badge{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.3px;padding:3px 8px;border-radius:5px;border:1px solid;display:inline-block;white-space:nowrap;}
+.st-none{color:var(--muted);border-color:var(--border);background:rgba(255,255,255,0.02);}
+.st-error{color:#ffb199;border-color:rgba(228,87,46,0.55);background:rgba(228,87,46,0.10);}
+.st-printed{color:var(--blue);border-color:#3a5aa8;background:rgba(91,147,255,0.10);}
+.st-picking{color:var(--amber);border-color:var(--amber-deep);background:rgba(242,169,59,0.10);}
+.st-packed{color:#e0954f;border-color:#a8641a;background:rgba(224,149,79,0.10);}
+.st-loaded{color:var(--teal);border-color:#1f8080;background:rgba(62,201,201,0.10);}
+.st-invoiced{color:var(--green);border-color:#2c7f52;background:rgba(70,179,120,0.10);}
+
+.lane.st-none{background:var(--panel-alt);}
+.lane.st-error{background:rgba(228,87,46,0.16);border-color:rgba(228,87,46,0.5);}
+.lane.st-printed{background:rgba(91,147,255,0.16);border-color:#3a5aa8;}
+.lane.st-picking{background:rgba(242,169,59,0.18);border-color:var(--amber-deep);}
+.lane.st-packed{background:rgba(224,149,79,0.18);border-color:#a8641a;}
+.lane.st-loaded{background:rgba(62,201,201,0.18);border-color:#1f8080;}
+.lane.st-invoiced{background:rgba(70,179,120,0.18);border-color:#2c7f52;}
+
+/* ---------- Order Log ---------- */
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px;}
+.toolbar .grow{flex:1;min-width:180px;}
+.search-input,.filter-select{width:100%;background:var(--panel-alt);border:1px solid var(--border);border-radius:7px;padding:8px 11px;color:var(--text);font-family:var(--mono);font-size:12.5px;}
+.search-input:focus,.filter-select:focus{outline:none;border-color:var(--amber);}
+.toolbar-actions{display:flex;gap:8px;flex-wrap:wrap;}
+
+.table-scroll{overflow-x:auto;border:1px solid var(--border);border-radius:10px;}
+table.order-table{width:100%;border-collapse:collapse;font-size:11px;min-width:1100px;}
+.order-table thead th{text-align:left;font-family:var(--mono);font-size:8.5px;text-transform:uppercase;letter-spacing:0.2px;color:var(--muted);padding:7px 6px;background:var(--panel-alt);border-bottom:1px solid var(--border);white-space:nowrap;position:sticky;top:0;cursor:grab;user-select:none;}
+.order-table thead th:hover{color:var(--text);}
+.order-table thead th.sap-col{box-shadow:inset 0 2px 0 0 var(--sap);}
+.order-table thead th.ops-col{box-shadow:inset 0 2px 0 0 var(--ops);}
+.order-table thead th .arrow{opacity:0.5;margin-left:3px;}
+.order-table thead th .drag-handle{opacity:0.35;margin-right:4px;font-size:9px;}
+.order-table thead th.dragging{opacity:0.4;cursor:grabbing;}
+.order-table thead th.drop-target{box-shadow:inset 2px 0 0 0 var(--amber),inset 2px 2px 0 0 var(--amber);}
+.order-table tbody td{padding:6px 6px;border-bottom:1px solid var(--border-soft);font-family:var(--mono);color:var(--text);white-space:nowrap;}
+.order-table tbody tr:hover{background:rgba(255,255,255,0.02);}
+.order-table tbody tr.row-error td{background:rgba(228,87,46,0.05);}
+.order-table td.comments-cell{white-space:normal;max-width:200px;font-family:var(--sans);color:var(--muted);font-size:10.5px;}
+.order-table td .chk{width:14px;height:14px;accent-color:var(--amber);cursor:pointer;}
+.row-actions{display:flex;gap:5px;}
+.icon-btn{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:5px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;flex:none;}
+.icon-btn:hover{border-color:var(--muted-dim);color:var(--text);}
+.icon-btn.danger:hover{border-color:rgba(228,87,46,0.55);color:#ffb199;}
+.btn.icon-only{width:32px;height:32px;padding:0;font-size:14px;flex:none;}
+
+/* ---------- Settings ---------- */
+.settings-gate{display:flex;flex-direction:column;align-items:center;gap:14px;padding:20px 0 6px;text-align:center;}
+.settings-gate p{color:var(--muted);font-size:12.5px;max-width:340px;margin:0;}
+.settings-gate input{max-width:260px;}
+.settings-tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:16px;}
+.settings-tab-btn{font-family:var(--disp);font-size:11.5px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;color:var(--muted);background:transparent;border:none;border-bottom:2px solid transparent;padding:8px 4px 10px;cursor:pointer;}
+.settings-tab-btn:hover{color:var(--text);}
+.settings-tab-btn.active{color:var(--amber);border-bottom-color:var(--amber);}
+.settings-pane{display:none;}
+.settings-pane.active{display:block;}
+.status-opt-row{display:grid;grid-template-columns:0.7fr 1.4fr 1fr auto;gap:8px;align-items:center;margin-bottom:8px;}
+.status-opt-row input,.status-opt-row select{background:var(--panel-alt);border:1px solid var(--border);border-radius:7px;padding:7px 9px;color:var(--text);font-family:var(--mono);font-size:12px;}
+.security-note{font-size:11px;color:var(--muted-dim);background:var(--panel-alt);border:1px solid var(--border-soft);border-radius:7px;padding:10px 12px;line-height:1.6;margin-top:6px;}
+.sync-status-line{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-bottom:12px;}
+
+.empty-state{padding:40px 20px;text-align:center;color:var(--muted);font-size:12.5px;}
+
+/* ---------- Modal ---------- */
+.modal-overlay{position:fixed;inset:0;background:rgba(8,9,12,0.72);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;}
+.modal-overlay.hidden{display:none;}
+.modal{background:var(--panel);border:1px solid var(--border);border-radius:12px;width:100%;max-width:760px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,0.5);max-height:88vh;overflow-y:auto;}
+.modal.narrow{max-width:520px;}
+.modal.wide{max-width:920px;}
+.modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.modal-head h3{font-family:var(--disp);text-transform:uppercase;font-size:16px;letter-spacing:0.4px;margin:0;flex:1;font-weight:600;}
+.modal-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;padding:2px 6px;line-height:1;}
+.modal-close:hover{color:var(--text);}
+
+.section-chip{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:0.5px;padding:5px 10px;border-radius:6px;margin:16px 0 12px;}
+.section-chip:first-child{margin-top:0;}
+.section-chip .sw{width:10px;height:10px;border-radius:3px;}
+.section-chip.sap{background:rgba(127,184,255,0.10);color:#a9cdff;border:1px solid rgba(127,184,255,0.35);}
+.section-chip.sap .sw{background:var(--sap);}
+.section-chip.ops{background:rgba(10,47,107,0.35);color:#9db8e8;border:1px solid #294d8f;}
+.section-chip.ops .sw{background:#3b6fd4;}
+
+.field-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px;}
+.field-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px 12px;}
+.field{margin-bottom:0;}
+.field label{display:block;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:5px;font-family:var(--mono);}
+.field input,.field select,.field textarea{width:100%;background:var(--panel-alt);border:1px solid var(--border);border-radius:7px;padding:8px 10px;color:var(--text);font-family:var(--mono);font-size:12.5px;}
+.req-star{color:var(--red);}
+.field-invalid{border-color:var(--red) !important;box-shadow:0 0 0 1px rgba(228,87,46,0.4);}
+.field textarea{font-family:var(--sans);resize:vertical;min-height:54px;}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--amber);}
+.checkbox-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text);cursor:pointer;user-select:none;font-family:var(--mono);}
+.checkbox-row input{width:15px;height:15px;accent-color:var(--amber);cursor:pointer;flex:none;}
+.modal-foot{display:flex;justify-content:space-between;align-items:center;margin-top:20px;padding-top:16px;border-top:1px solid var(--border-soft);gap:10px;}
+
+/* CSV import modal */
+.dropzone{border:1.5px dashed var(--border);border-radius:8px;padding:22px 12px;text-align:center;cursor:pointer;transition:all .15s ease;background:var(--panel-alt);}
+.dropzone:hover,.dropzone.drag{border-color:var(--amber);background:rgba(242,169,59,0.06);}
+.dropzone .dz-title{font-size:13px;font-weight:600;}
+.dropzone .dz-sub{font-size:11px;color:var(--muted);margin-top:4px;font-family:var(--mono);}
+.csv-map-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;margin:14px 0;}
+.csv-preview{max-height:260px;overflow:auto;border:1px solid var(--border);border-radius:8px;margin-top:12px;}
+table.csv-table{width:100%;border-collapse:collapse;font-size:11px;font-family:var(--mono);}
+.csv-table th{position:sticky;top:0;background:var(--panel-alt);text-align:left;padding:6px 8px;border-bottom:1px solid var(--border);color:var(--muted);text-transform:uppercase;font-size:9.5px;}
+.csv-table td{padding:6px 8px;border-bottom:1px solid var(--border-soft);}
+.csv-table tr.matched td:first-child{color:var(--green);}
+.csv-table tr.unmatched td:first-child{color:var(--red);}
+.import-summary{display:flex;gap:14px;margin-top:10px;font-family:var(--mono);font-size:11.5px;}
+.import-summary b{color:var(--amber);}
+
+/* ---------- Toast ---------- */
+.toast{position:fixed;bottom:22px;right:22px;background:var(--panel);border:1px solid var(--border);color:var(--text);padding:12px 16px;border-radius:8px;font-size:13px;box-shadow:0 12px 30px rgba(0,0,0,.4);z-index:999;max-width:340px;display:none;font-family:var(--sans);}
+.toast.error{border-color:rgba(228,87,46,0.6);color:#ffb199;}
+.toast.show{display:block;animation:fadein .15s ease-out;}
+@keyframes fadein{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+.footnote{margin-top:24px;padding-top:14px;border-top:1px solid var(--border-soft);font-size:11px;color:var(--muted-dim);font-family:var(--mono);line-height:1.6;}
+
+@media (max-width:900px){
+  .field-grid,.field-grid3,.csv-map-grid{grid-template-columns:1fr;}
+  .floor-body{flex-direction:column;}
+  .right-cluster{flex-direction:column;}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="logo-badge">IFF</div>
+    <div>
+      <h1>IFF Scoreboard</h1>
+      <p>Outbound Staging &amp; Delivery Tracker</p>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <span class="pill" id="syncPill"><span class="dot"></span>—</span>
+    <button class="btn ghost sm" id="btnImportPkms">⇪ Import PKMS CSV</button>
+    <button class="btn ghost sm" id="btnExportCsv">⇩ Export CSV</button>
+    <button class="btn ghost sm" id="btnBackup">⇩ Backup JSON</button>
+    <button class="btn ghost sm" id="btnRestore">⇧ Restore JSON</button>
+    <button class="btn ghost sm icon-only" id="btnSettings" title="Settings">⚙</button>
+    <button class="btn primary sm" id="btnAddOrder">+ Add Order</button>
+  </div>
+</div>
+
+<div class="tabbar">
+  <button class="tab-btn active" data-view="map">🗺 Staging Map</button>
+  <button class="tab-btn" data-view="log">☰ Order Log <span class="cnt" id="logCount">0</span></button>
+</div>
+
+<div class="workspace">
+
+  <!-- ===================== STAGING DASHBOARD VIEW ===================== -->
+  <div class="view active" id="view-map">
+
+    <div class="stat-strip" id="statStrip"></div>
+
+    <div class="card">
+      <h2>Staging Dashboard</h2>
+      <p class="hint">Every lane, grouped by area. Colors reflect PKMS status of the order currently assigned. Click an occupied lane to edit it, or an empty lane to assign an order to it.</p>
+      <div class="map-legend" id="mapLegend"></div>
+    </div>
+
+    <div class="zone-grid" id="zoneGrid"></div>
+  </div>
+
+  <!-- ===================== ORDER LOG VIEW ===================== -->
+  <div class="view" id="view-log">
+
+    <div class="toolbar">
+      <div class="grow">
+        <input type="text" class="search-input" id="searchInput" placeholder="Search customer, STO, PO, carrier, lane…">
+      </div>
+      <select class="filter-select" id="statusFilter" style="max-width:190px;">
+        <option value="">All statuses</option>
+      </select>
+      <div class="toolbar-actions">
+        <button class="btn ghost sm" id="btnClearFilter">Clear filters</button>
+        <button class="btn ghost sm" id="btnResetColumns">Reset columns</button>
+      </div>
+    </div>
+
+    <div class="table-scroll">
+      <table class="order-table" id="orderTable">
+        <thead>
+          <tr id="orderTableHead"></tr>
+        </thead>
+        <tbody id="orderTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<div class="footnote">
+  Data is stored locally in this browser (no live SAP / PKMS / Shiptify connection). Use <b>Import PKMS CSV</b> to bulk-update PKMS Status from a PKMS export, and <b>Backup / Restore JSON</b> to move the board between devices or share with teammates.
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- ===================== ADD / EDIT ORDER MODAL ===================== -->
+<div class="modal-overlay hidden" id="orderModalOverlay">
+  <div class="modal wide">
+    <div class="modal-head">
+      <h3 id="orderModalTitle">Add Order</h3>
+      <button class="modal-close" id="orderModalClose">×</button>
+    </div>
+
+    <div class="section-chip sap"><span class="sw"></span> SAP Waved Fields</div>
+    <div class="field-grid3" id="sapFieldsGrid"></div>
+
+    <div id="opsSection">
+      <div class="section-chip ops"><span class="sw"></span> Operations Fields</div>
+      <div class="field-grid3" id="opsFieldsGrid"></div>
+    </div>
+
+    <div style="margin-top:16px;" id="commentsFieldWrap"></div>
+
+    <div class="modal-foot">
+      <button class="btn ghost sm danger-outline" id="btnDeleteOrder" style="display:none;">Delete Order</button>
+      <div style="flex:1;"></div>
+      <button class="btn ghost sm" id="btnCancelOrder">Cancel</button>
+      <button class="btn primary sm" id="btnSaveOrder">Save Order</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== DATA IMPORT MODAL (PKMS / Shiptify) ===================== -->
+<div class="modal-overlay hidden" id="pkmsModalOverlay">
+  <div class="modal wide">
+    <div class="modal-head">
+      <h3>Import Data (PKMS / Shiptify)</h3>
+      <button class="modal-close" id="pkmsModalClose">×</button>
+    </div>
+    <p class="hint" style="margin-bottom:12px;">Upload a PKMS or Shiptify export (.csv or .xlsx). Rows are matched to existing orders by IFF STO, Shipment #, or Ceva Reference #. Choose which field to update and which column holds the new value — unmatched rows are shown but not applied.</p>
+
+    <div class="dropzone" id="pkmsDropzone">
+      <div class="dz-title">Click to choose a CSV or XLSX file, or drag one here</div>
+      <div class="dz-sub" id="pkmsFileName">No file selected</div>
+    </div>
+    <input type="file" id="pkmsFileInput" accept=".csv,.xlsx,text/csv">
+
+    <div id="pkmsMapSection" style="display:none;">
+      <div class="csv-map-grid">
+        <div class="field">
+          <label>Header Row</label>
+          <select id="pkmsHeaderRow"></select>
+        </div>
+        <div class="field">
+          <label>Match Column (identifies the order)</label>
+          <select id="pkmsMatchCol"></select>
+        </div>
+        <div class="field">
+          <label>Update Field</label>
+          <select id="pkmsUpdateField"></select>
+        </div>
+        <div class="field">
+          <label>Value Column (new value)</label>
+          <select id="pkmsStatusCol"></select>
+        </div>
+      </div>
+      <p class="hint" id="pkmsDateHint" style="display:none;margin:-4px 0 10px;">Dates are parsed automatically (DD/MM/YYYY, MM/DD/YYYY, or YYYY-MM-DD).</p>
+
+      <div class="import-summary" id="pkmsSummary"></div>
+
+      <div class="csv-preview">
+        <table class="csv-table" id="pkmsPreviewTable"></table>
+      </div>
+    </div>
+
+    <div class="modal-foot">
+      <div style="flex:1;"></div>
+      <button class="btn ghost sm" id="btnCancelPkms">Cancel</button>
+      <button class="btn primary sm" id="btnApplyPkms" disabled>Apply Updates</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="restoreFileInput" accept="application/json">
+
+<!-- ===================== SETTINGS MODAL ===================== -->
+<div class="modal-overlay hidden" id="settingsModalOverlay">
+  <div class="modal wide">
+    <div class="modal-head">
+      <h3>Settings</h3>
+      <button class="modal-close" id="settingsModalClose">×</button>
+    </div>
+
+    <div id="settingsGate" class="settings-gate">
+      <p>This area is password protected. Enter the settings password to manage statuses and sync configuration.</p>
+      <div class="field"><input type="password" id="settingsPasswordInput" placeholder="Settings password"></div>
+      <button class="btn primary sm" id="btnSettingsUnlock">Unlock</button>
+      <p id="settingsGateError" style="color:#ffb199;display:none;"></p>
+    </div>
+
+    <div id="settingsBody" style="display:none;">
+      <div class="settings-tabs">
+        <button class="settings-tab-btn active" data-pane="statuses">PKMS Statuses</button>
+        <button class="settings-tab-btn" data-pane="sync">Google Sheet Sync</button>
+        <button class="settings-tab-btn" data-pane="password">Password</button>
+      </div>
+
+      <div class="settings-pane active" id="pane-statuses">
+        <p class="hint">These are the options that appear in the PKMS Status dropdown. "Code" is optional — set it to the raw code your PKMS export uses (e.g. 10, 20, 35, 40, 70, 90) so imported codes map to this label automatically. Assign each one a color stage so it shows correctly on the dashboard.</p>
+        <div id="statusOptList"></div>
+        <button class="btn ghost sm" id="btnAddStatusOpt">+ Add Status</button>
+        <div class="modal-foot">
+          <div style="flex:1;"></div>
+          <button class="btn primary sm" id="btnSaveStatusOpts">Save Statuses</button>
+        </div>
+      </div>
+
+      <div class="settings-pane" id="pane-sync">
+        <div class="sync-status-line"><span id="syncDetailStatus">Not connected</span></div>
+        <p class="hint">Paste the Web App URL from your deployed Google Apps Script (see the Code.gs file provided alongside this app) to sync orders live to a shared Google Sheet, so multiple people can work in this at once.</p>
+        <div class="field-grid">
+          <div class="field"><label>Web App (Sync) URL</label><input type="text" id="syncUrlInput" placeholder="https://script.google.com/macros/s/…/exec"></div>
+          <div class="field"><label>Shared Token</label><input type="text" id="syncTokenInput" placeholder="matches SHARED_TOKEN in Code.gs"></div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn ghost sm" id="btnTestSync">Test Connection</button>
+          <div style="flex:1;"></div>
+          <button class="btn ghost sm" id="btnForceRefresh">Force Refresh from Sheet</button>
+          <button class="btn primary sm" id="btnSaveSync">Save Sync Settings</button>
+        </div>
+      </div>
+
+      <div class="settings-pane" id="pane-password">
+        <div class="field-grid">
+          <div class="field"><label>Current Password</label><input type="password" id="pwCurrentInput"></div>
+          <div class="field"></div>
+          <div class="field"><label>New Password</label><input type="password" id="pwNewInput"></div>
+          <div class="field"><label>Confirm New Password</label><input type="password" id="pwConfirmInput"></div>
+        </div>
+        <div class="modal-foot">
+          <div style="flex:1;"></div>
+          <button class="btn primary sm" id="btnChangePassword">Update Password</button>
+        </div>
+      </div>
+
+      <div class="security-note">
+        <b>Note:</b> this is a client-side gate meant to keep casual users out of settings — since this file's source will be public on GitHub, anyone technically inclined could bypass it. It is not a substitute for restricting access to the Google Sheet / Apps Script deployment itself, which is the real access boundary for your data.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ===================== SYNC CONFIG (edit before deploying, or set in Settings) ===================== */
+/* Paste the Web App URL from your deployed Google Apps Script (Code.gs) here so the file
+   works out of the box once uploaded to GitHub. Individual users can also override this
+   from the Settings > Google Sheet Sync panel (stored per-browser). */
+var DEFAULT_SYNC_URL = "";
+var DEFAULT_SYNC_TOKEN = "";
+var SYNC_POLL_MS = 20000;
+
+/* ===================== CONSTANTS / SCHEMA ===================== */
+
+var STORAGE_KEY = "iffScoreboardData_v1";
+var SETTINGS_KEY = "iffScoreboardSettings_v1";
+var SESSION_AUTH_KEY = "iffScoreboardSettingsAuthed_v1";
+var DEFAULT_PASSWORD_HASH_HEX = null; // computed at runtime from DEFAULT_PASSWORD below
+var DEFAULT_PASSWORD = "iffops"; // change this via Settings once deployed
+var SEED = [{"giDate": "2026-08-03", "stoIFF": 921201, "customer": "Fresca Foods Inc", "incoterms": 142, "docType": "", "tot": "", "cevaRef": "0081177371", "hu": "", "shipmentNum": "-", "poIFF": "", "poCustomer": 13271443, "pkmsStatus": "90 Invoiced", "doorLane": "OBSTG79", "apl": "", "addedAPL": "", "closedSAP": true, "closedPKMS": true, "carrier": "Uber Freight", "schedPickup": "2026-08-03", "arrivedOnTime": "Yes", "comments": ""}, {"giDate": "2026-08-03", "stoIFF": "923430", "customer": "55387229-Nellson Nutraceutical LLC", "incoterms": 142, "docType": "", "tot": "", "cevaRef": "0081177128", "hu": "", "shipmentNum": "-", "poIFF": "", "poCustomer": "55387229", "pkmsStatus": "70 Loaded", "doorLane": "OBSTG75", "apl": "", "addedAPL": "", "closedSAP": false, "closedPKMS": false, "carrier": "Spot", "schedPickup": "2026-08-10", "arrivedOnTime": "", "comments": ""}, {"giDate": "2026-08-04", "stoIFF": "922818", "customer": "55034085-General Mills Operations LLC", "incoterms": 142, "docType": "", "tot": "", "cevaRef": "0081177362", "hu": "", "shipmentNum": "-", "poIFF": "", "poCustomer": "55034085", "pkmsStatus": "90 Invoiced", "doorLane": "OBSTG78", "apl": "", "addedAPL": "", "closedSAP": true, "closedPKMS": true, "carrier": "RXO", "schedPickup": "2026-08-04", "arrivedOnTime": "Yes", "comments": ""}, {"giDate": "2026-08-03", "stoIFF": "920212", "customer": "55393920-Worldwide Sport Nutritional", "incoterms": 152, "docType": "", "tot": "", "cevaRef": "0081177291", "hu": "", "shipmentNum": 571760, "poIFF": "", "poCustomer": "55393920", "pkmsStatus": "90 Invoiced", "doorLane": "OBSTG79", "apl": "APL Req'd", "addedAPL": true, "closedSAP": true, "closedPKMS": true, "carrier": "CH Robinson", "schedPickup": "2026-08-06", "arrivedOnTime": "No", "comments": "arrived 3 hours early \u2026 able to accommodate and load early"}, {"giDate": "2026-08-03", "stoIFF": "919145", "customer": "55053178-EMPWR Canada Inc", "incoterms": 142, "docType": "", "tot": "", "cevaRef": "0081177124", "hu": "", "shipmentNum": "-", "poIFF": "", "poCustomer": "55053178", "pkmsStatus": "90 Invoiced", "doorLane": "OBSTG80", "apl": "", "addedAPL": "", "closedSAP": true, "closedPKMS": true, "carrier": "Mexuscan", "schedPickup": "2026-08-05", "arrivedOnTime": "Yes", "comments": ""}, {"giDate": "2026-08-03", "stoIFF": "922670", "customer": "55394379-Nutrition Bar Confectioners", "incoterms": 145, "docType": "", "tot": "", "cevaRef": "0081177391", "hu": "", "shipmentNum": "-", "poIFF": "", "poCustomer": "55394379", "pkmsStatus": "70 Loaded", "doorLane": "OBSTG82", "apl": "", "addedAPL": "", "closedSAP": false, "closedPKMS": false, "carrier": "Munk pack", "schedPickup": "2026-08-05", "arrivedOnTime": "No", "comments": ""}, {"giDate": "2026-08-03", "stoIFF": "919475", "customer": "55009464-Nellson Nutraceutical Canada, INC", "incoterms": "FCA", "docType": "", "tot": "", "cevaRef": "0081177393", "hu": "", "shipmentNum": "-", "poIFF": "", "poCustomer": "55009464", "pkmsStatus": "90 Invoiced", "doorLane": "OBSTG83", "apl": "", "addedAPL": "", "closedSAP": true, "closedPKMS": true, "carrier": "Tansport Lessard", "schedPickup": "2026-08-04", "arrivedOnTime": "Yes", "comments": ""}, {"giDate": "2026-08-03", "stoIFF": 922893, "customer": "55387853-Nellson Nutraceutical LLC", "incoterms": 142, "docType": "ZOR", "tot": "", "cevaRef": "0081177526", "hu": "", "shipmentNum": "-", "poIFF": "", "poCustomer": "2219453-OP-6001", "pkmsStatus": "90 Invoiced", "doorLane": "OBSTG86", "apl": "", "addedAPL": "", "closedSAP": true, "closedPKMS": true, "carrier": "Spot", "schedPickup": "2026-08-07", "arrivedOnTime": "No", "comments": "20kg short .. Arrived at 8:30am for 2pm pick up"}, {"giDate": "2026-08-05", "stoIFF": 921629, "customer": "General Mills Operations LLC", "incoterms": 142, "docType": "", "tot": "", "cevaRef": "0081177576", "hu": "", "shipmentNum": "-", "poIFF": "", "poCustomer": 13277313, "pkmsStatus": "90 Invoiced", "doorLane": "OVRFL07", "apl": "", "addedAPL": "", "closedSAP": true, "closedPKMS": true, "carrier": "Ceeg", "schedPickup": "2026-08-06", "arrivedOnTime": "", "comments": ""}, {"giDate": "2026-08-05", "stoIFF": 916032, "customer": "EMPWR USA Inc. ", "incoterms": 142, "docType": "", "tot": "", "cevaRef": "0081177584", "hu": "", "shipmentNum": "-", "poIFF": "", "poCustomer": 4510016974, "pkmsStatus": "90 Invoiced", "doorLane": "OBSTG85", "apl": "", "addedAPL": "", "closedSAP": true, "closedPKMS": true, "carrier": "", "schedPickup": "", "arrivedOnTime": "Yes", "comments": "arrived on time \u2026 per inventory 20kg short .. Pending Ronnie to load. Load corrected, begin load @ "}, {"giDate": "2026-08-05", "stoIFF": 924347, "customer": "Danisco USA", "incoterms": 151, "docType": "", "tot": "", "cevaRef": "0081177585", "hu": "", "shipmentNum": 571910, "poIFF": "", "poCustomer": "IFF/SUPNUG570/JAP", "pkmsStatus": "90 Invoiced", "doorLane": "OBPCL02", "apl": "", "addedAPL": "", "closedSAP": true, "closedPKMS": false, "carrier": "FedEx", "schedPickup": "NA", "arrivedOnTime": "", "comments": "20kg short"}, {"giDate": "2026-08-07", "stoIFF": 919802, "customer": "", "incoterms": 142, "docType": "", "tot": "", "cevaRef": "0081177620", "hu": "", "shipmentNum": "-", "poIFF": "", "poCustomer": 3787709, "pkmsStatus": "90 Invoiced", "doorLane": "OBSTG84", "apl": "", "addedAPL": "", "closedSAP": true, "closedPKMS": true, "carrier": "", "schedPickup": "", "arrivedOnTime": "", "comments": ""}, {"giDate": "2026-08-06", "stoIFF": 924510, "customer": "55375273 -JFB Technical Center", "incoterms": 152, "docType": "", "tot": "", "cevaRef": "0081177619", "hu": "", "shipmentNum": 571916, "poIFF": "", "poCustomer": 13307676, "pkmsStatus": "70 Loaded", "doorLane": "OBPCL01", "apl": "", "addedAPL": "", "closedSAP": true, "closedPKMS": false, "carrier": "FedEx", "schedPickup": "", "arrivedOnTime": "", "comments": ""}, {"giDate": "2026-08-04", "stoIFF": "921879", "customer": "55034085-General Mills Operations LLC", "incoterms": 142, "docType": "", "tot": "", "cevaRef": "0081177394", "hu": "", "shipmentNum": "-", "poIFF": "", "poCustomer": "55034085", "pkmsStatus": "90 Invoiced", "doorLane": "OBSTG81", "apl": "", "addedAPL": "", "closedSAP": true, "closedPKMS": true, "carrier": "CEEG", "schedPickup": "2026-08-05", "arrivedOnTime": "Yes", "comments": ""}, {"giDate": "2026-08-04", "stoIFF": "921176", "customer": "55034085-General Mills Operations LLC", "incoterms": 142, "docType": "", "tot": "", "cevaRef": "0081177520", "hu": "", "shipmentNum": "-", "poIFF": "", "poCustomer": "55034085", "pkmsStatus": "90 Invoiced", "doorLane": "OBSTG78", "apl": "", "addedAPL": "", "closedSAP": true, "closedPKMS": true, "carrier": "CEEG", "schedPickup": "2026-08-05", "arrivedOnTime": "Yes", "comments": ""}, {"giDate": "2026-08-08", "stoIFF": "918199", "customer": "55393743-Kellanova USA", "incoterms": 152, "docType": "", "tot": "", "cevaRef": "0081177183", "hu": "", "shipmentNum": 571731, "poIFF": "", "poCustomer": "55393743", "pkmsStatus": "70 Loaded", "doorLane": "OBSTG76", "apl": "APL Req'd", "addedAPL": true, "closedSAP": false, "closedPKMS": false, "carrier": "", "schedPickup": "", "arrivedOnTime": "", "comments": ""}, {"giDate": "2026-08-10", "stoIFF": 922918, "customer": "55387853-Nellson Nutraceutical LLC", "incoterms": 142, "docType": "ZOR", "tot": "", "cevaRef": "0081177679", "hu": "", "shipmentNum": "-", "poIFF": "", "poCustomer": "2219454-OP-6001", "pkmsStatus": "20 Printed", "doorLane": "OVRFL08", "apl": "", "addedAPL": false, "closedSAP": false, "closedPKMS": false, "carrier": "", "schedPickup": "2026-08-11", "arrivedOnTime": "", "comments": ""}, {"giDate": "2026-08-10", "stoIFF": 922928, "customer": "55387853-Nellson Nutraceutical LLC", "incoterms": 142, "docType": "ZOR", "tot": "", "cevaRef": "0081177697", "hu": "", "shipmentNum": "-", "poIFF": "", "poCustomer": "2219458-OP-6001", "pkmsStatus": "70 Loaded", "doorLane": "OVRFL09", "apl": "", "addedAPL": "", "closedSAP": false, "closedPKMS": false, "carrier": "", "schedPickup": "", "arrivedOnTime": "", "comments": ""}, {"giDate": "2026-08-10", "stoIFF": 923482, "customer": "55395403-Nellson Nutraceutical LLC", "incoterms": 142, "docType": "ZOR", "tot": "", "cevaRef": "0081177698", "hu": "", "shipmentNum": "-", "poIFF": "", "poCustomer": "2220192-OP-6001", "pkmsStatus": "70 Loaded", "doorLane": "OVRFL10", "apl": "", "addedAPL": "", "closedSAP": false, "closedPKMS": false, "carrier": "", "schedPickup": "", "arrivedOnTime": "", "comments": ""}, {"giDate": "2026-07-28", "stoIFF": "923844", "customer": "97002035-Danisco USA Inc.", "incoterms": 151, "docType": "ZIC", "tot": "", "cevaRef": "0081177131", "hu": "", "shipmentNum": 571687, "poIFF": "", "poCustomer": "97002035", "pkmsStatus": "90 Invoiced", "doorLane": "OBSTG77", "apl": "", "addedAPL": "", "closedSAP": true, "closedPKMS": true, "carrier": "FedEx", "schedPickup": "NA", "arrivedOnTime": "", "comments": ""}, {"giDate": "2026-08-12", "stoIFF": 918393, "customer": "Youngwood facility", "incoterms": 152, "docType": "ZOR", "tot": 34, "cevaRef": "0081178014", "hu": "694761", "shipmentNum": 572070, "poIFF": "", "poCustomer": "", "pkmsStatus": "10 Released", "doorLane": "", "apl": "APL Req'd", "addedAPL": "", "closedSAP": false, "closedPKMS": false, "carrier": "", "schedPickup": "", "arrivedOnTime": "", "comments": "Insufficient qty"}, {"giDate": "2026-08-12", "stoIFF": 920877, "customer": "General Mills Operations LLC", "incoterms": 142, "docType": "ZOR", "tot": 60, "cevaRef": "0081178015", "hu": "-", "shipmentNum": "-", "poIFF": "", "poCustomer": "", "pkmsStatus": "20 Printed", "doorLane": "OBSTG83", "apl": "", "addedAPL": "", "closedSAP": false, "closedPKMS": false, "carrier": "", "schedPickup": "", "arrivedOnTime": "", "comments": ""}, {"giDate": "2026-08-12", "stoIFF": 921882, "customer": "General Mills Operations LLC", "incoterms": 142, "docType": "ZOR", "tot": 60, "cevaRef": "0081178016", "hu": "-", "shipmentNum": "-", "poIFF": "", "poCustomer": "", "pkmsStatus": "35 Picking", "doorLane": "OBSTG80", "apl": "", "addedAPL": "", "closedSAP": false, "closedPKMS": false, "carrier": "", "schedPickup": "", "arrivedOnTime": "", "comments": ""}, {"giDate": "2026-08-12", "stoIFF": 923479, "customer": "Nellson Nutraceutical LLC", "incoterms": 142, "docType": "ZOR", "tot": 795, "cevaRef": "0081178017", "hu": "-", "shipmentNum": "-", "poIFF": "", "poCustomer": "", "pkmsStatus": "70 Loaded", "doorLane": "OBSTG79", "apl": "", "addedAPL": "", "closedSAP": false, "closedPKMS": false, "carrier": "SPOT", "schedPickup": "2026-08-14", "arrivedOnTime": "", "comments": ""}, {"giDate": "2026-08-12", "stoIFF": 923480, "customer": "Nellson Nutraceutical LLC", "incoterms": 142, "docType": "ZOR", "tot": 795, "cevaRef": "0081178019", "hu": "-", "shipmentNum": "-", "poIFF": "", "poCustomer": "", "pkmsStatus": "20 Printed", "doorLane": "OBSTG84", "apl": "", "addedAPL": "", "closedSAP": false, "closedPKMS": false, "carrier": "", "schedPickup": "", "arrivedOnTime": "", "comments": ""}, {"giDate": "2026-08-12", "stoIFF": 921654, "customer": "Youngwood facility", "incoterms": 152, "docType": "ZOR", "tot": 18, "cevaRef": "0081178021", "hu": "", "shipmentNum": "", "poIFF": "", "poCustomer": "", "pkmsStatus": "10 Released", "doorLane": "", "apl": "APL Req'd", "addedAPL": "", "closedSAP": false, "closedPKMS": false, "carrier": "", "schedPickup": "", "arrivedOnTime": "", "comments": "Insufficient qty"}, {"giDate": "2026-08-13", "stoIFF": 921998, "customer": "Nellson Nutraceutical LLC", "incoterms": 142, "docType": "ZOR", "tot": 795, "cevaRef": "0081178029", "hu": "-", "shipmentNum": "-", "poIFF": "", "poCustomer": "", "pkmsStatus": "20 Printed", "doorLane": "OBSTG81", "apl": "", "addedAPL": "", "closedSAP": false, "closedPKMS": false, "carrier": "", "schedPickup": "", "arrivedOnTime": "", "comments": ""}, {"giDate": "2026-08-13", "stoIFF": 922000, "customer": "Nellson Nutraceutical LLC", "incoterms": 142, "docType": "ZOR", "tot": 795, "cevaRef": "0081178030", "hu": "-", "shipmentNum": "-", "poIFF": "", "poCustomer": "", "pkmsStatus": "20 Printed", "doorLane": "OBSTG85", "apl": "", "addedAPL": "", "closedSAP": false, "closedPKMS": false, "carrier": "", "schedPickup": "", "arrivedOnTime": "", "comments": ""}, {"giDate": "2026-08-10", "stoIFF": 922780, "customer": "Nellson Nutraceutical LLC", "incoterms": 142, "docType": "ZOR", "tot": 795, "cevaRef": "0081178032", "hu": "-", "shipmentNum": "-", "poIFF": "", "poCustomer": "", "pkmsStatus": "70 Loaded", "doorLane": "OBSTG76", "apl": "", "addedAPL": "", "closedSAP": false, "closedPKMS": false, "carrier": "SPOT", "schedPickup": "2026-08-11", "arrivedOnTime": "", "comments": ""}, {"giDate": "2026-08-10", "stoIFF": 923748, "customer": "Nellson Nutraceutical LLC", "incoterms": 142, "docType": "ZOR", "tot": 47, "cevaRef": "0081178035", "hu": "-", "shipmentNum": "-", "poIFF": "", "poCustomer": "", "pkmsStatus": "40 Packed", "doorLane": "OBSTG77", "apl": "", "addedAPL": "", "closedSAP": false, "closedPKMS": false, "carrier": "", "schedPickup": "", "arrivedOnTime": "", "comments": ""}, {"giDate": "2026-08-14", "stoIFF": 919801, "customer": "Tennessee Gluten Free Pla", "incoterms": 142, "docType": "ZOR", "tot": 53, "cevaRef": "0081178043", "hu": "", "shipmentNum": "", "poIFF": "", "poCustomer": "", "pkmsStatus": "20 Printed", "doorLane": "", "apl": "", "addedAPL": "", "closedSAP": false, "closedPKMS": false, "carrier": "", "schedPickup": "", "arrivedOnTime": "", "comments": "One pallet short due to damage - take from 45"}, {"giDate": "2026-08-14", "stoIFF": 921880, "customer": "General Mills Operations LLC", "incoterms": 142, "docType": "ZOR", "tot": 60, "cevaRef": "0081178049", "hu": "-", "shipmentNum": "-", "poIFF": "", "poCustomer": "", "pkmsStatus": "10 Released", "doorLane": "", "apl": "", "addedAPL": "", "closedSAP": false, "closedPKMS": false, "carrier": "", "schedPickup": "", "arrivedOnTime": "", "comments": "Insufficient qty"}]
+
+var DEFAULT_STATUS_OPTIONS = [
+  {code:"10", label:"10 \u00b7 Released from SAP", stage:"printed"},
+  {code:"20", label:"20 \u00b7 Printed",            stage:"printed"},
+  {code:"35", label:"35 \u00b7 Partially Picked",   stage:"picking"},
+  {code:"40", label:"40 \u00b7 Picked Complete",    stage:"packed"},
+  {code:"70", label:"70 \u00b7 Loaded & Staged",    stage:"loaded"},
+  {code:"90", label:"90 \u00b7 PGI\u2019d & Loaded",   stage:"invoiced"},
+  {code:"",   label:"#N/A",                     stage:"error"}
+];
+
+var SAP_FIELDS = [
+  {k:"giDate", label:"Planned GI Date", type:"date", required:true},
+  {k:"stoIFF", label:"IFF STO", type:"text", required:true},
+  {k:"customer", label:"Customer / Supplier", type:"text", wide:true, required:true},
+  {k:"incoterms", label:"Incoterms", type:"text", required:true},
+  {k:"docType", label:"Sales Document Type", type:"text", required:true},
+  {k:"tot", label:"TOT", type:"text", required:true},
+  {k:"cevaRef", label:"Ceva Reference #", type:"text", required:true},
+  {k:"hu", label:"HU", type:"text"},
+  {k:"shipmentNum", label:"Shipment #", type:"text"},
+  {k:"poIFF", label:"IFF PO #", type:"text"},
+  {k:"poCustomer", label:"Customer PO #", type:"text"}
+];
+
+var OPS_FIELDS = [
+  {k:"pkmsStatus", label:"PKMS Status", type:"select", options:null /* filled from STATE.statusOptions */},
+  {k:"doorLane", label:"Assigned Door #", type:"select", options:null /* filled from LANES */},
+  {k:"apl", label:"APL?", type:"text"},
+  {k:"addedAPL", label:"Added to APL?", type:"bool"},
+  {k:"closedSAP", label:"Closed in SAP?", type:"bool"},
+  {k:"closedPKMS", label:"Closed in PKMS?", type:"bool"},
+  {k:"carrier", label:"Carrier", type:"text"},
+  {k:"schedPickup", label:"Scheduled P/U Date", type:"date"}
+];
+
+var COMMENTS_FIELD = {k:"comments", label:"Comments", type:"textarea", wide:true};
+
+var ALL_FIELDS = SAP_FIELDS.concat(OPS_FIELDS).concat([COMMENTS_FIELD]);
+
+var TABLE_COLUMNS = [
+  {k:"giDate", label:"Planned GI", group:"sap"},
+  {k:"stoIFF", label:"IFF STO", group:"sap"},
+  {k:"customer", label:"Customer / Supplier", group:"sap"},
+  {k:"incoterms", label:"Incoterms", group:"sap"},
+  {k:"docType", label:"Doc Type", group:"sap"},
+  {k:"tot", label:"TOT", group:"sap"},
+  {k:"cevaRef", label:"Ceva Ref #", group:"sap"},
+  {k:"hu", label:"HU", group:"sap"},
+  {k:"shipmentNum", label:"Shipment #", group:"sap"},
+  {k:"poIFF", label:"IFF PO #", group:"sap"},
+  {k:"poCustomer", label:"Customer PO #", group:"sap"},
+  {k:"pkmsStatus", label:"PKMS Status", group:"ops"},
+  {k:"doorLane", label:"Door / Lane", group:"ops"},
+  {k:"apl", label:"APL?", group:"ops"},
+  {k:"addedAPL", label:"Added to APL?", group:"ops", bool:true},
+  {k:"closedSAP", label:"Closed SAP?", group:"ops", bool:true},
+  {k:"closedPKMS", label:"Closed PKMS?", group:"ops", bool:true},
+  {k:"carrier", label:"Carrier", group:"ops"},
+  {k:"schedPickup", label:"Sched P/U", group:"ops"},
+  {k:"comments", label:"Comments", group:"ops"},
+  {k:"__actions", label:"", group:"ops"}
+];
+
+/* Lane layout, derived from the CEVA / IFF warehouse floor plan.
+   OBSTG75-86 sit directly under dock doors 75-86.
+   OBPCL01-24 form a 4-row x 6-col serpentine block.
+   OVRFL01-12 form a vertical column along the right wall. */
+
+var OBSTG_LANES = [];
+for (var s = 75; s <= 86; s++) OBSTG_LANES.push("OBSTG" + s);
+
+var OBPCL_LANES = [];
+for (var p = 1; p <= 24; p++) OBPCL_LANES.push("OBPCL" + (p < 10 ? "0"+p : p));
+
+var OVRFL_LANES = [];
+for (var o = 1; o <= 12; o++) OVRFL_LANES.push("OVRFL" + (o < 10 ? "0"+o : o));
+
+var ALL_LANES = OBSTG_LANES.concat(OBPCL_LANES).concat(OVRFL_LANES);
+
+var ZONES = [
+  {key:"OVRFL", title:"Overflow Staging", lanes: OVRFL_LANES},
+  {key:"OBSTG", title:"OBSTG Staging", lanes: OBSTG_LANES},
+  {key:"OBPCL", title:"Parcel Staging", lanes: OBPCL_LANES}
+];
+
+/* ===================== STATUS STAGES (fixed color buckets) ===================== */
+
+var STATUS_STAGES = [
+  {key:"none",     label:"No Status",   cls:"st-none"},
+  {key:"error",    label:"Error / N/A", cls:"st-error"},
+  {key:"printed",  label:"Printed",     cls:"st-printed"},
+  {key:"picking",  label:"Picking",     cls:"st-picking"},
+  {key:"packed",   label:"Packed",      cls:"st-packed"},
+  {key:"loaded",   label:"Loaded",      cls:"st-loaded"},
+  {key:"invoiced", label:"Invoiced",    cls:"st-invoiced"}
+];
+
+function stageInfo(key){
+  for (var i=0;i<STATUS_STAGES.length;i++) if (STATUS_STAGES[i].key === key) return STATUS_STAGES[i];
+  return STATUS_STAGES[0];
+}
+
+function normalizeStatus(raw){
+  var s = (raw == null ? "" : String(raw)).trim();
+  if (!s) return "none";
+
+  // 1) exact match against configured status options (case-insensitive)
+  var opts = STATE.statusOptions || DEFAULT_STATUS_OPTIONS;
+  for (var i=0;i<opts.length;i++){
+    if (opts[i].label.trim().toLowerCase() === s.toLowerCase()) return opts[i].stage;
+  }
+
+  // 2) heuristic fallback for freeform / legacy / imported values
+  var up = s.toUpperCase();
+  if (up === "#N/A" || up === "N/A" || up === "NA") return "error";
+  var m = s.match(/^(\d+)/);
+  if (m){
+    var n = parseInt(m[1], 10);
+    if (n < 35) return "printed";
+    if (n < 40) return "picking";
+    if (n < 70) return "packed";
+    if (n < 90) return "loaded";
+    return "invoiced";
+  }
+  if (/printed/i.test(s)) return "printed";
+  if (/pick/i.test(s)) return "picking";
+  if (/pack/i.test(s)) return "packed";
+  if (/load/i.test(s)) return "loaded";
+  if (/invoice/i.test(s)) return "invoiced";
+  return "none";
+}
+
+/* ===================== STATE ===================== */
+
+var STATE = {
+  orders: [],
+  statusOptions: DEFAULT_STATUS_OPTIONS.slice(),
+  passwordHash: null,
+  editingId: null,
+  activeView: "map",
+  activeStatFilter: "",
+  searchTerm: "",
+  statusFilter: "",
+  sortKey: "giDate",
+  sortDir: 1,
+  pkmsParsed: null,
+  pkmsHeaders: [],
+  sync: {url:"", token:"", connected:false, lastSyncAt:null, syncing:false, mode:"local"},
+  settingsAuthed: false
+};
+
+function uid(){
+  return "o_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,8);
+}
+
+function blankOrder(){
+  var o = {id: uid()};
+  ALL_FIELDS.forEach(function(f){ o[f.k] = (f.type === "bool") ? false : ""; });
+  return o;
+}
+
+/* ===================== CRYPTO (settings password) ===================== */
+
+function sha256Hex(str){
+  var enc = new TextEncoder().encode(str);
+  return crypto.subtle.digest("SHA-256", enc).then(function(buf){
+    var arr = Array.from(new Uint8Array(buf));
+    return arr.map(function(b){ return b.toString(16).padStart(2,"0"); }).join("");
+  });
+}
+
+/* ===================== LOCAL PERSISTENCE (offline cache) ===================== */
+
+function loadLocalSettings(){
+  var raw = null;
+  try{ raw = localStorage.getItem(SETTINGS_KEY); }catch(e){}
+  if (raw){
+    try{
+      var parsed = JSON.parse(raw);
+      if (parsed.sync) STATE.sync.url = parsed.sync.url || ""; 
+      if (parsed.sync) STATE.sync.token = parsed.sync.token || "";
+      if (parsed.statusOptions) STATE.statusOptions = parsed.statusOptions;
+      if (parsed.passwordHash) STATE.passwordHash = parsed.passwordHash;
+    }catch(e){}
+  }
+  if (!STATE.sync.url) STATE.sync.url = DEFAULT_SYNC_URL;
+  if (!STATE.sync.token) STATE.sync.token = DEFAULT_SYNC_TOKEN;
+}
+
+function saveLocalSettings(){
+  try{
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify({
+      sync: {url: STATE.sync.url, token: STATE.sync.token},
+      statusOptions: STATE.statusOptions,
+      passwordHash: STATE.passwordHash
+    }));
+  }catch(e){}
+}
+
+function loadLocalOrders(){
+  var raw = null;
+  try{ raw = localStorage.getItem(STORAGE_KEY); }catch(e){}
+  if (raw){
+    try{
+      var parsed = JSON.parse(raw);
+      if (parsed && Array.isArray(parsed.orders)) return parsed.orders;
+    }catch(e){}
+  }
+  return null;
+}
+
+function saveLocalOrders(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({orders: STATE.orders, savedAt: Date.now()}));
+  }catch(e){
+    showToast("Could not save locally — storage may be full or disabled.", true);
+  }
+}
+
+function seedOrders(){
+  STATE.orders = SEED.map(function(row){
+    var o = blankOrder();
+    Object.keys(row).forEach(function(k){
+      if (o.hasOwnProperty(k)){
+        var v = row[k];
+        if (typeof v === "boolean") o[k] = v;
+        else o[k] = (v === null || v === undefined) ? "" : String(v);
+      }
+    });
+    o.id = uid();
+    return o;
+  });
+}
+
+/* ===================== SYNC (Google Sheet via Apps Script Web App) ===================== */
+
+function syncConfigured(){
+  return !!(STATE.sync.url && STATE.sync.url.trim());
+}
+
+function updateSyncPill(){
+  var pill = document.getElementById("syncPill");
+  var detail = document.getElementById("syncDetailStatus");
+  var when = STATE.sync.lastSyncAt ? new Date(STATE.sync.lastSyncAt).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}) : null;
+
+  if (!syncConfigured()){
+    pill.innerHTML = '<span class="dot"></span>Local only — not connected';
+    pill.className = "pill warn";
+    if (detail) detail.textContent = "Not connected. Add a Sync URL below to enable multi-user sync.";
+    return;
+  }
+  if (STATE.sync.syncing){
+    pill.innerHTML = '<span class="dot"></span>Syncing…';
+    pill.className = "pill";
+    if (detail) detail.textContent = "Syncing…";
+    return;
+  }
+  if (STATE.sync.connected){
+    pill.innerHTML = '<span class="dot"></span>Synced' + (when ? (" " + when) : "");
+    pill.className = "pill ok";
+    if (detail) detail.textContent = "Connected. Last synced " + (when || "just now") + ".";
+  } else {
+    pill.innerHTML = '<span class="dot"></span>Offline (local cache)';
+    pill.className = "pill warn";
+    if (detail) detail.textContent = "Could not reach the Google Sheet. Working from the local cache in this browser.";
+  }
+}
+
+function syncFetch(action, payload){
+  if (!syncConfigured()) return Promise.reject(new Error("not configured"));
+  var url = STATE.sync.url.trim();
+
+  if (action === "getAll"){
+    var getUrl = url + (url.indexOf("?") === -1 ? "?" : "&") + "action=getAll&token=" + encodeURIComponent(STATE.sync.token || "");
+    return fetch(getUrl).then(function(r){ return r.text(); }).then(function(text){
+      var j;
+      try{ j = JSON.parse(text); }catch(e){ throw new Error("Non-JSON response from sync URL"); }
+      if (j.status !== "ok") throw new Error(j.message || "sync backend error");
+      return j.data;
+    });
+  }
+
+  var body = Object.assign({action: action, token: STATE.sync.token || ""}, payload || {});
+  return fetch(url, {
+    method: "POST",
+    headers: {"Content-Type": "text/plain;charset=utf-8"}, // avoids CORS preflight against Apps Script
+    body: JSON.stringify(body)
+  }).then(function(r){ return r.text(); }).then(function(text){
+    var j;
+    try{ j = JSON.parse(text); }catch(e){ throw new Error("Non-JSON response from sync URL"); }
+    if (j.status !== "ok") throw new Error(j.message || "sync backend error");
+    return j.data;
+  });
+}
+
+function syncPullAll(showErrors){
+  if (!syncConfigured()) { updateSyncPill(); return Promise.resolve(false); }
+  STATE.sync.syncing = true; updateSyncPill();
+  return syncFetch("getAll").then(function(data){
+    STATE.sync.syncing = false;
+    STATE.sync.connected = true;
+    STATE.sync.lastSyncAt = Date.now();
+
+    var remoteOrders = (data && Array.isArray(data.orders)) ? data.orders : [];
+
+    if (data && Array.isArray(data.statusOptions) && data.statusOptions.length) STATE.statusOptions = data.statusOptions;
+    if (data && data.passwordHash) STATE.passwordHash = data.passwordHash;
+
+    if (remoteOrders.length === 0 && STATE.orders.length > 0){
+      // Safety: never let an empty sheet silently wipe out local data. This happens the
+      // very first time a Sync URL is connected to a brand-new (empty) Google Sheet —
+      // in that case we seed the sheet FROM the local data instead of overwriting it.
+      if (showErrors) showToast("Sheet is empty — pushing " + STATE.orders.length + " local orders to seed it.");
+      var pushes = STATE.orders.map(function(o){ return syncFetch("upsertOrder", {order: o}); });
+      return Promise.all(pushes).then(function(){
+        saveLocalOrders(); saveLocalSettings();
+        updateSyncPill();
+        return true;
+      });
+    }
+
+    STATE.orders = remoteOrders;
+    saveLocalOrders(); saveLocalSettings();
+    updateSyncPill();
+    return true;
+  }).catch(function(err){
+    STATE.sync.syncing = false;
+    STATE.sync.connected = false;
+    updateSyncPill();
+    if (showErrors) showToast("Could not reach Google Sheet: " + err.message, true);
+    return false;
+  });
+}
+
+function syncPushOrder(order){
+  saveLocalOrders();
+  if (!syncConfigured()) return;
+  syncFetch("upsertOrder", {order: order}).then(function(){
+    STATE.sync.connected = true; STATE.sync.lastSyncAt = Date.now(); updateSyncPill();
+  }).catch(function(err){
+    STATE.sync.connected = false; updateSyncPill();
+    showToast("Saved locally, but could not sync to Google Sheet: " + err.message, true);
+  });
+}
+
+function syncPushDelete(id){
+  if (!syncConfigured()) return;
+  syncFetch("deleteOrder", {id: id}).then(function(){
+    STATE.sync.connected = true; STATE.sync.lastSyncAt = Date.now(); updateSyncPill();
+  }).catch(function(err){
+    STATE.sync.connected = false; updateSyncPill();
+    showToast("Deleted locally, but could not sync to Google Sheet: " + err.message, true);
+  });
+}
+
+function syncPushConfig(){
+  saveLocalSettings();
+  if (!syncConfigured()) return Promise.resolve();
+  return syncFetch("updateConfig", {statusOptions: STATE.statusOptions, passwordHash: STATE.passwordHash}).then(function(){
+    STATE.sync.connected = true; STATE.sync.lastSyncAt = Date.now(); updateSyncPill();
+  }).catch(function(err){
+    STATE.sync.connected = false; updateSyncPill();
+    showToast("Saved locally, but could not sync settings to Google Sheet: " + err.message, true);
+  });
+}
+
+function startPolling(){
+  setInterval(function(){
+    var modalOpen = !document.getElementById("orderModalOverlay").classList.contains("hidden") ||
+                    !document.getElementById("settingsModalOverlay").classList.contains("hidden") ||
+                    !document.getElementById("pkmsModalOverlay").classList.contains("hidden");
+    if (modalOpen) return;
+    if (!syncConfigured()) return;
+    syncPullAll(false).then(function(ok){ if (ok) renderAll(); });
+  }, SYNC_POLL_MS);
+}
+
+/* ===================== SAVE (single entry point used by mutations) ===================== */
+
+function saveData(){
+  saveLocalOrders();
+  updateSyncPill();
+}
+
+/* ===================== UTIL ===================== */
+
+function esc(v){
+  if (v === null || v === undefined) return "";
+  return String(v).replace(/[&<>"']/g, function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+  });
+}
+
+function fmtDate(v){
+  if (!v) return "";
+  var d = new Date(v + (String(v).length <= 10 ? "T00:00:00" : ""));
+  if (isNaN(d.getTime())) return v;
+  return (d.getMonth()+1) + "/" + d.getDate() + "/" + String(d.getFullYear()).slice(2);
+}
+
+function showToast(msg, isError){
+  var t = document.getElementById("toast");
+  t.textContent = msg;
+  t.className = "toast show" + (isError ? " error" : "");
+  clearTimeout(t._timer);
+  t._timer = setTimeout(function(){ t.className = "toast"; }, 3600);
+}
+
+function findOrderByLane(lane){
+  // Once an order is Invoiced (PGI'd & Loaded / final stage), the physical lane has been
+  // cleared in the warehouse — so it should show as empty on the dashboard even though the
+  // order itself is still kept and visible in the Order Log below.
+  for (var i=0;i<STATE.orders.length;i++){
+    var o = STATE.orders[i];
+    if ((o.doorLane || "").trim().toUpperCase() === lane && normalizeStatus(o.pkmsStatus) !== "invoiced") return o;
+  }
+  return null;
+}
+
+/* ===================== RENDER: STAT STRIP ===================== */
+
+function renderStats(){
+  var counts = {};
+  STATUS_STAGES.forEach(function(s){ counts[s.key] = 0; });
+  STATE.orders.forEach(function(o){ counts[normalizeStatus(o.pkmsStatus)]++; });
+
+  var strip = document.getElementById("statStrip");
+  strip.innerHTML = "";
+
+  var totalStat = document.createElement("div");
+  totalStat.className = "stat" + (STATE.activeStatFilter === "" ? " active" : "");
+  totalStat.innerHTML = '<div class="n">' + STATE.orders.length + '</div><div class="l">Total Open</div>';
+  totalStat.addEventListener("click", function(){ setStatFilter(""); });
+  strip.appendChild(totalStat);
+
+  STATUS_STAGES.forEach(function(s){
+    var el = document.createElement("div");
+    el.className = "stat" + (STATE.activeStatFilter === s.key ? " active" : "");
+    el.innerHTML = '<div class="n">' + counts[s.key] + '</div><div class="l">' + esc(s.label) + '</div>';
+    el.addEventListener("click", function(){ setStatFilter(s.key); });
+    strip.appendChild(el);
+  });
+}
+
+function setStatFilter(key){
+  STATE.activeStatFilter = key;
+  renderStats();
+  renderZones();
+}
+
+/* ===================== RENDER: LEGEND ===================== */
+
+function renderLegend(){
+  var wrap = document.getElementById("mapLegend");
+  wrap.innerHTML = "";
+  STATUS_STAGES.forEach(function(s){
+    var item = document.createElement("div");
+    item.className = "item";
+    item.innerHTML = '<span class="sw ' + s.cls + '"></span>' + esc(s.label);
+    wrap.appendChild(item);
+  });
+}
+
+/* ===================== RENDER: ZONE DASHBOARD ===================== */
+
+function zoneStatusChips(laneCodes){
+  var counts = {};
+  laneCodes.forEach(function(l){
+    var order = findOrderByLane(l);
+    if (!order) return;
+    var st = normalizeStatus(order.pkmsStatus);
+    counts[st] = (counts[st] || 0) + 1;
+  });
+  return Object.keys(counts).map(function(k){
+    return '<span class="zone-chip">' + esc(stageInfo(k).label) + ': ' + counts[k] + '</span>';
+  }).join("");
+}
+
+function openOrderModalWithLane(laneCode){
+  openOrderModal(null);
+  var sel = document.getElementById("fld_doorLane");
+  if (sel) sel.value = laneCode;
+}
+
+function buildLaneCard(laneCode){
+  var order = findOrderByLane(laneCode);
+  var card = document.createElement("div");
+
+  if (order){
+    var stageKey = normalizeStatus(order.pkmsStatus);
+    card.className = "lane-card " + stageInfo(stageKey).cls;
+    if (STATE.activeStatFilter && stageKey !== STATE.activeStatFilter) card.style.opacity = "0.3";
+    card.innerHTML =
+      '<div class="lc-head"><span class="lc-code">' + esc(laneCode) + '</span><span class="badge ' + stageInfo(stageKey).cls + '">' + esc(order.pkmsStatus || "\u2014") + '</span></div>' +
+      '<div class="lc-rows">' +
+        '<div class="lc-row"><div class="lc-label">Date Delivery Assigned</div><div class="lc-value">' + esc(fmtDate(order.giDate) || "\u2014") + '</div></div>' +
+        '<div class="lc-row"><div class="lc-label">Delivery Number</div><div class="lc-value">' + esc(order.cevaRef || "\u2014") + '</div></div>' +
+        '<div class="lc-row"><div class="lc-label">STO</div><div class="lc-value">' + esc(order.stoIFF || "\u2014") + '</div></div>' +
+        '<div class="lc-row"><div class="lc-label">Carrier</div><div class="lc-value">' + esc(order.carrier || "\u2014") + '</div></div>' +
+        '<div class="lc-row"><div class="lc-label">Scheduled Pickup</div><div class="lc-value">' + esc(fmtDate(order.schedPickup) || "\u2014") + '</div></div>' +
+      '</div>';
+    card.addEventListener("click", function(){ openOrderModal(order.id); });
+  } else {
+    card.className = "lane-card empty";
+    card.innerHTML =
+      '<div class="lc-head"><span class="lc-code">' + esc(laneCode) + '</span></div>' +
+      '<div class="lc-empty-msg">Empty<br>click to assign</div>';
+    card.addEventListener("click", function(){ openOrderModalWithLane(laneCode); });
+  }
+  return card;
+}
+
+function getUnassignedOrders(){
+  return STATE.orders.filter(function(o){
+    var hasLane = (o.doorLane || "").trim() !== "";
+    var isInvoiced = normalizeStatus(o.pkmsStatus) === "invoiced";
+    return !hasLane && !isInvoiced;
+  });
+}
+
+function orderStatusChips(orders){
+  var counts = {};
+  orders.forEach(function(o){
+    var st = normalizeStatus(o.pkmsStatus);
+    counts[st] = (counts[st] || 0) + 1;
+  });
+  return Object.keys(counts).map(function(k){
+    return '<span class="zone-chip">' + esc(stageInfo(k).label) + ': ' + counts[k] + '</span>';
+  }).join("");
+}
+
+function buildUnassignedCard(order){
+  var stageKey = normalizeStatus(order.pkmsStatus);
+  var card = document.createElement("div");
+  card.className = "lane-card unassigned " + stageInfo(stageKey).cls;
+  if (STATE.activeStatFilter && stageKey !== STATE.activeStatFilter) card.style.opacity = "0.3";
+  card.innerHTML =
+    '<div class="lc-head"><span class="lc-code">' + esc(order.customer || order.stoIFF || "Unassigned") + '</span><span class="badge ' + stageInfo(stageKey).cls + '">' + esc(order.pkmsStatus || "\u2014") + '</span></div>' +
+    '<div class="lc-rows">' +
+      '<div class="lc-row"><div class="lc-label">Date Delivery Assigned</div><div class="lc-value">' + esc(fmtDate(order.giDate) || "\u2014") + '</div></div>' +
+      '<div class="lc-row"><div class="lc-label">Delivery Number</div><div class="lc-value">' + esc(order.cevaRef || "\u2014") + '</div></div>' +
+      '<div class="lc-row"><div class="lc-label">STO</div><div class="lc-value">' + esc(order.stoIFF || "\u2014") + '</div></div>' +
+      '<div class="lc-row"><div class="lc-label">Carrier</div><div class="lc-value">' + esc(order.carrier || "\u2014") + '</div></div>' +
+      '<div class="lc-row"><div class="lc-label">Scheduled Pickup</div><div class="lc-value">' + esc(fmtDate(order.schedPickup) || "\u2014") + '</div></div>' +
+    '</div>';
+  card.addEventListener("click", function(){ openOrderModal(order.id); });
+  return card;
+}
+
+function buildUnassignedSection(){
+  var orders = getUnassignedOrders();
+
+  var section = document.createElement("div");
+  section.className = "zone-section";
+  section.id = "zonesection-UNASSIGNED";
+
+  var head = document.createElement("div");
+  head.className = "zone-section-head";
+  head.innerHTML =
+    '<h2>Unassigned</h2>' +
+    '<div class="zh-right">' +
+      '<div class="zh-counts">' + orderStatusChips(orders) + '</div>' +
+      '<span class="zh-sub">' + orders.length + ' waiting on a lane</span>' +
+      '<span class="caret">\u25be</span>' +
+    '</div>';
+  head.addEventListener("click", function(){ section.classList.toggle("collapsed"); });
+  section.appendChild(head);
+
+  if (orders.length){
+    var grid = document.createElement("div");
+    grid.className = "zone-card-grid";
+    orders.forEach(function(order){
+      grid.appendChild(buildUnassignedCard(order));
+    });
+    section.appendChild(grid);
+  } else {
+    var note = document.createElement("div");
+    note.className = "zone-empty-note";
+    note.textContent = "Every open order currently has a lane assigned.";
+    section.appendChild(note);
+  }
+
+  return section;
+}
+
+function buildZoneSection(zone){
+  var occupiedLanes = zone.lanes.filter(function(l){ return !!findOrderByLane(l); });
+
+  var section = document.createElement("div");
+  section.className = "zone-section";
+  section.id = "zonesection-" + zone.key;
+
+  var head = document.createElement("div");
+  head.className = "zone-section-head";
+  head.innerHTML =
+    '<h2>' + esc(zone.title) + '</h2>' +
+    '<div class="zh-right">' +
+      '<div class="zh-counts">' + zoneStatusChips(occupiedLanes) + '</div>' +
+      '<span class="zh-sub">' + occupiedLanes.length + ' / ' + zone.lanes.length + ' occupied</span>' +
+      '<span class="caret">\u25be</span>' +
+    '</div>';
+  head.addEventListener("click", function(){ section.classList.toggle("collapsed"); });
+  section.appendChild(head);
+
+  var grid = document.createElement("div");
+  grid.className = "zone-card-grid";
+  zone.lanes.forEach(function(laneCode){
+    grid.appendChild(buildLaneCard(laneCode));
+  });
+  section.appendChild(grid);
+
+  return section;
+}
+
+function renderZones(){
+  var wrap = document.getElementById("zoneGrid");
+  if (!wrap) return;
+  wrap.innerHTML = "";
+  wrap.appendChild(buildUnassignedSection());
+  ZONES.forEach(function(zone){
+    wrap.appendChild(buildZoneSection(zone));
+  });
+}
+/* ===================== RENDER: ORDER LOG TABLE ===================== */
+
+function populateStatusFilterOptions(){
+  var sel = document.getElementById("statusFilter");
+  sel.innerHTML = '<option value="">All statuses</option>';
+  STATUS_STAGES.forEach(function(s){
+    var opt = document.createElement("option");
+    opt.value = s.key;
+    opt.textContent = s.label;
+    sel.appendChild(opt);
+  });
+}
+
+function getFilteredSortedOrders(){
+  var term = STATE.searchTerm.trim().toLowerCase();
+  var list = STATE.orders.filter(function(o){
+    if (STATE.statusFilter && normalizeStatus(o.pkmsStatus) !== STATE.statusFilter) return false;
+    if (!term) return true;
+    var hay = [o.customer,o.stoIFF,o.poIFF,o.poCustomer,o.carrier,o.doorLane,o.cevaRef,o.shipmentNum,o.comments]
+      .map(function(v){ return (v||"").toString().toLowerCase(); }).join(" ");
+    return hay.indexOf(term) !== -1;
+  });
+
+  var key = STATE.sortKey, dir = STATE.sortDir;
+  list.sort(function(a,b){
+    var av = (a[key] || "").toString().toLowerCase();
+    var bv = (b[key] || "").toString().toLowerCase();
+    if (av < bv) return -1 * dir;
+    if (av > bv) return 1 * dir;
+    return 0;
+  });
+  return list;
+}
+
+/* ---- Column ordering (persisted per-browser; a display preference, not synced data) ---- */
+
+var COLUMN_ORDER_KEY = "iffScoreboardColumnOrder_v1";
+var dragSrcColKey = null;
+
+function defaultColumnOrder(){
+  return TABLE_COLUMNS.filter(function(c){ return c.k !== "__actions"; }).map(function(c){ return c.k; });
+}
+
+function loadColumnOrder(){
+  var raw = null;
+  try{ raw = localStorage.getItem(COLUMN_ORDER_KEY); }catch(e){}
+  if (raw){
+    try{
+      var parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length){ STATE.columnOrder = parsed; return; }
+    }catch(e){}
+  }
+  STATE.columnOrder = defaultColumnOrder();
+}
+
+function saveColumnOrder(){
+  try{ localStorage.setItem(COLUMN_ORDER_KEY, JSON.stringify(STATE.columnOrder)); }catch(e){}
+}
+
+function resetColumnOrder(){
+  STATE.columnOrder = defaultColumnOrder();
+  saveColumnOrder();
+  renderTableHead();
+  renderTable();
+  showToast("Column order reset.");
+}
+
+function getOrderedColumns(){
+  var byKey = {};
+  TABLE_COLUMNS.forEach(function(c){ byKey[c.k] = c; });
+  var order = (STATE.columnOrder && STATE.columnOrder.length) ? STATE.columnOrder : defaultColumnOrder();
+  var ordered = order.map(function(k){ return byKey[k]; }).filter(Boolean);
+  TABLE_COLUMNS.forEach(function(c){
+    if (c.k !== "__actions" && ordered.indexOf(c) === -1) ordered.push(c);
+  });
+  ordered.push(byKey["__actions"]);
+  return ordered;
+}
+
+function reorderColumn(srcKey, targetKey){
+  var order = (STATE.columnOrder || defaultColumnOrder()).slice();
+  var srcIdx = order.indexOf(srcKey);
+  if (srcIdx === -1) return;
+  order.splice(srcIdx, 1);
+  var insertAt = order.indexOf(targetKey);
+  if (insertAt === -1) insertAt = order.length;
+  order.splice(insertAt, 0, srcKey);
+  STATE.columnOrder = order;
+  saveColumnOrder();
+  renderTableHead();
+  renderTable();
+}
+
+function renderTableHead(){
+  var tr = document.getElementById("orderTableHead");
+  tr.innerHTML = "";
+  getOrderedColumns().forEach(function(col){
+    var th = document.createElement("th");
+    if (col.group === "sap") th.className = "sap-col";
+    if (col.group === "ops") th.className = "ops-col";
+    if (col.k === "__actions"){
+      th.textContent = "";
+      tr.appendChild(th);
+      return;
+    }
+
+    var arrow = "";
+    if (STATE.sortKey === col.k) arrow = '<span class="arrow">' + (STATE.sortDir === 1 ? "▲" : "▼") + '</span>';
+    th.innerHTML = '<span class="drag-handle">⠿</span>' + esc(col.label) + arrow;
+    th.title = "Click to sort · drag to reorder";
+    th.setAttribute("draggable", "true");
+
+    th.addEventListener("click", function(){
+      if (STATE.sortKey === col.k) STATE.sortDir *= -1;
+      else { STATE.sortKey = col.k; STATE.sortDir = 1; }
+      renderTable();
+    });
+    th.addEventListener("dragstart", function(e){
+      dragSrcColKey = col.k;
+      th.classList.add("dragging");
+      if (e.dataTransfer){ e.dataTransfer.effectAllowed = "move"; try{ e.dataTransfer.setData("text/plain", col.k); }catch(err){} }
+    });
+    th.addEventListener("dragend", function(){
+      th.classList.remove("dragging");
+      document.querySelectorAll(".order-table thead th").forEach(function(el){ el.classList.remove("drop-target"); });
+      dragSrcColKey = null;
+    });
+    th.addEventListener("dragover", function(e){
+      e.preventDefault();
+      th.classList.add("drop-target");
+    });
+    th.addEventListener("dragleave", function(){
+      th.classList.remove("drop-target");
+    });
+    th.addEventListener("drop", function(e){
+      e.preventDefault();
+      th.classList.remove("drop-target");
+      if (!dragSrcColKey || dragSrcColKey === col.k) return;
+      reorderColumn(dragSrcColKey, col.k);
+    });
+
+    tr.appendChild(th);
+  });
+}
+
+function renderTable(){
+  document.getElementById("logCount").textContent = STATE.orders.length;
+  var body = document.getElementById("orderTableBody");
+  body.innerHTML = "";
+  var list = getFilteredSortedOrders();
+
+  if (!list.length){
+    var tr = document.createElement("tr");
+    var td = document.createElement("td");
+    td.colSpan = TABLE_COLUMNS.length;
+    td.className = "empty-state";
+    td.textContent = "No orders match the current filters.";
+    tr.appendChild(td);
+    body.appendChild(tr);
+    return;
+  }
+
+  list.forEach(function(o){
+    var tr = document.createElement("tr");
+    if (normalizeStatus(o.pkmsStatus) === "error") tr.className = "row-error";
+
+    getOrderedColumns().forEach(function(col){
+      var td = document.createElement("td");
+      if (col.k === "__actions"){
+        var actions = document.createElement("div");
+        actions.className = "row-actions";
+        var editBtn = document.createElement("button");
+        editBtn.className = "icon-btn"; editBtn.title = "Edit"; editBtn.textContent = "✎";
+        editBtn.addEventListener("click", function(){ openOrderModal(o.id); });
+        var delBtn = document.createElement("button");
+        delBtn.className = "icon-btn danger"; delBtn.title = "Delete"; delBtn.textContent = "✕";
+        delBtn.addEventListener("click", function(){ confirmDelete(o.id); });
+        actions.appendChild(editBtn);
+        actions.appendChild(delBtn);
+        td.appendChild(actions);
+        tr.appendChild(td);
+        return;
+      }
+
+      if (col.bool){
+        var chk = document.createElement("input");
+        chk.type = "checkbox";
+        chk.className = "chk";
+        chk.checked = !!o[col.k];
+        chk.addEventListener("change", function(){
+          o[col.k] = chk.checked;
+          saveData();
+          syncPushOrder(o);
+          renderStats();
+        });
+        td.appendChild(chk);
+        tr.appendChild(td);
+        return;
+      }
+
+      if (col.k === "pkmsStatus"){
+        var st = normalizeStatus(o.pkmsStatus);
+        td.innerHTML = '<span class="badge ' + stageInfo(st).cls + '">' + esc(o.pkmsStatus || "—") + '</span>';
+        tr.appendChild(td);
+        return;
+      }
+
+      if (col.k === "comments"){
+        td.className = "comments-cell";
+        td.textContent = o.comments || "";
+        tr.appendChild(td);
+        return;
+      }
+
+      if (col.k === "giDate" || col.k === "schedPickup"){
+        td.textContent = fmtDate(o[col.k]);
+        tr.appendChild(td);
+        return;
+      }
+
+      td.textContent = o[col.k] || "";
+      tr.appendChild(td);
+    });
+
+    body.appendChild(tr);
+  });
+}
+
+function confirmDelete(id){
+  var o = STATE.orders.find(function(x){ return x.id === id; });
+  if (!o) return;
+  if (!window.confirm("Delete order for " + (o.customer || o.stoIFF || "this row") + "? This cannot be undone.")) return;
+  STATE.orders = STATE.orders.filter(function(x){ return x.id !== id; });
+  saveData();
+  syncPushDelete(id);
+  renderAll();
+  showToast("Order deleted.");
+}
+
+/* ===================== ORDER MODAL (ADD/EDIT) ===================== */
+
+function fieldControlHtml(f, val){
+  var id = "fld_" + f.k;
+  if (f.type === "bool"){
+    return '<label class="checkbox-row" style="margin-top:22px;"><input type="checkbox" id="' + id + '" ' + (val ? "checked" : "") + '> ' + esc(f.label) + '</label>';
+  }
+  var labelHtml = '<label for="' + id + '">' + esc(f.label) + (f.required ? ' <span class="req-star">*</span>' : '') + '</label>';
+  if (f.type === "select"){
+    var opts;
+    if (f.k === "doorLane"){
+      opts = [""].concat(ALL_LANES);
+    } else if (f.k === "pkmsStatus"){
+      opts = [""].concat((STATE.statusOptions || DEFAULT_STATUS_OPTIONS).map(function(o){ return o.label; }));
+    } else {
+      opts = f.options || [""];
+    }
+    var optHtml = opts.map(function(o){
+      return '<option value="' + esc(o) + '" ' + (o === val ? "selected" : "") + '>' + (o === "" ? "—" : esc(o)) + '</option>';
+    }).join("");
+    return '<div class="field">' + labelHtml + '<select id="' + id + '"' + (f.required ? ' required' : '') + '>' + optHtml + '</select></div>';
+  }
+  if (f.type === "textarea"){
+    return '<div class="field" style="grid-column:1/-1;">' + labelHtml + '<textarea id="' + id + '"' + (f.required ? ' required' : '') + '>' + esc(val) + '</textarea></div>';
+  }
+  if (f.type === "date"){
+    return '<div class="field">' + labelHtml + '<input type="date" id="' + id + '" value="' + esc(val) + '"' + (f.required ? ' required' : '') + '></div>';
+  }
+  return '<div class="field">' + labelHtml + '<input type="text" id="' + id + '" value="' + esc(val) + '"' + (f.required ? ' required' : '') + '></div>';
+}
+
+function openOrderModal(id){
+  STATE.editingId = id || null;
+  var order = id ? STATE.orders.find(function(o){ return o.id === id; }) : blankOrder();
+  if (!order) return;
+
+  document.getElementById("orderModalTitle").textContent = id ? "Edit Order" : "Add Order";
+  document.getElementById("btnDeleteOrder").style.display = id ? "inline-flex" : "none";
+
+  var sapGrid = document.getElementById("sapFieldsGrid");
+  sapGrid.innerHTML = SAP_FIELDS.map(function(f){ return fieldControlHtml(f, order[f.k]); }).join("");
+
+  // Operations Fields only apply once ops has picked the order up — hide that section when
+  // creating a brand-new order (it comes in from SAP with none of that filled in yet), but
+  // keep it available when editing an order that ops is actively working.
+  var opsSection = document.getElementById("opsSection");
+  opsSection.style.display = id ? "block" : "none";
+  var opsGrid = document.getElementById("opsFieldsGrid");
+  opsGrid.innerHTML = OPS_FIELDS.map(function(f){ return fieldControlHtml(f, order[f.k]); }).join("");
+
+  document.getElementById("commentsFieldWrap").innerHTML = fieldControlHtml(COMMENTS_FIELD, order.comments);
+
+  document.getElementById("orderModalOverlay").classList.remove("hidden");
+}
+
+function closeOrderModal(){
+  document.getElementById("orderModalOverlay").classList.add("hidden");
+  STATE.editingId = null;
+}
+
+function validateRequiredFields(){
+  var missing = [];
+  ALL_FIELDS.forEach(function(f){
+    if (!f.required) return;
+    var el = document.getElementById("fld_" + f.k);
+    if (!el) return; // field not currently rendered (e.g. hidden section) — nothing to validate
+    el.classList.remove("field-invalid");
+    if (!String(el.value || "").trim()){
+      el.classList.add("field-invalid");
+      missing.push(f.label);
+    }
+  });
+  return missing;
+}
+
+function findDuplicateByDeliveryNumber(cevaRefValue, excludeId){
+  var nk = normalizeKey(cevaRefValue);
+  if (!nk) return null;
+  for (var i=0;i<STATE.orders.length;i++){
+    var o = STATE.orders[i];
+    if (o.id === excludeId) continue;
+    if (normalizeKey(o.cevaRef) === nk) return o;
+  }
+  return null;
+}
+
+function saveOrderFromModal(){
+  // Required-field enforcement only applies to brand-new orders coming in from SAP.
+  // Editing an existing order (which may predate this rule, or have legitimately blank
+  // legacy fields) should never be blocked by fields unrelated to the change being made.
+  if (!STATE.editingId){
+    var missing = validateRequiredFields();
+    if (missing.length){
+      showToast("Please fill in: " + missing.join(", "), true);
+      return;
+    }
+  }
+
+  // Duplicate-order safeguard: the Delivery Number (Ceva Reference #) should be unique.
+  // Applies whether adding a new order or editing an existing one's Ceva Reference #.
+  var cevaRefEl = document.getElementById("fld_cevaRef");
+  if (cevaRefEl){
+    cevaRefEl.classList.remove("field-invalid");
+    var dup = findDuplicateByDeliveryNumber(cevaRefEl.value, STATE.editingId);
+    if (dup){
+      cevaRefEl.classList.add("field-invalid");
+      showToast("Delivery Number " + cevaRefEl.value.trim() + " is already on an order for " + (dup.customer || dup.stoIFF || "another order") + ". Duplicate orders aren't allowed.", true);
+      return;
+    }
+  }
+
+  var order, isNew = false;
+  if (STATE.editingId){
+    order = STATE.orders.find(function(o){ return o.id === STATE.editingId; });
+  } else {
+    order = blankOrder();
+    isNew = true;
+  }
+
+  ALL_FIELDS.forEach(function(f){
+    var el = document.getElementById("fld_" + f.k);
+    if (!el) return;
+    if (f.type === "bool") order[f.k] = el.checked;
+    else order[f.k] = el.value;
+  });
+
+  if (isNew) STATE.orders.push(order);
+
+  saveData();
+  syncPushOrder(order);
+  renderAll();
+  closeOrderModal();
+  showToast("Order saved.");
+}
+
+/* ===================== DATA IMPORT (PKMS / Shiptify, CSV or XLSX) ===================== */
+
+var IMPORT_UPDATE_FIELDS = ALL_FIELDS.filter(function(f){ return f.type !== "bool"; });
+
+function parseCsv(text){
+  var rows = [];
+  var i = 0, field = "", row = [], inQuotes = false;
+  var len = text.length;
+  while (i < len){
+    var c = text[i];
+    if (inQuotes){
+      if (c === '"'){
+        if (text[i+1] === '"'){ field += '"'; i += 2; continue; }
+        inQuotes = false; i++; continue;
+      }
+      field += c; i++; continue;
+    } else {
+      if (c === '"'){ inQuotes = true; i++; continue; }
+      if (c === ','){ row.push(field); field = ""; i++; continue; }
+      if (c === '\r'){ i++; continue; }
+      if (c === '\n'){ row.push(field); rows.push(row); row = []; field = ""; i++; continue; }
+      field += c; i++; continue;
+    }
+  }
+  if (field.length || row.length){ row.push(field); rows.push(row); }
+  return rows.filter(function(r){ return !(r.length === 1 && r[0] === ""); });
+}
+
+function parseXlsxArrayBuffer(buf){
+  if (typeof XLSX === "undefined"){
+    throw new Error("XLSX library did not load — check your internet connection and try again.");
+  }
+  var wb = XLSX.read(buf, {type: "array"});
+  var sheetName = wb.SheetNames[0];
+  var ws = wb.Sheets[sheetName];
+  var rows = XLSX.utils.sheet_to_json(ws, {header: 1, raw: false, defval: ""});
+  return rows.map(function(r){ return r.map(function(c){ return (c === null || c === undefined) ? "" : String(c); }); });
+}
+
+function guessHeaderRowIndex(rows){
+  var n = Math.min(10, rows.length);
+  var best = 0, bestScore = -1;
+  for (var i = 0; i < n; i++){
+    var row = rows[i] || [];
+    var totalLen = 0, alphaCount = 0;
+    row.forEach(function(c){
+      var s = (c === null || c === undefined) ? "" : String(c);
+      totalLen += s.length;
+      for (var k = 0; k < s.length; k++){
+        if (/[a-zA-Z ]/.test(s[k])) alphaCount++;
+      }
+    });
+    var ratio = totalLen ? (alphaCount / totalLen) : 0;
+    var score = totalLen * ratio;
+    if (score > bestScore){ bestScore = score; best = i; }
+  }
+  return best;
+}
+
+function guessColumn(headers, candidates){
+  for (var c=0;c<candidates.length;c++){
+    for (var h=0;h<headers.length;h++){
+      if (headers[h].trim().toLowerCase() === candidates[c]) return h;
+    }
+  }
+  for (var c2=0;c2<candidates.length;c2++){
+    for (var h2=0;h2<headers.length;h2++){
+      if (headers[h2].trim().toLowerCase().indexOf(candidates[c2]) !== -1) return h2;
+    }
+  }
+  return -1;
+}
+
+var MATCH_COL_CANDIDATES = ["delivery","iff sto","sto","document","shipment #","shipment","slot name","ceva reference","phpctl"];
+
+var VALUE_COL_CANDIDATES = {
+  pkmsStatus: ["pkms status","pickticket status","phpstf","status"],
+  carrier: ["carrier"],
+  schedPickup: ["planned date","scheduled p/u date","scheduled pickup date","booking confirmation"],
+  giDate: ["gi date","planned gi date"],
+  doorLane: ["door","lane","slot"],
+  comments: ["comment","notes","incident type"]
+};
+
+function guessValueColumn(headers, fieldKey){
+  var candidates = VALUE_COL_CANDIDATES[fieldKey] || [fieldKey.toLowerCase()];
+  var idx = guessColumn(headers, candidates);
+  return idx;
+}
+
+function normalizeKey(v){
+  return (v == null ? "" : String(v)).replace(/^0+/, "").trim().toLowerCase();
+}
+
+function extractNumericTokens(s){
+  var m = String(s || "").match(/\d{4,}/g);
+  return m || [];
+}
+
+function findOrderForImportKey(key){
+  if (!key) return null;
+  var raw = String(key).trim();
+  var candidates = [normalizeKey(raw)].concat(extractNumericTokens(raw).map(normalizeKey));
+  candidates = candidates.filter(function(v, i, a){ return v && a.indexOf(v) === i; });
+  if (!candidates.length) return null;
+
+  for (var i=0;i<STATE.orders.length;i++){
+    var o = STATE.orders[i];
+    var ofields = [normalizeKey(o.stoIFF), normalizeKey(o.shipmentNum), normalizeKey(o.cevaRef), normalizeKey(o.poCustomer), normalizeKey(o.poIFF)];
+    for (var c=0;c<candidates.length;c++){
+      if (candidates[c] && ofields.indexOf(candidates[c]) !== -1) return o;
+    }
+  }
+  return null;
+}
+
+function normalizeDateString(s){
+  if (!s) return "";
+  s = String(s).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  var m = s.match(/^(\d{4})(\d{2})(\d{2})$/);
+  if (m) return m[1] + "-" + m[2] + "-" + m[3];
+  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); // Shiptify uses DD/MM/YYYY
+  if (m){
+    var day = m[1].length < 2 ? "0"+m[1] : m[1];
+    var mon = m[2].length < 2 ? "0"+m[2] : m[2];
+    return m[3] + "-" + mon + "-" + day;
+  }
+  return s;
+}
+
+function resolveImportStatusValue(rawVal){
+  var trimmed = String(rawVal || "").trim();
+  if (!trimmed) return "";
+  var opts = STATE.statusOptions || DEFAULT_STATUS_OPTIONS;
+  for (var i=0;i<opts.length;i++){
+    if (opts[i].code && opts[i].code.trim() !== "" && opts[i].code.trim().toLowerCase() === trimmed.toLowerCase()) return opts[i].label;
+  }
+  for (var j=0;j<opts.length;j++){
+    if (opts[j].label.trim().toLowerCase() === trimmed.toLowerCase()) return opts[j].label;
+  }
+  return trimmed;
+}
+
+function transformImportValue(rawVal, fieldKey){
+  var trimmed = String(rawVal === null || rawVal === undefined ? "" : rawVal).trim();
+  if (!trimmed) return "";
+  if (fieldKey === "pkmsStatus") return resolveImportStatusValue(trimmed);
+  if (fieldKey === "giDate" || fieldKey === "schedPickup") return normalizeDateString(trimmed);
+  return trimmed;
+}
+
+function populateImportFieldSelectors(){
+  var updSel = document.getElementById("pkmsUpdateField");
+  updSel.innerHTML = IMPORT_UPDATE_FIELDS.map(function(f){
+    return '<option value="' + f.k + '" ' + (f.k === "pkmsStatus" ? "selected" : "") + '>' + esc(f.label) + '</option>';
+  }).join("");
+}
+
+function currentImportHeaders(){
+  var headerIdx = parseInt(document.getElementById("pkmsHeaderRow").value, 10);
+  var rows = STATE.pkmsAllRows || [];
+  return {headerIdx: headerIdx, headers: rows[headerIdx] || [], dataRows: rows.slice(headerIdx + 1)};
+}
+
+function refreshImportColumnSelectors(){
+  var ctx = currentImportHeaders();
+  var headers = ctx.headers;
+
+  var matchSel = document.getElementById("pkmsMatchCol");
+  var valueSel = document.getElementById("pkmsStatusCol");
+  matchSel.innerHTML = headers.map(function(h,idx){ return '<option value="'+idx+'">' + esc(h) + '</option>'; }).join("");
+  valueSel.innerHTML = headers.map(function(h,idx){ return '<option value="'+idx+'">' + esc(h) + '</option>'; }).join("");
+
+  var matchGuess = guessColumn(headers, MATCH_COL_CANDIDATES);
+  matchSel.value = matchGuess !== -1 ? matchGuess : 0;
+
+  var fieldKey = document.getElementById("pkmsUpdateField").value || "pkmsStatus";
+  var valueGuess = guessValueColumn(headers, fieldKey);
+  valueSel.value = valueGuess !== -1 ? valueGuess : (headers.length > 1 ? 1 : 0);
+
+  var field = ALL_FIELDS.filter(function(f){ return f.k === fieldKey; })[0];
+  document.getElementById("pkmsDateHint").style.display = (field && field.type === "date") ? "block" : "none";
+
+  renderPkmsPreview();
+}
+
+function handlePkmsFile(file){
+  var isXlsx = /\.xlsx$/i.test(file.name);
+  var reader = new FileReader();
+
+  reader.onload = function(e){
+    var rows;
+    try{
+      rows = isXlsx ? parseXlsxArrayBuffer(e.target.result) : parseCsv(String(e.target.result));
+    }catch(err){
+      showToast("Could not read that file: " + err.message, true);
+      return;
+    }
+    rows = rows.filter(function(r){ return r.some(function(c){ return String(c || "").trim() !== ""; }); });
+    if (!rows.length){
+      showToast("That file appears to be empty.", true);
+      return;
+    }
+
+    STATE.pkmsAllRows = rows;
+    document.getElementById("pkmsFileName").textContent = file.name + " — " + rows.length + " rows";
+    document.getElementById("pkmsMapSection").style.display = "block";
+
+    var guessIdx = guessHeaderRowIndex(rows);
+    var headerRowSel = document.getElementById("pkmsHeaderRow");
+    var previewCount = Math.min(10, rows.length);
+    var opts = [];
+    for (var i=0;i<previewCount;i++){
+      var preview = rows[i].slice(0,4).join(" | ").slice(0,60);
+      opts.push('<option value="'+i+'" ' + (i===guessIdx ? "selected" : "") + '>Row ' + (i+1) + ': ' + esc(preview) + '</option>');
+    }
+    headerRowSel.innerHTML = opts.join("");
+
+    populateImportFieldSelectors();
+    refreshImportColumnSelectors();
+  };
+
+  if (isXlsx) reader.readAsArrayBuffer(file);
+  else reader.readAsText(file);
+}
+
+function renderPkmsPreview(){
+  var ctx = currentImportHeaders();
+  var matchIdx = parseInt(document.getElementById("pkmsMatchCol").value, 10);
+  var valueIdx = parseInt(document.getElementById("pkmsStatusCol").value, 10);
+  var fieldKey = document.getElementById("pkmsUpdateField").value || "pkmsStatus";
+  var field = ALL_FIELDS.filter(function(f){ return f.k === fieldKey; })[0];
+  var rows = ctx.dataRows;
+
+  var matchedCount = 0, unmatchedCount = 0;
+  var previewRows = rows.map(function(r){
+    var keyVal = r[matchIdx] || "";
+    var rawVal = r[valueIdx] || "";
+    var order = findOrderForImportKey(keyVal);
+    var resolved = transformImportValue(rawVal, fieldKey);
+    if (order) matchedCount++; else unmatchedCount++;
+    return {key: keyVal, raw: rawVal, resolved: resolved, order: order};
+  });
+
+  var summary = document.getElementById("pkmsSummary");
+  summary.innerHTML =
+    '<span><b>' + matchedCount + '</b> matched</span>' +
+    '<span><b>' + unmatchedCount + '</b> unmatched (ignored)</span>' +
+    '<span><b>' + rows.length + '</b> total rows</span>' +
+    '<span>Updating <b>' + esc(field ? field.label : fieldKey) + '</b></span>';
+
+  var table = document.getElementById("pkmsPreviewTable");
+  var head = '<tr><th>Match</th><th>Key Value</th><th>New Value</th><th>Matched Order</th></tr>';
+  var body = previewRows.slice(0, 200).map(function(pr){
+    var cls = pr.order ? "matched" : "unmatched";
+    var label = pr.order ? "\u2713" : "\u2014";
+    var custName = pr.order ? (pr.order.customer || pr.order.stoIFF) : "No match";
+    return '<tr class="' + cls + '"><td>' + label + '</td><td>' + esc(pr.key) + '</td><td>' + esc(pr.resolved) + '</td><td>' + esc(custName) + '</td></tr>';
+  }).join("");
+  table.innerHTML = head + body;
+
+  document.getElementById("btnApplyPkms").disabled = matchedCount === 0;
+  STATE.pkmsPreviewRows = previewRows;
+  STATE.pkmsImportFieldKey = fieldKey;
+}
+
+function applyPkmsImport(){
+  var rows = STATE.pkmsPreviewRows || [];
+  var fieldKey = STATE.pkmsImportFieldKey || "pkmsStatus";
+  var applied = 0;
+  rows.forEach(function(pr){
+    if (pr.order && pr.resolved !== ""){
+      pr.order[fieldKey] = pr.resolved;
+      applied++;
+    }
+  });
+  if (applied){
+    saveData();
+    rows.forEach(function(pr){ if (pr.order && pr.resolved !== "") syncPushOrder(pr.order); });
+    renderAll();
+  }
+  showToast(applied + " order" + (applied === 1 ? "" : "s") + " updated from import.");
+  closePkmsModal();
+}
+
+function closePkmsModal(){
+  document.getElementById("pkmsModalOverlay").classList.add("hidden");
+  document.getElementById("pkmsMapSection").style.display = "none";
+  document.getElementById("pkmsFileName").textContent = "No file selected";
+  document.getElementById("pkmsFileInput").value = "";
+  STATE.pkmsAllRows = null;
+  STATE.pkmsPreviewRows = null;
+  STATE.pkmsImportFieldKey = null;
+}
+/* ===================== EXPORT / BACKUP ===================== */
+
+function downloadBlob(content, filename, mime){
+  var blob = new Blob([content], {type: mime});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+}
+
+function csvEscape(v){
+  var s = (v === null || v === undefined) ? "" : String(v);
+  if (/[",\n]/.test(s)) return '"' + s.replace(/"/g,'""') + '"';
+  return s;
+}
+
+function exportCsv(){
+  var cols = ALL_FIELDS;
+  var head = cols.map(function(f){ return csvEscape(f.label); }).join(",");
+  var lines = STATE.orders.map(function(o){
+    return cols.map(function(f){ return csvEscape(o[f.k]); }).join(",");
+  });
+  var csv = [head].concat(lines).join("\n");
+  downloadBlob(csv, "IFF_Scoreboard_export_" + todayStamp() + ".csv", "text/csv;charset=utf-8;");
+  showToast("CSV exported.");
+}
+
+function todayStamp(){
+  var d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+}
+
+function backupJson(){
+  downloadBlob(JSON.stringify({orders: STATE.orders, savedAt: Date.now()}, null, 2), "IFF_Scoreboard_backup_" + todayStamp() + ".json", "application/json");
+  showToast("Backup downloaded.");
+}
+
+function restoreJson(file){
+  var reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      var parsed = JSON.parse(String(e.target.result));
+      if (!parsed || !Array.isArray(parsed.orders)) throw new Error("bad shape");
+      if (!window.confirm("Restore " + parsed.orders.length + " orders? This replaces the current board" + (syncConfigured() ? " and the Google Sheet" : " in this browser") + ".")) return;
+      STATE.orders = parsed.orders;
+      saveData();
+      if (syncConfigured()){
+        STATE.orders.forEach(function(o){ syncPushOrder(o); });
+      }
+      renderAll();
+      showToast("Board restored from backup.");
+    }catch(err){
+      showToast("That file doesn't look like a valid IFF Scoreboard backup.", true);
+    }
+  };
+  reader.readAsText(file);
+}
+
+/* ===================== VIEW SWITCHING ===================== */
+
+function setView(view){
+  STATE.activeView = view;
+  document.querySelectorAll(".tab-btn").forEach(function(btn){
+    btn.classList.toggle("active", btn.getAttribute("data-view") === view);
+  });
+  document.getElementById("view-map").classList.toggle("active", view === "map");
+  document.getElementById("view-log").classList.toggle("active", view === "log");
+  var ws = document.querySelector(".workspace");
+  if (ws) ws.classList.toggle("wide-view", view === "log");
+}
+
+/* ===================== SETTINGS: GATE / PASSWORD ===================== */
+
+function isSettingsAuthed(){
+  try{ return sessionStorage.getItem(SESSION_AUTH_KEY) === "1"; }catch(e){ return STATE.settingsAuthed; }
+}
+function setSettingsAuthed(v){
+  STATE.settingsAuthed = v;
+  try{ sessionStorage.setItem(SESSION_AUTH_KEY, v ? "1" : "0"); }catch(e){}
+}
+
+function currentPasswordHashPromise(){
+  if (STATE.passwordHash) return Promise.resolve(STATE.passwordHash);
+  return sha256Hex(DEFAULT_PASSWORD);
+}
+
+function openSettingsModal(){
+  document.getElementById("settingsModalOverlay").classList.remove("hidden");
+  document.getElementById("settingsGateError").style.display = "none";
+  document.getElementById("settingsPasswordInput").value = "";
+  if (isSettingsAuthed()){
+    showSettingsBody();
+  } else {
+    document.getElementById("settingsGate").style.display = "flex";
+    document.getElementById("settingsBody").style.display = "none";
+  }
+}
+
+function closeSettingsModal(){
+  document.getElementById("settingsModalOverlay").classList.add("hidden");
+}
+
+function showSettingsBody(){
+  document.getElementById("settingsGate").style.display = "none";
+  document.getElementById("settingsBody").style.display = "block";
+  renderStatusOptEditor();
+  document.getElementById("syncUrlInput").value = STATE.sync.url || "";
+  document.getElementById("syncTokenInput").value = STATE.sync.token || "";
+  updateSyncPill();
+}
+
+function attemptUnlock(){
+  var input = document.getElementById("settingsPasswordInput").value;
+  currentPasswordHashPromise().then(function(correctHash){
+    return sha256Hex(input).then(function(inputHash){
+      if (inputHash === correctHash){
+        setSettingsAuthed(true);
+        showSettingsBody();
+      } else {
+        var errEl = document.getElementById("settingsGateError");
+        errEl.textContent = "Incorrect password.";
+        errEl.style.display = "block";
+      }
+    });
+  });
+}
+
+function switchSettingsPane(pane){
+  document.querySelectorAll(".settings-tab-btn").forEach(function(b){
+    b.classList.toggle("active", b.getAttribute("data-pane") === pane);
+  });
+  document.querySelectorAll(".settings-pane").forEach(function(p){
+    p.classList.toggle("active", p.id === "pane-" + pane);
+  });
+}
+
+/* ---- Status options editor ---- */
+
+function renderStatusOptEditor(){
+  var wrap = document.getElementById("statusOptList");
+  wrap.innerHTML = "";
+  (STATE.statusOptions || []).forEach(function(opt, idx){
+    var row = document.createElement("div");
+    row.className = "status-opt-row";
+    var stageOptsHtml = STATUS_STAGES.map(function(s){
+      return '<option value="' + s.key + '" ' + (s.key === opt.stage ? "selected" : "") + '>' + esc(s.label) + '</option>';
+    }).join("");
+    row.innerHTML =
+      '<input type="text" data-idx="' + idx + '" data-role="code" value="' + esc(opt.code || "") + '" placeholder="Code (optional, e.g. 70)">' +
+      '<input type="text" data-idx="' + idx + '" data-role="label" value="' + esc(opt.label) + '" placeholder="Status label (shown in the app)">' +
+      '<select data-idx="' + idx + '" data-role="stage">' + stageOptsHtml + '</select>' +
+      '<button class="icon-btn danger" data-idx="' + idx + '" data-role="remove" title="Remove">✕</button>';
+    wrap.appendChild(row);
+  });
+
+  wrap.querySelectorAll('[data-role="code"]').forEach(function(el){
+    el.addEventListener("input", function(){
+      STATE.statusOptions[parseInt(el.getAttribute("data-idx"),10)].code = el.value;
+    });
+  });
+  wrap.querySelectorAll('[data-role="label"]').forEach(function(el){
+    el.addEventListener("input", function(){
+      STATE.statusOptions[parseInt(el.getAttribute("data-idx"),10)].label = el.value;
+    });
+  });
+  wrap.querySelectorAll('[data-role="stage"]').forEach(function(el){
+    el.addEventListener("change", function(){
+      STATE.statusOptions[parseInt(el.getAttribute("data-idx"),10)].stage = el.value;
+    });
+  });
+  wrap.querySelectorAll('[data-role="remove"]').forEach(function(el){
+    el.addEventListener("click", function(){
+      STATE.statusOptions.splice(parseInt(el.getAttribute("data-idx"),10), 1);
+      renderStatusOptEditor();
+    });
+  });
+}
+
+function addStatusOpt(){
+  STATE.statusOptions.push({code:"", label:"", stage:"none"});
+  renderStatusOptEditor();
+}
+
+function saveStatusOpts(){
+  STATE.statusOptions = (STATE.statusOptions || []).filter(function(o){ return o.label && o.label.trim(); });
+  saveLocalSettings();
+  syncPushConfig();
+  populateStatusFilterOptions();
+  renderAll();
+  showToast("Status options saved.");
+}
+
+/* ---- Sync settings ---- */
+
+function saveSyncSettings(){
+  STATE.sync.url = document.getElementById("syncUrlInput").value.trim();
+  STATE.sync.token = document.getElementById("syncTokenInput").value.trim();
+  saveLocalSettings();
+  showToast("Sync settings saved.");
+  syncPullAll(true).then(function(ok){ if (ok) renderAll(); });
+}
+
+function testSyncConnection(){
+  var url = document.getElementById("syncUrlInput").value.trim();
+  var token = document.getElementById("syncTokenInput").value.trim();
+  if (!url){ showToast("Enter a Sync URL first.", true); return; }
+  var prevUrl = STATE.sync.url, prevToken = STATE.sync.token;
+  STATE.sync.url = url; STATE.sync.token = token;
+  syncFetch("getAll").then(function(){
+    showToast("Connection successful.");
+    STATE.sync.connected = true; STATE.sync.lastSyncAt = Date.now(); updateSyncPill();
+  }).catch(function(err){
+    showToast("Connection failed: " + err.message, true);
+    STATE.sync.url = prevUrl; STATE.sync.token = prevToken;
+  });
+}
+
+function forceRefreshFromSheet(){
+  syncPullAll(true).then(function(ok){
+    if (ok){ renderAll(); renderStatusOptEditor(); showToast("Refreshed from Google Sheet."); }
+  });
+}
+
+/* ---- Password change ---- */
+
+function changeSettingsPassword(){
+  var cur = document.getElementById("pwCurrentInput").value;
+  var next = document.getElementById("pwNewInput").value;
+  var confirmVal = document.getElementById("pwConfirmInput").value;
+
+  if (!next || next.length < 4){ showToast("New password must be at least 4 characters.", true); return; }
+  if (next !== confirmVal){ showToast("New password entries don't match.", true); return; }
+
+  currentPasswordHashPromise().then(function(correctHash){
+    return sha256Hex(cur).then(function(curHash){
+      if (curHash !== correctHash){ showToast("Current password is incorrect.", true); return; }
+      return sha256Hex(next).then(function(newHash){
+        STATE.passwordHash = newHash;
+        saveLocalSettings();
+        syncPushConfig();
+        document.getElementById("pwCurrentInput").value = "";
+        document.getElementById("pwNewInput").value = "";
+        document.getElementById("pwConfirmInput").value = "";
+        showToast("Settings password updated.");
+      });
+    });
+  });
+}
+
+/* ===================== RENDER ALL ===================== */
+
+function renderAll(){
+  renderStats();
+  renderLegend();
+  renderZones();
+  renderTableHead();
+  renderTable();
+  updateSyncPill();
+}
+
+/* ===================== EVENT WIRING ===================== */
+
+function wireEvents(){
+  document.querySelectorAll(".tab-btn").forEach(function(btn){
+    btn.addEventListener("click", function(){ setView(btn.getAttribute("data-view")); });
+  });
+
+  document.getElementById("btnAddOrder").addEventListener("click", function(){ openOrderModal(null); });
+  document.getElementById("orderModalClose").addEventListener("click", closeOrderModal);
+  document.getElementById("btnCancelOrder").addEventListener("click", closeOrderModal);
+  document.getElementById("btnSaveOrder").addEventListener("click", saveOrderFromModal);
+  document.getElementById("btnDeleteOrder").addEventListener("click", function(){
+    var id = STATE.editingId;
+    closeOrderModal();
+    if (id) confirmDelete(id);
+  });
+  document.getElementById("orderModalOverlay").addEventListener("click", function(e){
+    if (e.target === this) closeOrderModal();
+  });
+
+  document.getElementById("searchInput").addEventListener("input", function(e){
+    STATE.searchTerm = e.target.value;
+    renderTable();
+  });
+  document.getElementById("statusFilter").addEventListener("change", function(e){
+    STATE.statusFilter = e.target.value;
+    renderTable();
+  });
+  document.getElementById("btnResetColumns").addEventListener("click", resetColumnOrder);
+  document.getElementById("btnClearFilter").addEventListener("click", function(){
+    STATE.searchTerm = ""; STATE.statusFilter = "";
+    document.getElementById("searchInput").value = "";
+    document.getElementById("statusFilter").value = "";
+    renderTable();
+  });
+
+  document.getElementById("btnExportCsv").addEventListener("click", exportCsv);
+  document.getElementById("btnBackup").addEventListener("click", backupJson);
+  document.getElementById("btnRestore").addEventListener("click", function(){
+    document.getElementById("restoreFileInput").click();
+  });
+  document.getElementById("restoreFileInput").addEventListener("change", function(e){
+    if (e.target.files && e.target.files[0]) restoreJson(e.target.files[0]);
+    e.target.value = "";
+  });
+
+  // PKMS import modal
+  document.getElementById("btnImportPkms").addEventListener("click", function(){
+    document.getElementById("pkmsModalOverlay").classList.remove("hidden");
+  });
+  document.getElementById("pkmsModalClose").addEventListener("click", closePkmsModal);
+  document.getElementById("btnCancelPkms").addEventListener("click", closePkmsModal);
+  document.getElementById("pkmsModalOverlay").addEventListener("click", function(e){
+    if (e.target === this) closePkmsModal();
+  });
+  document.getElementById("pkmsDropzone").addEventListener("click", function(){
+    document.getElementById("pkmsFileInput").click();
+  });
+  document.getElementById("pkmsDropzone").addEventListener("dragover", function(e){
+    e.preventDefault(); this.classList.add("drag");
+  });
+  document.getElementById("pkmsDropzone").addEventListener("dragleave", function(){
+    this.classList.remove("drag");
+  });
+  document.getElementById("pkmsDropzone").addEventListener("drop", function(e){
+    e.preventDefault(); this.classList.remove("drag");
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) handlePkmsFile(e.dataTransfer.files[0]);
+  });
+  document.getElementById("pkmsFileInput").addEventListener("change", function(e){
+    if (e.target.files && e.target.files[0]) handlePkmsFile(e.target.files[0]);
+  });
+  document.getElementById("pkmsHeaderRow").addEventListener("change", refreshImportColumnSelectors);
+  document.getElementById("pkmsUpdateField").addEventListener("change", refreshImportColumnSelectors);
+  document.getElementById("pkmsMatchCol").addEventListener("change", renderPkmsPreview);
+  document.getElementById("pkmsStatusCol").addEventListener("change", renderPkmsPreview);
+  document.getElementById("btnApplyPkms").addEventListener("click", applyPkmsImport);
+
+  // Settings modal
+  document.getElementById("btnSettings").addEventListener("click", openSettingsModal);
+  document.getElementById("settingsModalClose").addEventListener("click", closeSettingsModal);
+  document.getElementById("settingsModalOverlay").addEventListener("click", function(e){
+    if (e.target === this) closeSettingsModal();
+  });
+  document.getElementById("btnSettingsUnlock").addEventListener("click", attemptUnlock);
+  document.getElementById("settingsPasswordInput").addEventListener("keydown", function(e){
+    if (e.key === "Enter") attemptUnlock();
+  });
+  document.querySelectorAll(".settings-tab-btn").forEach(function(btn){
+    btn.addEventListener("click", function(){ switchSettingsPane(btn.getAttribute("data-pane")); });
+  });
+  document.getElementById("btnAddStatusOpt").addEventListener("click", addStatusOpt);
+  document.getElementById("btnSaveStatusOpts").addEventListener("click", saveStatusOpts);
+  document.getElementById("btnSaveSync").addEventListener("click", saveSyncSettings);
+  document.getElementById("btnTestSync").addEventListener("click", testSyncConnection);
+  document.getElementById("btnForceRefresh").addEventListener("click", forceRefreshFromSheet);
+  document.getElementById("btnChangePassword").addEventListener("click", changeSettingsPassword);
+}
+
+/* ===================== INIT ===================== */
+
+function init(){
+  loadLocalSettings();
+  loadColumnOrder();
+  var cached = loadLocalOrders();
+  if (cached) STATE.orders = cached;
+  else { seedOrders(); saveLocalOrders(); }
+
+  populateStatusFilterOptions();
+  wireEvents();
+  renderAll();
+
+  if (syncConfigured()){
+    syncPullAll(false).then(function(ok){ if (ok) renderAll(); });
+  }
+  startPolling();
+}
+
+document.addEventListener("DOMContentLoaded", init);
+
+})();
+</script>
+</body>
+</html>
