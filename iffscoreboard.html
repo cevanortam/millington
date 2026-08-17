@@ -156,6 +156,11 @@ table.order-table{width:100%;border-collapse:collapse;font-size:11px;min-width:1
 .icon-btn.danger:hover{border-color:rgba(228,87,46,0.55);color:#ffb199;}
 .btn.icon-only{width:32px;height:32px;padding:0;font-size:14px;flex:none;}
 
+.upload-tile{display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:var(--panel-alt);color:var(--text);cursor:pointer;transition:all .12s ease;}
+.upload-tile:hover{border-color:var(--amber-deep);background:rgba(242,169,59,0.08);transform:translateY(-1px);}
+.upload-tile .ut-icon{font-size:15px;color:var(--amber);flex:none;}
+.upload-tile .ut-label{font-family:var(--disp);font-size:10.5px;text-transform:uppercase;letter-spacing:0.3px;line-height:1.25;text-align:left;font-weight:600;}
+
 /* ---------- Settings ---------- */
 .settings-gate{display:flex;flex-direction:column;align-items:center;gap:14px;padding:20px 0 6px;text-align:center;}
 .settings-gate p{color:var(--muted);font-size:12.5px;max-width:340px;margin:0;}
@@ -217,7 +222,11 @@ table.csv-table{width:100%;border-collapse:collapse;font-size:11px;font-family:v
 .csv-table td{padding:6px 8px;border-bottom:1px solid var(--border-soft);}
 .csv-table tr.matched td:first-child{color:var(--green);}
 .csv-table tr.unmatched td:first-child{color:var(--red);}
-.import-summary{display:flex;gap:14px;margin-top:10px;font-family:var(--mono);font-size:11.5px;}
+.csv-table tr.regression{background:rgba(228,87,46,0.10);}
+.csv-table tr.regression td:first-child{color:var(--red);}
+.csv-table tr.unchanged-row{opacity:0.45;}
+.unchanged-tag{color:var(--muted-dim);font-size:9.5px;}
+.import-summary{display:flex;gap:14px;margin-top:10px;font-family:var(--mono);font-size:11.5px;flex-wrap:wrap;}
 .import-summary b{color:var(--amber);}
 
 /* ---------- Toast ---------- */
@@ -247,7 +256,8 @@ table.csv-table{width:100%;border-collapse:collapse;font-size:11px;font-family:v
   </div>
   <div class="topbar-right">
     <span class="pill" id="syncPill"><span class="dot"></span>—</span>
-    <button class="btn ghost sm" id="btnImportPkms">⇪ Import PKMS CSV</button>
+    <button class="upload-tile" id="btnPkmsUpload"><span class="ut-icon">⇪</span><span class="ut-label">PKMS Order Status<br>Upload</span></button>
+    <button class="upload-tile" id="btnShiptifyUpload"><span class="ut-icon">⇪</span><span class="ut-label">Shiptify<br>Upload</span></button>
     <button class="btn ghost sm" id="btnExportCsv">⇩ Export CSV</button>
     <button class="btn ghost sm" id="btnBackup">⇩ Backup JSON</button>
     <button class="btn ghost sm" id="btnRestore">⇧ Restore JSON</button>
@@ -339,14 +349,14 @@ table.csv-table{width:100%;border-collapse:collapse;font-size:11px;font-family:v
   </div>
 </div>
 
-<!-- ===================== DATA IMPORT MODAL (PKMS / Shiptify) ===================== -->
+<!-- ===================== PKMS ORDER STATUS UPLOAD MODAL ===================== -->
 <div class="modal-overlay hidden" id="pkmsModalOverlay">
   <div class="modal wide">
     <div class="modal-head">
-      <h3>Import Data (PKMS / Shiptify)</h3>
+      <h3>PKMS Order Status Upload</h3>
       <button class="modal-close" id="pkmsModalClose">×</button>
     </div>
-    <p class="hint" style="margin-bottom:12px;">Upload a PKMS or Shiptify export (.csv or .xlsx). Rows are matched to existing orders by IFF STO, Shipment #, or Ceva Reference #. Choose which field to update and which column holds the new value — unmatched rows are shown but not applied.</p>
+    <p class="hint" style="margin-bottom:12px;">Upload a PKMS Order Status export (.csv or .xlsx). Rows are matched by Pickticket Control Number against each order's Ceva Reference #, and PKMS Status is updated to the matching combination (e.g. "70" → "70 Loaded"). This doesn't touch any other field — you can still edit an order's PKMS Status individually any time.</p>
 
     <div class="dropzone" id="pkmsDropzone">
       <div class="dz-title">Click to choose a CSV or XLSX file, or drag one here</div>
@@ -361,19 +371,14 @@ table.csv-table{width:100%;border-collapse:collapse;font-size:11px;font-family:v
           <select id="pkmsHeaderRow"></select>
         </div>
         <div class="field">
-          <label>Match Column (identifies the order)</label>
+          <label>Pickticket Control Number Column</label>
           <select id="pkmsMatchCol"></select>
         </div>
         <div class="field">
-          <label>Update Field</label>
-          <select id="pkmsUpdateField"></select>
-        </div>
-        <div class="field">
-          <label>Value Column (new value)</label>
+          <label>Pickticket Status Column</label>
           <select id="pkmsStatusCol"></select>
         </div>
       </div>
-      <p class="hint" id="pkmsDateHint" style="display:none;margin:-4px 0 10px;">Dates are parsed automatically (DD/MM/YYYY, MM/DD/YYYY, or YYYY-MM-DD).</p>
 
       <div class="import-summary" id="pkmsSummary"></div>
 
@@ -386,6 +391,57 @@ table.csv-table{width:100%;border-collapse:collapse;font-size:11px;font-family:v
       <div style="flex:1;"></div>
       <button class="btn ghost sm" id="btnCancelPkms">Cancel</button>
       <button class="btn primary sm" id="btnApplyPkms" disabled>Apply Updates</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== SHIPTIFY UPLOAD MODAL ===================== -->
+<div class="modal-overlay hidden" id="shiptifyModalOverlay">
+  <div class="modal wide">
+    <div class="modal-head">
+      <h3>Shiptify Upload</h3>
+      <button class="modal-close" id="shiptifyModalClose">×</button>
+    </div>
+    <p class="hint" style="margin-bottom:12px;">Upload a Shiptify export (.csv or .xlsx). Rows are matched by Slot Name against each order's STO or Ceva Reference #, and only Carrier and Scheduled Pickup Date are updated. This doesn't touch any other field — you can still edit an order individually any time.</p>
+
+    <div class="dropzone" id="shiptifyDropzone">
+      <div class="dz-title">Click to choose a CSV or XLSX file, or drag one here</div>
+      <div class="dz-sub" id="shiptifyFileName">No file selected</div>
+    </div>
+    <input type="file" id="shiptifyFileInput" accept=".csv,.xlsx,text/csv">
+
+    <div id="shiptifyMapSection" style="display:none;">
+      <div class="csv-map-grid">
+        <div class="field">
+          <label>Header Row</label>
+          <select id="shiptifyHeaderRow"></select>
+        </div>
+        <div class="field">
+          <label>Slot Name Column</label>
+          <select id="shiptifyMatchCol"></select>
+        </div>
+        <div class="field">
+          <label>Carrier Column</label>
+          <select id="shiptifyCarrierCol"></select>
+        </div>
+        <div class="field">
+          <label>Planned Date Column</label>
+          <select id="shiptifyDateCol"></select>
+        </div>
+      </div>
+      <p class="hint" style="margin:-4px 0 10px;">Dates are parsed automatically (Shiptify uses DD/MM/YYYY).</p>
+
+      <div class="import-summary" id="shiptifySummary"></div>
+
+      <div class="csv-preview">
+        <table class="csv-table" id="shiptifyPreviewTable"></table>
+      </div>
+    </div>
+
+    <div class="modal-foot">
+      <div style="flex:1;"></div>
+      <button class="btn ghost sm" id="btnCancelShiptify">Cancel</button>
+      <button class="btn primary sm" id="btnApplyShiptify" disabled>Apply Updates</button>
     </div>
   </div>
 </div>
@@ -481,13 +537,13 @@ var DEFAULT_PASSWORD = "iffops"; // change this via Settings once deployed
 var SEED = [{"giDate": "2026-08-03", "stoIFF": 921201, "customer": "Fresca Foods Inc", "incoterms": 142, "docType": "", "tot": "", "cevaRef": "0081177371", "hu": "", "shipmentNum": "-", "poIFF": "", "poCustomer": 13271443, "pkmsStatus": "90 Invoiced", "doorLane": "OBSTG79", "apl": "", "addedAPL": "", "closedSAP": true, "closedPKMS": true, "carrier": "Uber Freight", "schedPickup": "2026-08-03", "arrivedOnTime": "Yes", "comments": ""}, {"giDate": "2026-08-03", "stoIFF": "923430", "customer": "55387229-Nellson Nutraceutical LLC", "incoterms": 142, "docType": "", "tot": "", "cevaRef": "0081177128", "hu": "", "shipmentNum": "-", "poIFF": "", "poCustomer": "55387229", "pkmsStatus": "70 Loaded", "doorLane": "OBSTG75", "apl": "", "addedAPL": "", "closedSAP": false, "closedPKMS": false, "carrier": "Spot", "schedPickup": "2026-08-10", "arrivedOnTime": "", "comments": ""}, {"giDate": "2026-08-04", "stoIFF": "922818", "customer": "55034085-General Mills Operations LLC", "incoterms": 142, "docType": "", "tot": "", "cevaRef": "0081177362", "hu": "", "shipmentNum": "-", "poIFF": "", "poCustomer": "55034085", "pkmsStatus": "90 Invoiced", "doorLane": "OBSTG78", "apl": "", "addedAPL": "", "closedSAP": true, "closedPKMS": true, "carrier": "RXO", "schedPickup": "2026-08-04", "arrivedOnTime": "Yes", "comments": ""}, {"giDate": "2026-08-03", "stoIFF": "920212", "customer": "55393920-Worldwide Sport Nutritional", "incoterms": 152, "docType": "", "tot": "", "cevaRef": "0081177291", "hu": "", "shipmentNum": 571760, "poIFF": "", "poCustomer": "55393920", "pkmsStatus": "90 Invoiced", "doorLane": "OBSTG79", "apl": "APL Req'd", "addedAPL": true, "closedSAP": true, "closedPKMS": true, "carrier": "CH Robinson", "schedPickup": "2026-08-06", "arrivedOnTime": "No", "comments": "arrived 3 hours early \u2026 able to accommodate and load early"}, {"giDate": "2026-08-03", "stoIFF": "919145", "customer": "55053178-EMPWR Canada Inc", "incoterms": 142, "docType": "", "tot": "", "cevaRef": "0081177124", "hu": "", "shipmentNum": "-", "poIFF": "", "poCustomer": "55053178", "pkmsStatus": "90 Invoiced", "doorLane": "OBSTG80", "apl": "", "addedAPL": "", "closedSAP": true, "closedPKMS": true, "carrier": "Mexuscan", "schedPickup": "2026-08-05", "arrivedOnTime": "Yes", "comments": ""}, {"giDate": "2026-08-03", "stoIFF": "922670", "customer": "55394379-Nutrition Bar Confectioners", "incoterms": 145, "docType": "", "tot": "", "cevaRef": "0081177391", "hu": "", "shipmentNum": "-", "poIFF": "", "poCustomer": "55394379", "pkmsStatus": "70 Loaded", "doorLane": "OBSTG82", "apl": "", "addedAPL": "", "closedSAP": false, "closedPKMS": false, "carrier": "Munk pack", "schedPickup": "2026-08-05", "arrivedOnTime": "No", "comments": ""}, {"giDate": "2026-08-03", "stoIFF": "919475", "customer": "55009464-Nellson Nutraceutical Canada, INC", "incoterms": "FCA", "docType": "", "tot": "", "cevaRef": "0081177393", "hu": "", "shipmentNum": "-", "poIFF": "", "poCustomer": "55009464", "pkmsStatus": "90 Invoiced", "doorLane": "OBSTG83", "apl": "", "addedAPL": "", "closedSAP": true, "closedPKMS": true, "carrier": "Tansport Lessard", "schedPickup": "2026-08-04", "arrivedOnTime": "Yes", "comments": ""}, {"giDate": "2026-08-03", "stoIFF": 922893, "customer": "55387853-Nellson Nutraceutical LLC", "incoterms": 142, "docType": "ZOR", "tot": "", "cevaRef": "0081177526", "hu": "", "shipmentNum": "-", "poIFF": "", "poCustomer": "2219453-OP-6001", "pkmsStatus": "90 Invoiced", "doorLane": "OBSTG86", "apl": "", "addedAPL": "", "closedSAP": true, "closedPKMS": true, "carrier": "Spot", "schedPickup": "2026-08-07", "arrivedOnTime": "No", "comments": "20kg short .. Arrived at 8:30am for 2pm pick up"}, {"giDate": "2026-08-05", "stoIFF": 921629, "customer": "General Mills Operations LLC", "incoterms": 142, "docType": "", "tot": "", "cevaRef": "0081177576", "hu": "", "shipmentNum": "-", "poIFF": "", "poCustomer": 13277313, "pkmsStatus": "90 Invoiced", "doorLane": "OVRFL07", "apl": "", "addedAPL": "", "closedSAP": true, "closedPKMS": true, "carrier": "Ceeg", "schedPickup": "2026-08-06", "arrivedOnTime": "", "comments": ""}, {"giDate": "2026-08-05", "stoIFF": 916032, "customer": "EMPWR USA Inc. ", "incoterms": 142, "docType": "", "tot": "", "cevaRef": "0081177584", "hu": "", "shipmentNum": "-", "poIFF": "", "poCustomer": 4510016974, "pkmsStatus": "90 Invoiced", "doorLane": "OBSTG85", "apl": "", "addedAPL": "", "closedSAP": true, "closedPKMS": true, "carrier": "", "schedPickup": "", "arrivedOnTime": "Yes", "comments": "arrived on time \u2026 per inventory 20kg short .. Pending Ronnie to load. Load corrected, begin load @ "}, {"giDate": "2026-08-05", "stoIFF": 924347, "customer": "Danisco USA", "incoterms": 151, "docType": "", "tot": "", "cevaRef": "0081177585", "hu": "", "shipmentNum": 571910, "poIFF": "", "poCustomer": "IFF/SUPNUG570/JAP", "pkmsStatus": "90 Invoiced", "doorLane": "OBPCL02", "apl": "", "addedAPL": "", "closedSAP": true, "closedPKMS": false, "carrier": "FedEx", "schedPickup": "NA", "arrivedOnTime": "", "comments": "20kg short"}, {"giDate": "2026-08-07", "stoIFF": 919802, "customer": "", "incoterms": 142, "docType": "", "tot": "", "cevaRef": "0081177620", "hu": "", "shipmentNum": "-", "poIFF": "", "poCustomer": 3787709, "pkmsStatus": "90 Invoiced", "doorLane": "OBSTG84", "apl": "", "addedAPL": "", "closedSAP": true, "closedPKMS": true, "carrier": "", "schedPickup": "", "arrivedOnTime": "", "comments": ""}, {"giDate": "2026-08-06", "stoIFF": 924510, "customer": "55375273 -JFB Technical Center", "incoterms": 152, "docType": "", "tot": "", "cevaRef": "0081177619", "hu": "", "shipmentNum": 571916, "poIFF": "", "poCustomer": 13307676, "pkmsStatus": "70 Loaded", "doorLane": "OBPCL01", "apl": "", "addedAPL": "", "closedSAP": true, "closedPKMS": false, "carrier": "FedEx", "schedPickup": "", "arrivedOnTime": "", "comments": ""}, {"giDate": "2026-08-04", "stoIFF": "921879", "customer": "55034085-General Mills Operations LLC", "incoterms": 142, "docType": "", "tot": "", "cevaRef": "0081177394", "hu": "", "shipmentNum": "-", "poIFF": "", "poCustomer": "55034085", "pkmsStatus": "90 Invoiced", "doorLane": "OBSTG81", "apl": "", "addedAPL": "", "closedSAP": true, "closedPKMS": true, "carrier": "CEEG", "schedPickup": "2026-08-05", "arrivedOnTime": "Yes", "comments": ""}, {"giDate": "2026-08-04", "stoIFF": "921176", "customer": "55034085-General Mills Operations LLC", "incoterms": 142, "docType": "", "tot": "", "cevaRef": "0081177520", "hu": "", "shipmentNum": "-", "poIFF": "", "poCustomer": "55034085", "pkmsStatus": "90 Invoiced", "doorLane": "OBSTG78", "apl": "", "addedAPL": "", "closedSAP": true, "closedPKMS": true, "carrier": "CEEG", "schedPickup": "2026-08-05", "arrivedOnTime": "Yes", "comments": ""}, {"giDate": "2026-08-08", "stoIFF": "918199", "customer": "55393743-Kellanova USA", "incoterms": 152, "docType": "", "tot": "", "cevaRef": "0081177183", "hu": "", "shipmentNum": 571731, "poIFF": "", "poCustomer": "55393743", "pkmsStatus": "70 Loaded", "doorLane": "OBSTG76", "apl": "APL Req'd", "addedAPL": true, "closedSAP": false, "closedPKMS": false, "carrier": "", "schedPickup": "", "arrivedOnTime": "", "comments": ""}, {"giDate": "2026-08-10", "stoIFF": 922918, "customer": "55387853-Nellson Nutraceutical LLC", "incoterms": 142, "docType": "ZOR", "tot": "", "cevaRef": "0081177679", "hu": "", "shipmentNum": "-", "poIFF": "", "poCustomer": "2219454-OP-6001", "pkmsStatus": "20 Printed", "doorLane": "OVRFL08", "apl": "", "addedAPL": false, "closedSAP": false, "closedPKMS": false, "carrier": "", "schedPickup": "2026-08-11", "arrivedOnTime": "", "comments": ""}, {"giDate": "2026-08-10", "stoIFF": 922928, "customer": "55387853-Nellson Nutraceutical LLC", "incoterms": 142, "docType": "ZOR", "tot": "", "cevaRef": "0081177697", "hu": "", "shipmentNum": "-", "poIFF": "", "poCustomer": "2219458-OP-6001", "pkmsStatus": "70 Loaded", "doorLane": "OVRFL09", "apl": "", "addedAPL": "", "closedSAP": false, "closedPKMS": false, "carrier": "", "schedPickup": "", "arrivedOnTime": "", "comments": ""}, {"giDate": "2026-08-10", "stoIFF": 923482, "customer": "55395403-Nellson Nutraceutical LLC", "incoterms": 142, "docType": "ZOR", "tot": "", "cevaRef": "0081177698", "hu": "", "shipmentNum": "-", "poIFF": "", "poCustomer": "2220192-OP-6001", "pkmsStatus": "70 Loaded", "doorLane": "OVRFL10", "apl": "", "addedAPL": "", "closedSAP": false, "closedPKMS": false, "carrier": "", "schedPickup": "", "arrivedOnTime": "", "comments": ""}, {"giDate": "2026-07-28", "stoIFF": "923844", "customer": "97002035-Danisco USA Inc.", "incoterms": 151, "docType": "ZIC", "tot": "", "cevaRef": "0081177131", "hu": "", "shipmentNum": 571687, "poIFF": "", "poCustomer": "97002035", "pkmsStatus": "90 Invoiced", "doorLane": "OBSTG77", "apl": "", "addedAPL": "", "closedSAP": true, "closedPKMS": true, "carrier": "FedEx", "schedPickup": "NA", "arrivedOnTime": "", "comments": ""}, {"giDate": "2026-08-12", "stoIFF": 918393, "customer": "Youngwood facility", "incoterms": 152, "docType": "ZOR", "tot": 34, "cevaRef": "0081178014", "hu": "694761", "shipmentNum": 572070, "poIFF": "", "poCustomer": "", "pkmsStatus": "10 Released", "doorLane": "", "apl": "APL Req'd", "addedAPL": "", "closedSAP": false, "closedPKMS": false, "carrier": "", "schedPickup": "", "arrivedOnTime": "", "comments": "Insufficient qty"}, {"giDate": "2026-08-12", "stoIFF": 920877, "customer": "General Mills Operations LLC", "incoterms": 142, "docType": "ZOR", "tot": 60, "cevaRef": "0081178015", "hu": "-", "shipmentNum": "-", "poIFF": "", "poCustomer": "", "pkmsStatus": "20 Printed", "doorLane": "OBSTG83", "apl": "", "addedAPL": "", "closedSAP": false, "closedPKMS": false, "carrier": "", "schedPickup": "", "arrivedOnTime": "", "comments": ""}, {"giDate": "2026-08-12", "stoIFF": 921882, "customer": "General Mills Operations LLC", "incoterms": 142, "docType": "ZOR", "tot": 60, "cevaRef": "0081178016", "hu": "-", "shipmentNum": "-", "poIFF": "", "poCustomer": "", "pkmsStatus": "35 Picking", "doorLane": "OBSTG80", "apl": "", "addedAPL": "", "closedSAP": false, "closedPKMS": false, "carrier": "", "schedPickup": "", "arrivedOnTime": "", "comments": ""}, {"giDate": "2026-08-12", "stoIFF": 923479, "customer": "Nellson Nutraceutical LLC", "incoterms": 142, "docType": "ZOR", "tot": 795, "cevaRef": "0081178017", "hu": "-", "shipmentNum": "-", "poIFF": "", "poCustomer": "", "pkmsStatus": "70 Loaded", "doorLane": "OBSTG79", "apl": "", "addedAPL": "", "closedSAP": false, "closedPKMS": false, "carrier": "SPOT", "schedPickup": "2026-08-14", "arrivedOnTime": "", "comments": ""}, {"giDate": "2026-08-12", "stoIFF": 923480, "customer": "Nellson Nutraceutical LLC", "incoterms": 142, "docType": "ZOR", "tot": 795, "cevaRef": "0081178019", "hu": "-", "shipmentNum": "-", "poIFF": "", "poCustomer": "", "pkmsStatus": "20 Printed", "doorLane": "OBSTG84", "apl": "", "addedAPL": "", "closedSAP": false, "closedPKMS": false, "carrier": "", "schedPickup": "", "arrivedOnTime": "", "comments": ""}, {"giDate": "2026-08-12", "stoIFF": 921654, "customer": "Youngwood facility", "incoterms": 152, "docType": "ZOR", "tot": 18, "cevaRef": "0081178021", "hu": "", "shipmentNum": "", "poIFF": "", "poCustomer": "", "pkmsStatus": "10 Released", "doorLane": "", "apl": "APL Req'd", "addedAPL": "", "closedSAP": false, "closedPKMS": false, "carrier": "", "schedPickup": "", "arrivedOnTime": "", "comments": "Insufficient qty"}, {"giDate": "2026-08-13", "stoIFF": 921998, "customer": "Nellson Nutraceutical LLC", "incoterms": 142, "docType": "ZOR", "tot": 795, "cevaRef": "0081178029", "hu": "-", "shipmentNum": "-", "poIFF": "", "poCustomer": "", "pkmsStatus": "20 Printed", "doorLane": "OBSTG81", "apl": "", "addedAPL": "", "closedSAP": false, "closedPKMS": false, "carrier": "", "schedPickup": "", "arrivedOnTime": "", "comments": ""}, {"giDate": "2026-08-13", "stoIFF": 922000, "customer": "Nellson Nutraceutical LLC", "incoterms": 142, "docType": "ZOR", "tot": 795, "cevaRef": "0081178030", "hu": "-", "shipmentNum": "-", "poIFF": "", "poCustomer": "", "pkmsStatus": "20 Printed", "doorLane": "OBSTG85", "apl": "", "addedAPL": "", "closedSAP": false, "closedPKMS": false, "carrier": "", "schedPickup": "", "arrivedOnTime": "", "comments": ""}, {"giDate": "2026-08-10", "stoIFF": 922780, "customer": "Nellson Nutraceutical LLC", "incoterms": 142, "docType": "ZOR", "tot": 795, "cevaRef": "0081178032", "hu": "-", "shipmentNum": "-", "poIFF": "", "poCustomer": "", "pkmsStatus": "70 Loaded", "doorLane": "OBSTG76", "apl": "", "addedAPL": "", "closedSAP": false, "closedPKMS": false, "carrier": "SPOT", "schedPickup": "2026-08-11", "arrivedOnTime": "", "comments": ""}, {"giDate": "2026-08-10", "stoIFF": 923748, "customer": "Nellson Nutraceutical LLC", "incoterms": 142, "docType": "ZOR", "tot": 47, "cevaRef": "0081178035", "hu": "-", "shipmentNum": "-", "poIFF": "", "poCustomer": "", "pkmsStatus": "40 Packed", "doorLane": "OBSTG77", "apl": "", "addedAPL": "", "closedSAP": false, "closedPKMS": false, "carrier": "", "schedPickup": "", "arrivedOnTime": "", "comments": ""}, {"giDate": "2026-08-14", "stoIFF": 919801, "customer": "Tennessee Gluten Free Pla", "incoterms": 142, "docType": "ZOR", "tot": 53, "cevaRef": "0081178043", "hu": "", "shipmentNum": "", "poIFF": "", "poCustomer": "", "pkmsStatus": "20 Printed", "doorLane": "", "apl": "", "addedAPL": "", "closedSAP": false, "closedPKMS": false, "carrier": "", "schedPickup": "", "arrivedOnTime": "", "comments": "One pallet short due to damage - take from 45"}, {"giDate": "2026-08-14", "stoIFF": 921880, "customer": "General Mills Operations LLC", "incoterms": 142, "docType": "ZOR", "tot": 60, "cevaRef": "0081178049", "hu": "-", "shipmentNum": "-", "poIFF": "", "poCustomer": "", "pkmsStatus": "10 Released", "doorLane": "", "apl": "", "addedAPL": "", "closedSAP": false, "closedPKMS": false, "carrier": "", "schedPickup": "", "arrivedOnTime": "", "comments": "Insufficient qty"}]
 
 var DEFAULT_STATUS_OPTIONS = [
-  {code:"10", label:"10 \u00b7 Released from SAP", stage:"printed"},
-  {code:"20", label:"20 \u00b7 Printed",            stage:"printed"},
-  {code:"35", label:"35 \u00b7 Partially Picked",   stage:"picking"},
-  {code:"40", label:"40 \u00b7 Picked Complete",    stage:"packed"},
-  {code:"70", label:"70 \u00b7 Loaded & Staged",    stage:"loaded"},
-  {code:"90", label:"90 \u00b7 PGI\u2019d & Loaded",   stage:"invoiced"},
-  {code:"",   label:"#N/A",                     stage:"error"}
+  {code:"10", label:"10 Released", stage:"printed"},
+  {code:"20", label:"20 Printed",  stage:"printed"},
+  {code:"35", label:"35 Picking",  stage:"picking"},
+  {code:"40", label:"40 Packed",   stage:"packed"},
+  {code:"70", label:"70 Loaded",   stage:"loaded"},
+  {code:"90", label:"90 Invoiced", stage:"invoiced"},
+  {code:"",   label:"#N/A",        stage:"error"}
 ];
 
 var SAP_FIELDS = [
@@ -850,7 +906,8 @@ function startPolling(){
   setInterval(function(){
     var modalOpen = !document.getElementById("orderModalOverlay").classList.contains("hidden") ||
                     !document.getElementById("settingsModalOverlay").classList.contains("hidden") ||
-                    !document.getElementById("pkmsModalOverlay").classList.contains("hidden");
+                    !document.getElementById("pkmsModalOverlay").classList.contains("hidden") ||
+                    !document.getElementById("shiptifyModalOverlay").classList.contains("hidden");
     if (modalOpen) return;
     if (!syncConfigured()) return;
     syncPullAll(false).then(function(ok){ if (ok) renderAll(); });
@@ -1477,9 +1534,7 @@ function saveOrderFromModal(){
   showToast("Order saved.");
 }
 
-/* ===================== DATA IMPORT (PKMS / Shiptify, CSV or XLSX) ===================== */
-
-var IMPORT_UPDATE_FIELDS = ALL_FIELDS.filter(function(f){ return f.type !== "bool"; });
+/* ===================== DATA IMPORT: shared parsing utilities ===================== */
 
 function parseCsv(text){
   var rows = [];
@@ -1550,23 +1605,6 @@ function guessColumn(headers, candidates){
   return -1;
 }
 
-var MATCH_COL_CANDIDATES = ["delivery","iff sto","sto","document","shipment #","shipment","slot name","ceva reference","phpctl"];
-
-var VALUE_COL_CANDIDATES = {
-  pkmsStatus: ["pkms status","pickticket status","phpstf","status"],
-  carrier: ["carrier"],
-  schedPickup: ["planned date","scheduled p/u date","scheduled pickup date","booking confirmation"],
-  giDate: ["gi date","planned gi date"],
-  doorLane: ["door","lane","slot"],
-  comments: ["comment","notes","incident type"]
-};
-
-function guessValueColumn(headers, fieldKey){
-  var candidates = VALUE_COL_CANDIDATES[fieldKey] || [fieldKey.toLowerCase()];
-  var idx = guessColumn(headers, candidates);
-  return idx;
-}
-
 function normalizeKey(v){
   return (v == null ? "" : String(v)).replace(/^0+/, "").trim().toLowerCase();
 }
@@ -1576,6 +1614,9 @@ function extractNumericTokens(s){
   return m || [];
 }
 
+// Used by the Shiptify upload: Slot Name can hold either an STO or a delivery number
+// (Ceva Ref), sometimes buried in messier text, so this checks multiple fields and
+// pulls out embedded numeric runs to match against.
 function findOrderForImportKey(key){
   if (!key) return null;
   var raw = String(key).trim();
@@ -1589,6 +1630,18 @@ function findOrderForImportKey(key){
     for (var c=0;c<candidates.length;c++){
       if (candidates[c] && ofields.indexOf(candidates[c]) !== -1) return o;
     }
+  }
+  return null;
+}
+
+// Used by the PKMS upload: Pickticket Control Number maps specifically to Ceva Reference #
+// (per the defined workflow), so this matches that one field only rather than guessing.
+function findOrderByCevaRef(key){
+  if (!key) return null;
+  var nk = normalizeKey(key);
+  if (!nk) return null;
+  for (var i=0;i<STATE.orders.length;i++){
+    if (normalizeKey(STATE.orders[i].cevaRef) === nk) return STATE.orders[i];
   }
   return null;
 }
@@ -1608,6 +1661,9 @@ function normalizeDateString(s){
   return s;
 }
 
+// Resolves a raw PKMS status code (e.g. "70") to its configured combination label
+// (e.g. "70 Loaded") using Settings > PKMS Statuses. Falls back to the raw value if
+// the code isn't recognized, rather than silently dropping it.
 function resolveImportStatusValue(rawVal){
   var trimmed = String(rawVal || "").trim();
   if (!trimmed) return "";
@@ -1621,53 +1677,9 @@ function resolveImportStatusValue(rawVal){
   return trimmed;
 }
 
-function transformImportValue(rawVal, fieldKey){
-  var trimmed = String(rawVal === null || rawVal === undefined ? "" : rawVal).trim();
-  if (!trimmed) return "";
-  if (fieldKey === "pkmsStatus") return resolveImportStatusValue(trimmed);
-  if (fieldKey === "giDate" || fieldKey === "schedPickup") return normalizeDateString(trimmed);
-  return trimmed;
-}
-
-function populateImportFieldSelectors(){
-  var updSel = document.getElementById("pkmsUpdateField");
-  updSel.innerHTML = IMPORT_UPDATE_FIELDS.map(function(f){
-    return '<option value="' + f.k + '" ' + (f.k === "pkmsStatus" ? "selected" : "") + '>' + esc(f.label) + '</option>';
-  }).join("");
-}
-
-function currentImportHeaders(){
-  var headerIdx = parseInt(document.getElementById("pkmsHeaderRow").value, 10);
-  var rows = STATE.pkmsAllRows || [];
-  return {headerIdx: headerIdx, headers: rows[headerIdx] || [], dataRows: rows.slice(headerIdx + 1)};
-}
-
-function refreshImportColumnSelectors(){
-  var ctx = currentImportHeaders();
-  var headers = ctx.headers;
-
-  var matchSel = document.getElementById("pkmsMatchCol");
-  var valueSel = document.getElementById("pkmsStatusCol");
-  matchSel.innerHTML = headers.map(function(h,idx){ return '<option value="'+idx+'">' + esc(h) + '</option>'; }).join("");
-  valueSel.innerHTML = headers.map(function(h,idx){ return '<option value="'+idx+'">' + esc(h) + '</option>'; }).join("");
-
-  var matchGuess = guessColumn(headers, MATCH_COL_CANDIDATES);
-  matchSel.value = matchGuess !== -1 ? matchGuess : 0;
-
-  var fieldKey = document.getElementById("pkmsUpdateField").value || "pkmsStatus";
-  var valueGuess = guessValueColumn(headers, fieldKey);
-  valueSel.value = valueGuess !== -1 ? valueGuess : (headers.length > 1 ? 1 : 0);
-
-  var field = ALL_FIELDS.filter(function(f){ return f.k === fieldKey; })[0];
-  document.getElementById("pkmsDateHint").style.display = (field && field.type === "date") ? "block" : "none";
-
-  renderPkmsPreview();
-}
-
-function handlePkmsFile(file){
+function readUploadFile(file, onRows){
   var isXlsx = /\.xlsx$/i.test(file.name);
   var reader = new FileReader();
-
   reader.onload = function(e){
     var rows;
     try{
@@ -1681,86 +1693,38 @@ function handlePkmsFile(file){
       showToast("That file appears to be empty.", true);
       return;
     }
-
-    STATE.pkmsAllRows = rows;
-    document.getElementById("pkmsFileName").textContent = file.name + " — " + rows.length + " rows";
-    document.getElementById("pkmsMapSection").style.display = "block";
-
-    var guessIdx = guessHeaderRowIndex(rows);
-    var headerRowSel = document.getElementById("pkmsHeaderRow");
-    var previewCount = Math.min(10, rows.length);
-    var opts = [];
-    for (var i=0;i<previewCount;i++){
-      var preview = rows[i].slice(0,4).join(" | ").slice(0,60);
-      opts.push('<option value="'+i+'" ' + (i===guessIdx ? "selected" : "") + '>Row ' + (i+1) + ': ' + esc(preview) + '</option>');
-    }
-    headerRowSel.innerHTML = opts.join("");
-
-    populateImportFieldSelectors();
-    refreshImportColumnSelectors();
+    onRows(rows);
   };
-
   if (isXlsx) reader.readAsArrayBuffer(file);
   else reader.readAsText(file);
 }
 
-function renderPkmsPreview(){
-  var ctx = currentImportHeaders();
-  var matchIdx = parseInt(document.getElementById("pkmsMatchCol").value, 10);
-  var valueIdx = parseInt(document.getElementById("pkmsStatusCol").value, 10);
-  var fieldKey = document.getElementById("pkmsUpdateField").value || "pkmsStatus";
-  var field = ALL_FIELDS.filter(function(f){ return f.k === fieldKey; })[0];
-  var rows = ctx.dataRows;
-
-  var matchedCount = 0, unmatchedCount = 0;
-  var previewRows = rows.map(function(r){
-    var keyVal = r[matchIdx] || "";
-    var rawVal = r[valueIdx] || "";
-    var order = findOrderForImportKey(keyVal);
-    var resolved = transformImportValue(rawVal, fieldKey);
-    if (order) matchedCount++; else unmatchedCount++;
-    return {key: keyVal, raw: rawVal, resolved: resolved, order: order};
-  });
-
-  var summary = document.getElementById("pkmsSummary");
-  summary.innerHTML =
-    '<span><b>' + matchedCount + '</b> matched</span>' +
-    '<span><b>' + unmatchedCount + '</b> unmatched (ignored)</span>' +
-    '<span><b>' + rows.length + '</b> total rows</span>' +
-    '<span>Updating <b>' + esc(field ? field.label : fieldKey) + '</b></span>';
-
-  var table = document.getElementById("pkmsPreviewTable");
-  var head = '<tr><th>Match</th><th>Key Value</th><th>New Value</th><th>Matched Order</th></tr>';
-  var body = previewRows.slice(0, 200).map(function(pr){
-    var cls = pr.order ? "matched" : "unmatched";
-    var label = pr.order ? "\u2713" : "\u2014";
-    var custName = pr.order ? (pr.order.customer || pr.order.stoIFF) : "No match";
-    return '<tr class="' + cls + '"><td>' + label + '</td><td>' + esc(pr.key) + '</td><td>' + esc(pr.resolved) + '</td><td>' + esc(custName) + '</td></tr>';
-  }).join("");
-  table.innerHTML = head + body;
-
-  document.getElementById("btnApplyPkms").disabled = matchedCount === 0;
-  STATE.pkmsPreviewRows = previewRows;
-  STATE.pkmsImportFieldKey = fieldKey;
+function populateHeaderRowSelect(selectEl, rows, guessIdx){
+  var previewCount = Math.min(10, rows.length);
+  var opts = [];
+  for (var i=0;i<previewCount;i++){
+    var preview = rows[i].slice(0,4).join(" | ").slice(0,60);
+    opts.push('<option value="'+i+'" ' + (i===guessIdx ? "selected" : "") + '>Row ' + (i+1) + ': ' + esc(preview) + '</option>');
+  }
+  selectEl.innerHTML = opts.join("");
 }
 
-function applyPkmsImport(){
-  var rows = STATE.pkmsPreviewRows || [];
-  var fieldKey = STATE.pkmsImportFieldKey || "pkmsStatus";
-  var applied = 0;
-  rows.forEach(function(pr){
-    if (pr.order && pr.resolved !== ""){
-      pr.order[fieldKey] = pr.resolved;
-      applied++;
-    }
-  });
-  if (applied){
-    saveData();
-    rows.forEach(function(pr){ if (pr.order && pr.resolved !== "") syncPushOrder(pr.order); });
-    renderAll();
-  }
-  showToast(applied + " order" + (applied === 1 ? "" : "s") + " updated from import.");
-  closePkmsModal();
+function populateColumnSelect(selectEl, headers, candidates){
+  selectEl.innerHTML = headers.map(function(h,idx){ return '<option value="'+idx+'">' + esc(h) + '</option>'; }).join("");
+  var guess = guessColumn(headers, candidates);
+  selectEl.value = guess !== -1 ? guess : 0;
+}
+
+/* ===================== PKMS ORDER STATUS UPLOAD ===================== */
+/* Matches Pickticket Control Number -> Ceva Reference #, updates PKMS Status using the
+   configured code -> combination label (e.g. "70" -> "70 Loaded"). Everything else on
+   the order is left untouched — manual per-line edits still work exactly as before. */
+
+var PKMS_MATCH_CANDIDATES = ["pickticket control number","phpctl","delivery number","delivery","ceva reference"];
+var PKMS_STATUS_CANDIDATES = ["pickticket status","phpstf","status"];
+
+function openPkmsUploadModal(){
+  document.getElementById("pkmsModalOverlay").classList.remove("hidden");
 }
 
 function closePkmsModal(){
@@ -1770,7 +1734,244 @@ function closePkmsModal(){
   document.getElementById("pkmsFileInput").value = "";
   STATE.pkmsAllRows = null;
   STATE.pkmsPreviewRows = null;
-  STATE.pkmsImportFieldKey = null;
+}
+
+function handlePkmsFile(file){
+  readUploadFile(file, function(rows){
+    STATE.pkmsAllRows = rows;
+    document.getElementById("pkmsFileName").textContent = file.name + " — " + rows.length + " rows";
+    document.getElementById("pkmsMapSection").style.display = "block";
+
+    var guessIdx = guessHeaderRowIndex(rows);
+    populateHeaderRowSelect(document.getElementById("pkmsHeaderRow"), rows, guessIdx);
+    refreshPkmsColumns();
+  });
+}
+
+function currentPkmsHeaders(){
+  var headerIdx = parseInt(document.getElementById("pkmsHeaderRow").value, 10);
+  var rows = STATE.pkmsAllRows || [];
+  return {headers: rows[headerIdx] || [], dataRows: rows.slice(headerIdx + 1)};
+}
+
+function refreshPkmsColumns(){
+  var ctx = currentPkmsHeaders();
+  populateColumnSelect(document.getElementById("pkmsMatchCol"), ctx.headers, PKMS_MATCH_CANDIDATES);
+  populateColumnSelect(document.getElementById("pkmsStatusCol"), ctx.headers, PKMS_STATUS_CANDIDATES);
+  renderPkmsPreview();
+}
+
+var STATUS_STAGE_RANK = {none:0, printed:1, picking:2, packed:3, loaded:4, invoiced:5};
+
+function isStatusRegression(oldStatus, newStatus){
+  var oldStage = normalizeStatus(oldStatus), newStage = normalizeStatus(newStatus);
+  if (!(oldStage in STATUS_STAGE_RANK) || !(newStage in STATUS_STAGE_RANK)) return false; // errors/unknowns: don't flag
+  if (oldStage === "none") return false; // nothing to regress from
+  return STATUS_STAGE_RANK[newStage] < STATUS_STAGE_RANK[oldStage];
+}
+
+function renderPkmsPreview(){
+  var ctx = currentPkmsHeaders();
+  var matchIdx = parseInt(document.getElementById("pkmsMatchCol").value, 10);
+  var statusIdx = parseInt(document.getElementById("pkmsStatusCol").value, 10);
+  var rows = ctx.dataRows;
+
+  var matchedCount = 0, unmatchedCount = 0, unchangedCount = 0, regressionCount = 0;
+  var previewRows = rows.map(function(r){
+    var keyVal = r[matchIdx] || "";
+    var rawStatus = r[statusIdx] || "";
+    var order = findOrderByCevaRef(keyVal);
+    var resolved = resolveImportStatusValue(rawStatus);
+    var oldVal = order ? (order.pkmsStatus || "") : "";
+    var unchanged = order && resolved === oldVal;
+    var regression = order && !unchanged && isStatusRegression(oldVal, resolved);
+    if (order) matchedCount++; else unmatchedCount++;
+    if (unchanged) unchangedCount++;
+    if (regression) regressionCount++;
+    return {key: keyVal, oldVal: oldVal, resolved: resolved, order: order, unchanged: unchanged, regression: regression};
+  });
+
+  var summary = document.getElementById("pkmsSummary");
+  summary.innerHTML =
+    '<span><b>' + matchedCount + '</b> matched</span>' +
+    '<span><b>' + (matchedCount - unchangedCount) + '</b> will change</span>' +
+    '<span><b>' + unchangedCount + '</b> already up to date</span>' +
+    '<span><b>' + unmatchedCount + '</b> unmatched (ignored)</span>' +
+    (regressionCount ? '<span style="color:var(--red);"><b>\u26a0 ' + regressionCount + '</b> look like a status going backward \u2014 check these</span>' : '');
+
+  var table = document.getElementById("pkmsPreviewTable");
+  var head = '<tr><th>Match</th><th>Ceva Reference #</th><th>Current Status</th><th>New Status</th><th>Matched Order</th></tr>';
+  var body = previewRows.slice(0, 300).map(function(pr){
+    var cls = pr.order ? (pr.regression ? "matched regression" : "matched") : "unmatched";
+    if (pr.unchanged) cls += " unchanged-row";
+    var label = pr.order ? (pr.regression ? "\u26a0" : "\u2713") : "\u2014";
+    var custName = pr.order ? (pr.order.customer || pr.order.stoIFF) : "No match";
+    var newValCell = pr.unchanged ? esc(pr.resolved) + ' <span class="unchanged-tag">(no change)</span>' : '<b>' + esc(pr.resolved) + '</b>';
+    return '<tr class="' + cls + '"><td>' + label + '</td><td>' + esc(pr.key) + '</td><td>' + esc(pr.oldVal || "\u2014") + '</td><td>' + newValCell + '</td><td>' + esc(custName) + '</td></tr>';
+  }).join("");
+  table.innerHTML = head + body;
+
+  document.getElementById("btnApplyPkms").disabled = matchedCount === 0;
+  STATE.pkmsPreviewRows = previewRows;
+}
+
+function applyPkmsImport(){
+  var rows = STATE.pkmsPreviewRows || [];
+  var changing = rows.filter(function(pr){ return pr.order && pr.resolved !== "" && !pr.unchanged; });
+  var regressions = changing.filter(function(pr){ return pr.regression; });
+
+  if (!changing.length){
+    showToast("Nothing to apply — matched orders are already up to date.");
+    closePkmsModal();
+    return;
+  }
+
+  var msg = "This will update PKMS Status on " + changing.length + " order" + (changing.length === 1 ? "" : "s") + ".";
+  if (regressions.length){
+    msg += "\n\n\u26a0 " + regressions.length + " of those look like they're moving BACKWARD (e.g. Invoiced \u2192 Picking) \u2014 double check those rows in the preview before continuing.";
+  }
+  msg += "\n\nA backup of the current data will download automatically first, in case anything needs to be undone.\n\nContinue?";
+
+  if (!window.confirm(msg)) return;
+
+  backupJson();
+
+  var applied = 0;
+  changing.forEach(function(pr){
+    pr.order.pkmsStatus = pr.resolved;
+    applied++;
+  });
+  if (applied){
+    saveData();
+    changing.forEach(function(pr){ syncPushOrder(pr.order); });
+    renderAll();
+  }
+  showToast(applied + " order" + (applied === 1 ? "" : "s") + " updated from PKMS Order Status Upload. Backup downloaded.");
+  closePkmsModal();
+}
+
+/* ===================== SHIPTIFY UPLOAD ===================== */
+/* Matches Slot Name -> STO or Ceva Reference #, updates Carrier and Scheduled Pickup
+   Date together per matched row. Nothing else on the order changes. */
+
+var SHIPTIFY_MATCH_CANDIDATES = ["slot name","sto","delivery"];
+var SHIPTIFY_CARRIER_CANDIDATES = ["carrier"];
+var SHIPTIFY_DATE_CANDIDATES = ["planned date","scheduled pickup date","scheduled p/u date"];
+
+function openShiptifyUploadModal(){
+  document.getElementById("shiptifyModalOverlay").classList.remove("hidden");
+}
+
+function closeShiptifyModal(){
+  document.getElementById("shiptifyModalOverlay").classList.add("hidden");
+  document.getElementById("shiptifyMapSection").style.display = "none";
+  document.getElementById("shiptifyFileName").textContent = "No file selected";
+  document.getElementById("shiptifyFileInput").value = "";
+  STATE.shiptifyAllRows = null;
+  STATE.shiptifyPreviewRows = null;
+}
+
+function handleShiptifyFile(file){
+  readUploadFile(file, function(rows){
+    STATE.shiptifyAllRows = rows;
+    document.getElementById("shiptifyFileName").textContent = file.name + " — " + rows.length + " rows";
+    document.getElementById("shiptifyMapSection").style.display = "block";
+
+    var guessIdx = guessHeaderRowIndex(rows);
+    populateHeaderRowSelect(document.getElementById("shiptifyHeaderRow"), rows, guessIdx);
+    refreshShiptifyColumns();
+  });
+}
+
+function currentShiptifyHeaders(){
+  var headerIdx = parseInt(document.getElementById("shiptifyHeaderRow").value, 10);
+  var rows = STATE.shiptifyAllRows || [];
+  return {headers: rows[headerIdx] || [], dataRows: rows.slice(headerIdx + 1)};
+}
+
+function refreshShiptifyColumns(){
+  var ctx = currentShiptifyHeaders();
+  populateColumnSelect(document.getElementById("shiptifyMatchCol"), ctx.headers, SHIPTIFY_MATCH_CANDIDATES);
+  populateColumnSelect(document.getElementById("shiptifyCarrierCol"), ctx.headers, SHIPTIFY_CARRIER_CANDIDATES);
+  populateColumnSelect(document.getElementById("shiptifyDateCol"), ctx.headers, SHIPTIFY_DATE_CANDIDATES);
+  renderShiptifyPreview();
+}
+
+function renderShiptifyPreview(){
+  var ctx = currentShiptifyHeaders();
+  var matchIdx = parseInt(document.getElementById("shiptifyMatchCol").value, 10);
+  var carrierIdx = parseInt(document.getElementById("shiptifyCarrierCol").value, 10);
+  var dateIdx = parseInt(document.getElementById("shiptifyDateCol").value, 10);
+  var rows = ctx.dataRows;
+
+  var matchedCount = 0, unmatchedCount = 0, unchangedCount = 0;
+  var previewRows = rows.map(function(r){
+    var keyVal = r[matchIdx] || "";
+    var carrierVal = String(r[carrierIdx] || "").trim();
+    var dateVal = normalizeDateString(String(r[dateIdx] || "").trim());
+    var order = findOrderForImportKey(keyVal);
+    var oldCarrier = order ? (order.carrier || "") : "";
+    var oldDate = order ? (order.schedPickup || "") : "";
+    var carrierChanges = order && carrierVal !== "" && carrierVal !== oldCarrier;
+    var dateChanges = order && dateVal !== "" && dateVal !== oldDate;
+    var unchanged = order && !carrierChanges && !dateChanges;
+    if (order) matchedCount++; else unmatchedCount++;
+    if (unchanged) unchangedCount++;
+    return {key: keyVal, carrier: carrierVal, schedPickup: dateVal, oldCarrier: oldCarrier, oldSchedPickup: oldDate, order: order, unchanged: unchanged, carrierChanges: carrierChanges, dateChanges: dateChanges};
+  });
+
+  var summary = document.getElementById("shiptifySummary");
+  summary.innerHTML =
+    '<span><b>' + matchedCount + '</b> matched</span>' +
+    '<span><b>' + (matchedCount - unchangedCount) + '</b> will change</span>' +
+    '<span><b>' + unchangedCount + '</b> already up to date</span>' +
+    '<span><b>' + unmatchedCount + '</b> unmatched (ignored)</span>';
+
+  var table = document.getElementById("shiptifyPreviewTable");
+  var head = '<tr><th>Match</th><th>Slot Name</th><th>Current Carrier</th><th>New Carrier</th><th>Current Pickup</th><th>New Pickup</th><th>Matched Order</th></tr>';
+  var body = previewRows.slice(0, 300).map(function(pr){
+    var cls = pr.order ? "matched" : "unmatched";
+    if (pr.unchanged) cls += " unchanged-row";
+    var label = pr.order ? "\u2713" : "\u2014";
+    var custName = pr.order ? (pr.order.customer || pr.order.stoIFF) : "No match";
+    var newCarrierCell = pr.carrierChanges ? '<b>' + esc(pr.carrier) + '</b>' : esc(pr.carrier || "\u2014");
+    var newDateCell = pr.dateChanges ? '<b>' + esc(pr.schedPickup) + '</b>' : esc(pr.schedPickup || "\u2014");
+    return '<tr class="' + cls + '"><td>' + label + '</td><td>' + esc(pr.key) + '</td><td>' + esc(pr.oldCarrier || "\u2014") + '</td><td>' + newCarrierCell + '</td><td>' + esc(pr.oldSchedPickup || "\u2014") + '</td><td>' + newDateCell + '</td><td>' + esc(custName) + '</td></tr>';
+  }).join("");
+  table.innerHTML = head + body;
+
+  document.getElementById("btnApplyShiptify").disabled = matchedCount === 0;
+  STATE.shiptifyPreviewRows = previewRows;
+}
+
+function applyShiptifyImport(){
+  var rows = STATE.shiptifyPreviewRows || [];
+  var changing = rows.filter(function(pr){ return pr.order && !pr.unchanged; });
+
+  if (!changing.length){
+    showToast("Nothing to apply — matched orders are already up to date.");
+    closeShiptifyModal();
+    return;
+  }
+
+  var msg = "This will update Carrier and/or Scheduled Pickup Date on " + changing.length + " order" + (changing.length === 1 ? "" : "s") + ".\n\nA backup of the current data will download automatically first, in case anything needs to be undone.\n\nContinue?";
+  if (!window.confirm(msg)) return;
+
+  backupJson();
+
+  var applied = 0;
+  changing.forEach(function(pr){
+    if (pr.carrierChanges) pr.order.carrier = pr.carrier;
+    if (pr.dateChanges) pr.order.schedPickup = pr.schedPickup;
+    applied++;
+  });
+  if (applied){
+    saveData();
+    changing.forEach(function(pr){ syncPushOrder(pr.order); });
+    renderAll();
+  }
+  showToast(applied + " order" + (applied === 1 ? "" : "s") + " updated from Shiptify Upload. Backup downloaded.");
+  closeShiptifyModal();
 }
 /* ===================== EXPORT / BACKUP ===================== */
 
@@ -2079,10 +2280,8 @@ function wireEvents(){
     e.target.value = "";
   });
 
-  // PKMS import modal
-  document.getElementById("btnImportPkms").addEventListener("click", function(){
-    document.getElementById("pkmsModalOverlay").classList.remove("hidden");
-  });
+  // PKMS Order Status Upload modal
+  document.getElementById("btnPkmsUpload").addEventListener("click", openPkmsUploadModal);
   document.getElementById("pkmsModalClose").addEventListener("click", closePkmsModal);
   document.getElementById("btnCancelPkms").addEventListener("click", closePkmsModal);
   document.getElementById("pkmsModalOverlay").addEventListener("click", function(e){
@@ -2104,11 +2303,39 @@ function wireEvents(){
   document.getElementById("pkmsFileInput").addEventListener("change", function(e){
     if (e.target.files && e.target.files[0]) handlePkmsFile(e.target.files[0]);
   });
-  document.getElementById("pkmsHeaderRow").addEventListener("change", refreshImportColumnSelectors);
-  document.getElementById("pkmsUpdateField").addEventListener("change", refreshImportColumnSelectors);
+  document.getElementById("pkmsHeaderRow").addEventListener("change", refreshPkmsColumns);
   document.getElementById("pkmsMatchCol").addEventListener("change", renderPkmsPreview);
   document.getElementById("pkmsStatusCol").addEventListener("change", renderPkmsPreview);
   document.getElementById("btnApplyPkms").addEventListener("click", applyPkmsImport);
+
+  // Shiptify Upload modal
+  document.getElementById("btnShiptifyUpload").addEventListener("click", openShiptifyUploadModal);
+  document.getElementById("shiptifyModalClose").addEventListener("click", closeShiptifyModal);
+  document.getElementById("btnCancelShiptify").addEventListener("click", closeShiptifyModal);
+  document.getElementById("shiptifyModalOverlay").addEventListener("click", function(e){
+    if (e.target === this) closeShiptifyModal();
+  });
+  document.getElementById("shiptifyDropzone").addEventListener("click", function(){
+    document.getElementById("shiptifyFileInput").click();
+  });
+  document.getElementById("shiptifyDropzone").addEventListener("dragover", function(e){
+    e.preventDefault(); this.classList.add("drag");
+  });
+  document.getElementById("shiptifyDropzone").addEventListener("dragleave", function(){
+    this.classList.remove("drag");
+  });
+  document.getElementById("shiptifyDropzone").addEventListener("drop", function(e){
+    e.preventDefault(); this.classList.remove("drag");
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) handleShiptifyFile(e.dataTransfer.files[0]);
+  });
+  document.getElementById("shiptifyFileInput").addEventListener("change", function(e){
+    if (e.target.files && e.target.files[0]) handleShiptifyFile(e.target.files[0]);
+  });
+  document.getElementById("shiptifyHeaderRow").addEventListener("change", refreshShiptifyColumns);
+  document.getElementById("shiptifyMatchCol").addEventListener("change", renderShiptifyPreview);
+  document.getElementById("shiptifyCarrierCol").addEventListener("change", renderShiptifyPreview);
+  document.getElementById("shiptifyDateCol").addEventListener("change", renderShiptifyPreview);
+  document.getElementById("btnApplyShiptify").addEventListener("click", applyShiptifyImport);
 
   // Settings modal
   document.getElementById("btnSettings").addEventListener("click", openSettingsModal);
