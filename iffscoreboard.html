@@ -1005,6 +1005,14 @@ function syncFetch(action, payload){
 
 function syncPullAll(showErrors){
   if (!syncConfigured()) { updateSyncPill(); return Promise.resolve(false); }
+  if (syncHasPendingWrites()){
+    // A bulk import (or any recent edit) is still pushing orders to the Sheet. Pulling now
+    // would overwrite those brand-new local orders with the Sheet's still-stale data —
+    // which is exactly what made imported orders "flash and disappear." Skip this pull;
+    // polling will try again on the next tick once the pending writes have finished.
+    if (showErrors) showToast("Still syncing recent changes to Google Sheet — try again in a moment.");
+    return Promise.resolve(false);
+  }
   STATE.sync.syncing = true; updateSyncPill();
   return syncFetch("getAll").then(function(data){
     STATE.sync.syncing = false;
@@ -1073,6 +1081,10 @@ function enqueueSyncTask(taskFn){
   });
 }
 
+function syncHasPendingWrites(){
+  return syncQueue.length > 0 || syncQueueRunning;
+}
+
 function isLockTimeoutError(err){
   return !!(err && /lock timeout/i.test(err.message || ""));
 }
@@ -1139,6 +1151,7 @@ function startPolling(){
                     !document.getElementById("shiptifyModalOverlay").classList.contains("hidden");
     if (modalOpen) return;
     if (!syncConfigured()) return;
+    if (syncHasPendingWrites()) return; // let in-flight/queued writes finish before pulling
     syncPullAll(false).then(function(ok){ if (ok) renderAll(); });
   }, SYNC_POLL_MS);
 }
