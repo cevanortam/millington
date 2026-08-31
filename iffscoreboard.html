@@ -102,6 +102,7 @@ input[type=file]{display:none;}
 .lane-card.st-invoiced{border-top-color:var(--green);}
 .lane-card.empty{background:var(--panel-alt);border-style:dashed;}
 .lane-card.unassigned{border-style:dashed;}
+.lane-card.hot-incoterm{box-shadow:0 0 0 2px var(--red) inset;}
 .lane-card .lc-head{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:9px;}
 .lane-card .lc-code{font-family:var(--disp);font-size:14px;font-weight:700;letter-spacing:0.4px;}
 .lane-card.empty .lc-code{color:var(--muted);}
@@ -109,6 +110,7 @@ input[type=file]{display:none;}
 .lane-card .lc-row .lc-label{font-family:var(--mono);font-size:8.5px;text-transform:uppercase;letter-spacing:0.4px;color:var(--muted-dim);}
 .lane-card .lc-row .lc-value{font-family:var(--sans);font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .lane-card.empty .lc-empty-msg{font-size:12px;color:var(--muted-dim);text-align:center;padding:14px 0 4px;}
+.hot-incoterm-tag{font-family:var(--mono);font-size:8.5px;font-weight:700;letter-spacing:0.4px;color:#ffb199;background:rgba(228,87,46,0.16);border:1px solid rgba(228,87,46,0.5);border-radius:5px;padding:1px 5px;margin-left:6px;white-space:nowrap;}
 
 /* ---------- Badges / status colors ---------- */
 .badge{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.3px;padding:3px 8px;border-radius:5px;border:1px solid;display:inline-block;white-space:nowrap;}
@@ -152,6 +154,8 @@ table.order-table{width:100%;border-collapse:collapse;font-size:13px;min-width:1
 .order-table tbody td{padding:8px 8px;border-bottom:1px solid var(--border-soft);font-family:var(--mono);color:var(--text);white-space:nowrap;}
 .order-table tbody tr:hover{background:rgba(255,255,255,0.02);}
 .order-table tbody tr.row-error td{background:rgba(228,87,46,0.05);}
+.order-table tbody tr.row-hot-incoterm td{background:rgba(228,87,46,0.07);}
+.order-table tbody tr.row-hot-incoterm.row-error td{background:rgba(228,87,46,0.12);}
 .order-table td.comments-cell{white-space:normal;max-width:240px;font-family:var(--sans);color:var(--muted);font-size:12.5px;}
 .order-table td .chk{width:14px;height:14px;accent-color:var(--amber);cursor:pointer;}
 .row-actions{display:flex;gap:5px;}
@@ -260,6 +264,7 @@ table.csv-table{width:100%;border-collapse:collapse;font-size:11px;font-family:v
   </div>
   <div class="topbar-right">
     <span class="pill" id="syncPill"><span class="dot"></span>—</span>
+    <button class="upload-tile" id="btnVl06oUpload"><span class="ut-icon">⇪</span><span class="ut-label">VL06O<br>Upload</span></button>
     <button class="upload-tile" id="btnPkmsUpload"><span class="ut-icon">⇪</span><span class="ut-label">PKMS Order Status<br>Upload</span></button>
     <button class="upload-tile" id="btnShiptifyUpload"><span class="ut-icon">⇪</span><span class="ut-label">Shiptify<br>Upload</span></button>
     <button class="btn ghost sm" id="btnExportCsv">⇩ Export CSV</button>
@@ -284,7 +289,7 @@ table.csv-table{width:100%;border-collapse:collapse;font-size:11px;font-family:v
 
     <div class="card">
       <h2>Staging Dashboard</h2>
-      <p class="hint">Every lane, grouped by area. Colors reflect PKMS status of the order currently assigned. Click an occupied lane to edit it, or an empty lane to assign an order to it.</p>
+      <p class="hint">Every lane, grouped by area. Colors reflect PKMS status of the order currently assigned. Orders with Incoterms 151 or 152 are outlined in red. Click an occupied lane to edit it, or an empty lane to assign an order to it.</p>
       <div class="map-legend" id="mapLegend"></div>
     </div>
 
@@ -331,7 +336,7 @@ table.csv-table{width:100%;border-collapse:collapse;font-size:11px;font-family:v
 </div>
 
 <div class="footnote">
-  Data is stored locally in this browser (no live SAP / PKMS / Shiptify connection). Use <b>Import PKMS CSV</b> to bulk-update PKMS Status from a PKMS export, and <b>Backup / Restore JSON</b> to move the board between devices or share with teammates.
+  Data is stored locally in this browser (no live SAP / PKMS / Shiptify connection). Use <b>VL06O Upload</b> to bulk-update SAP Status from a VL06O extract, <b>Import PKMS CSV</b> to bulk-update PKMS Status from a PKMS export, and <b>Backup / Restore JSON</b> to move the board between devices or share with teammates.
 </div>
 
 <!-- Toast -->
@@ -360,6 +365,68 @@ table.csv-table{width:100%;border-collapse:collapse;font-size:11px;font-family:v
       <div style="flex:1;"></div>
       <button class="btn ghost sm" id="btnCancelOrder">Cancel</button>
       <button class="btn primary sm" id="btnSaveOrder">Save Order</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== VL06O UPLOAD MODAL ===================== -->
+<div class="modal-overlay hidden" id="vl06oModalOverlay">
+  <div class="modal wide">
+    <div class="modal-head">
+      <h3>VL06O Upload</h3>
+      <button class="modal-close" id="vl06oModalClose">×</button>
+    </div>
+    <p class="hint" style="margin-bottom:12px;">Upload a VL06O extract (.csv or .xlsx). Rows are matched by Delivery against each order's Delivery Nbr. Matched orders get SAP Status set to "GI Complete" when the row has an Actual GI Date, or "Not Yet Shipped" when it doesn't — nothing else on a matched order is touched. Rows with no matching order are <b>created as new orders</b>, using Delivery → Delivery Nbr, Document → Order Nbr, Name of the ship-to party → Customer/Supplier, IncoT → Incoterms, and GI Date → Planned GI Date. Sales Document Type and TOT aren't in a VL06O extract, so those are left blank for you to fill in manually.</p>
+
+    <div class="dropzone" id="vl06oDropzone">
+      <div class="dz-title">Click to choose a CSV or XLSX file, or drag one here</div>
+      <div class="dz-sub" id="vl06oFileName">No file selected</div>
+    </div>
+    <input type="file" id="vl06oFileInput" accept=".csv,.xlsx,text/csv">
+
+    <div id="vl06oMapSection" style="display:none;">
+      <div class="csv-map-grid">
+        <div class="field">
+          <label>Header Row</label>
+          <select id="vl06oHeaderRow"></select>
+        </div>
+        <div class="field">
+          <label>Delivery Column (→ Delivery Nbr, match key)</label>
+          <select id="vl06oMatchCol"></select>
+        </div>
+        <div class="field">
+          <label>Document Column (→ Order Nbr)</label>
+          <select id="vl06oDocumentCol"></select>
+        </div>
+        <div class="field">
+          <label>Ship-to Party Column (→ Customer/Supplier)</label>
+          <select id="vl06oCustomerCol"></select>
+        </div>
+        <div class="field">
+          <label>IncoT Column (→ Incoterms)</label>
+          <select id="vl06oIncotermsCol"></select>
+        </div>
+        <div class="field">
+          <label>GI Date Column (→ Planned GI Date)</label>
+          <select id="vl06oPlannedGiDateCol"></select>
+        </div>
+        <div class="field">
+          <label>Ac.GI Date Column (→ SAP Status)</label>
+          <select id="vl06oGiDateCol"></select>
+        </div>
+      </div>
+
+      <div class="import-summary" id="vl06oSummary"></div>
+
+      <div class="csv-preview">
+        <table class="csv-table" id="vl06oPreviewTable"></table>
+      </div>
+    </div>
+
+    <div class="modal-foot">
+      <div style="flex:1;"></div>
+      <button class="btn ghost sm" id="btnCancelVl06o">Cancel</button>
+      <button class="btn primary sm" id="btnApplyVl06o" disabled>Apply Updates</button>
     </div>
   </div>
 </div>
@@ -561,6 +628,8 @@ var DEFAULT_STATUS_OPTIONS = [
   {code:"",   label:"#N/A",        stage:"error"}
 ];
 
+var SAP_STATUS_OPTIONS = ["Not Yet Shipped", "GI Complete"];
+
 var SAP_FIELDS = [
   {k:"giDate", label:"Planned GI Date", type:"date", required:true},
   {k:"stoIFF", label:"Order Nbr", type:"text", required:true},
@@ -568,16 +637,14 @@ var SAP_FIELDS = [
   {k:"incoterms", label:"Incoterms", type:"text", required:true},
   {k:"docType", label:"Sales Document Type", type:"text", required:true},
   {k:"tot", label:"TOT", type:"text", required:true},
-  {k:"cevaRef", label:"Delivery Nbr", type:"text", required:true},
+  {k:"cevaRef", label:"Delivery Nbr", type:"text"},
   {k:"shipmentNum", label:"Shipment #", type:"text"}
 ];
 
 var OPS_FIELDS = [
   {k:"pkmsStatus", label:"PKMS Status", type:"select", options:null /* filled from STATE.statusOptions */},
+  {k:"sapStatus", label:"SAP Status", type:"select", options:SAP_STATUS_OPTIONS},
   {k:"doorLane", label:"Assigned Door #", type:"select", options:null /* filled from LANES */},
-  {k:"addedAPL", label:"Added to APL?", type:"bool"},
-  {k:"closedSAP", label:"Closed in SAP?", type:"bool"},
-  {k:"closedPKMS", label:"Closed in PKMS?", type:"bool"},
   {k:"carrier", label:"Carrier", type:"text"},
   {k:"schedPickup", label:"Scheduled P/U Date", type:"date"}
 ];
@@ -596,10 +663,8 @@ var TABLE_COLUMNS = [
   {k:"cevaRef", label:"Delivery Nbr", group:"sap"},
   {k:"shipmentNum", label:"Shipment #", group:"sap"},
   {k:"pkmsStatus", label:"PKMS Status", group:"ops"},
+  {k:"sapStatus", label:"SAP Status", group:"ops"},
   {k:"doorLane", label:"Door / Lane", group:"ops"},
-  {k:"addedAPL", label:"Added to APL?", group:"ops", bool:true},
-  {k:"closedSAP", label:"Closed SAP?", group:"ops", bool:true},
-  {k:"closedPKMS", label:"Closed PKMS?", group:"ops", bool:true},
   {k:"carrier", label:"Carrier", group:"ops"},
   {k:"schedPickup", label:"Sched P/U", group:"ops"},
   {k:"comments", label:"Comments", group:"ops"},
@@ -673,6 +738,11 @@ function normalizeStatus(raw){
   if (/load/i.test(s)) return "loaded";
   if (/invoice/i.test(s)) return "invoiced";
   return "none";
+}
+
+function isHotIncoterm(order){
+  var v = (order && order.incoterms != null) ? String(order.incoterms).trim() : "";
+  return v === "151" || v === "152";
 }
 
 /* ===================== STATE ===================== */
@@ -916,6 +986,7 @@ function startPolling(){
     var modalOpen = !document.getElementById("orderModalOverlay").classList.contains("hidden") ||
                     !document.getElementById("settingsModalOverlay").classList.contains("hidden") ||
                     !document.getElementById("pkmsModalOverlay").classList.contains("hidden") ||
+                    !document.getElementById("vl06oModalOverlay").classList.contains("hidden") ||
                     !document.getElementById("shiptifyModalOverlay").classList.contains("hidden");
     if (modalOpen) return;
     if (!syncConfigured()) return;
@@ -1007,6 +1078,10 @@ function renderLegend(){
     item.innerHTML = '<span class="sw ' + s.cls + '"></span>' + esc(s.label);
     wrap.appendChild(item);
   });
+  var hotItem = document.createElement("div");
+  hotItem.className = "item";
+  hotItem.innerHTML = '<span class="hot-incoterm-tag">151/152</span> Incoterms 151 or 152';
+  wrap.appendChild(hotItem);
 }
 
 /* ===================== RENDER: ZONE DASHBOARD ===================== */
@@ -1036,10 +1111,11 @@ function buildLaneCard(laneCode){
 
   if (order){
     var stageKey = normalizeStatus(order.pkmsStatus);
-    card.className = "lane-card " + stageInfo(stageKey).cls;
+    var hot = isHotIncoterm(order);
+    card.className = "lane-card " + stageInfo(stageKey).cls + (hot ? " hot-incoterm" : "");
     if (STATE.activeStatFilter && stageKey !== STATE.activeStatFilter) card.style.opacity = "0.3";
     card.innerHTML =
-      '<div class="lc-head"><span class="lc-code">' + esc(laneCode) + '</span><span class="badge ' + stageInfo(stageKey).cls + '">' + esc(order.pkmsStatus || "\u2014") + '</span></div>' +
+      '<div class="lc-head"><span class="lc-code">' + esc(laneCode) + (hot ? '<span class="hot-incoterm-tag">' + esc(order.incoterms) + '</span>' : '') + '</span><span class="badge ' + stageInfo(stageKey).cls + '">' + esc(order.pkmsStatus || "\u2014") + '</span></div>' +
       '<div class="lc-rows">' +
         '<div class="lc-row"><div class="lc-label">Date Delivery Assigned</div><div class="lc-value">' + esc(fmtDate(order.giDate) || "\u2014") + '</div></div>' +
         '<div class="lc-row"><div class="lc-label">Delivery Nbr</div><div class="lc-value">' + esc(order.cevaRef || "\u2014") + '</div></div>' +
@@ -1079,11 +1155,12 @@ function orderStatusChips(orders){
 
 function buildUnassignedCard(order){
   var stageKey = normalizeStatus(order.pkmsStatus);
+  var hot = isHotIncoterm(order);
   var card = document.createElement("div");
-  card.className = "lane-card unassigned " + stageInfo(stageKey).cls;
+  card.className = "lane-card unassigned " + stageInfo(stageKey).cls + (hot ? " hot-incoterm" : "");
   if (STATE.activeStatFilter && stageKey !== STATE.activeStatFilter) card.style.opacity = "0.3";
   card.innerHTML =
-    '<div class="lc-head"><span class="lc-code">' + esc(order.customer || order.stoIFF || "Unassigned") + '</span><span class="badge ' + stageInfo(stageKey).cls + '">' + esc(order.pkmsStatus || "\u2014") + '</span></div>' +
+    '<div class="lc-head"><span class="lc-code">' + esc(order.customer || order.stoIFF || "Unassigned") + (hot ? '<span class="hot-incoterm-tag">' + esc(order.incoterms) + '</span>' : '') + '</span><span class="badge ' + stageInfo(stageKey).cls + '">' + esc(order.pkmsStatus || "\u2014") + '</span></div>' +
     '<div class="lc-rows">' +
       '<div class="lc-row"><div class="lc-label">Date Delivery Assigned</div><div class="lc-value">' + esc(fmtDate(order.giDate) || "\u2014") + '</div></div>' +
       '<div class="lc-row"><div class="lc-label">Delivery Nbr</div><div class="lc-value">' + esc(order.cevaRef || "\u2014") + '</div></div>' +
@@ -1370,7 +1447,10 @@ function renderTable(){
 
   list.forEach(function(o){
     var tr = document.createElement("tr");
-    if (normalizeStatus(o.pkmsStatus) === "error") tr.className = "row-error";
+    var rowClasses = [];
+    if (normalizeStatus(o.pkmsStatus) === "error") rowClasses.push("row-error");
+    if (isHotIncoterm(o)) rowClasses.push("row-hot-incoterm");
+    if (rowClasses.length) tr.className = rowClasses.join(" ");
 
     getOrderedColumns().forEach(function(col){
       var td = document.createElement("td");
@@ -1409,6 +1489,20 @@ function renderTable(){
       if (col.k === "pkmsStatus"){
         var st = normalizeStatus(o.pkmsStatus);
         td.innerHTML = '<span class="badge ' + stageInfo(st).cls + '">' + esc(o.pkmsStatus || "—") + '</span>';
+        tr.appendChild(td);
+        return;
+      }
+
+      if (col.k === "sapStatus"){
+        var sapCls = o.sapStatus === "GI Complete" ? "st-invoiced" : (o.sapStatus === "Not Yet Shipped" ? "st-printed" : "st-none");
+        td.innerHTML = o.sapStatus ? ('<span class="badge ' + sapCls + '">' + esc(o.sapStatus) + '</span>') : "—";
+        tr.appendChild(td);
+        return;
+      }
+
+      if (col.k === "incoterms"){
+        td.textContent = o.incoterms || "";
+        if (isHotIncoterm(o)) td.innerHTML = esc(o.incoterms) + ' <span class="hot-incoterm-tag">HOT</span>';
         tr.appendChild(td);
         return;
       }
@@ -1461,6 +1555,7 @@ function fieldControlHtml(f, val){
       opts = [""].concat((STATE.statusOptions || DEFAULT_STATUS_OPTIONS).map(function(o){ return o.label; }));
     } else {
       opts = f.options || [""];
+      if (opts[0] !== "") opts = [""].concat(opts);
     }
     var optHtml = opts.map(function(o){
       return '<option value="' + esc(o) + '" ' + (o === val ? "selected" : "") + '>' + (o === "" ? "—" : esc(o)) + '</option>';
@@ -1546,7 +1641,7 @@ function saveOrderFromModal(){
   // Duplicate-order safeguard: the Delivery Nbr should be unique.
   // Applies whether adding a new order or editing an existing one's Delivery Nbr.
   var cevaRefEl = document.getElementById("fld_cevaRef");
-  if (cevaRefEl){
+  if (cevaRefEl && cevaRefEl.value.trim()){
     cevaRefEl.classList.remove("field-invalid");
     var dup = findDuplicateByDeliveryNumber(cevaRefEl.value, STATE.editingId);
     if (dup){
@@ -1680,7 +1775,7 @@ function findOrderForImportKey(key){
   return null;
 }
 
-// Used by the PKMS upload: Pickticket Control Number maps specifically to Delivery Nbr
+// Used by the PKMS and VL06O uploads: their key columns map specifically to Delivery Nbr
 // (per the defined workflow), so this matches that one field only rather than guessing.
 function findOrderByCevaRef(key){
   if (!key) return null;
@@ -1759,6 +1854,198 @@ function populateColumnSelect(selectEl, headers, candidates){
   selectEl.innerHTML = headers.map(function(h,idx){ return '<option value="'+idx+'">' + esc(h) + '</option>'; }).join("");
   var guess = guessColumn(headers, candidates);
   selectEl.value = guess !== -1 ? guess : 0;
+}
+
+/* ===================== VL06O UPLOAD ===================== */
+/* Matches Delivery -> Delivery Nbr. For matched orders, only SAP Status is touched — set to
+   "GI Complete" when the row has an Actual GI Date, or "Not Yet Shipped" when that column is
+   blank. For rows with no matching order, a brand-new order is CREATED using Delivery (→
+   Delivery Nbr), Document (→ Order Nbr), Name of the ship-to party (→ Customer/Supplier),
+   IncoT (→ Incoterms), and GI Date (→ Planned GI Date). Sales Document Type and TOT aren't
+   present in a VL06O extract, so those are left blank on created orders for manual entry. */
+
+var VL06O_MATCH_CANDIDATES = ["delivery","delivery nbr","delivery number"];
+var VL06O_ACTUAL_GIDATE_CANDIDATES = ["ac.gi date","actual gi date","ac gi date"];
+var VL06O_PLANNED_GIDATE_CANDIDATES = ["gi date","planned gi date"];
+var VL06O_DOCUMENT_CANDIDATES = ["document","sto","order nbr","order number"];
+var VL06O_CUSTOMER_CANDIDATES = ["name of the ship-to party","ship-to party","customer","customer / supplier"];
+var VL06O_INCOTERMS_CANDIDATES = ["incot","incoterms"];
+
+function openVl06oUploadModal(){
+  document.getElementById("vl06oModalOverlay").classList.remove("hidden");
+}
+
+function closeVl06oModal(){
+  document.getElementById("vl06oModalOverlay").classList.add("hidden");
+  document.getElementById("vl06oMapSection").style.display = "none";
+  document.getElementById("vl06oFileName").textContent = "No file selected";
+  document.getElementById("vl06oFileInput").value = "";
+  STATE.vl06oAllRows = null;
+  STATE.vl06oPreviewRows = null;
+}
+
+function handleVl06oFile(file){
+  readUploadFile(file, function(rows){
+    STATE.vl06oAllRows = rows;
+    document.getElementById("vl06oFileName").textContent = file.name + " — " + rows.length + " rows";
+    document.getElementById("vl06oMapSection").style.display = "block";
+
+    var guessIdx = guessHeaderRowIndex(rows);
+    populateHeaderRowSelect(document.getElementById("vl06oHeaderRow"), rows, guessIdx);
+    refreshVl06oColumns();
+  });
+}
+
+function currentVl06oHeaders(){
+  var headerIdx = parseInt(document.getElementById("vl06oHeaderRow").value, 10);
+  var rows = STATE.vl06oAllRows || [];
+  return {headers: rows[headerIdx] || [], dataRows: rows.slice(headerIdx + 1)};
+}
+
+function refreshVl06oColumns(){
+  var ctx = currentVl06oHeaders();
+  populateColumnSelect(document.getElementById("vl06oMatchCol"), ctx.headers, VL06O_MATCH_CANDIDATES);
+  populateColumnSelect(document.getElementById("vl06oDocumentCol"), ctx.headers, VL06O_DOCUMENT_CANDIDATES);
+  populateColumnSelect(document.getElementById("vl06oCustomerCol"), ctx.headers, VL06O_CUSTOMER_CANDIDATES);
+  populateColumnSelect(document.getElementById("vl06oIncotermsCol"), ctx.headers, VL06O_INCOTERMS_CANDIDATES);
+  populateColumnSelect(document.getElementById("vl06oPlannedGiDateCol"), ctx.headers, VL06O_PLANNED_GIDATE_CANDIDATES);
+  populateColumnSelect(document.getElementById("vl06oGiDateCol"), ctx.headers, VL06O_ACTUAL_GIDATE_CANDIDATES);
+  renderVl06oPreview();
+}
+
+function renderVl06oPreview(){
+  var ctx = currentVl06oHeaders();
+  var matchIdx = parseInt(document.getElementById("vl06oMatchCol").value, 10);
+  var documentIdx = parseInt(document.getElementById("vl06oDocumentCol").value, 10);
+  var customerIdx = parseInt(document.getElementById("vl06oCustomerCol").value, 10);
+  var incotermsIdx = parseInt(document.getElementById("vl06oIncotermsCol").value, 10);
+  var plannedGiDateIdx = parseInt(document.getElementById("vl06oPlannedGiDateCol").value, 10);
+  var giDateIdx = parseInt(document.getElementById("vl06oGiDateCol").value, 10);
+  var rows = ctx.dataRows;
+
+  var updateCount = 0, createCount = 0, skipCount = 0, unchangedCount = 0;
+  var seenNewKeys = {}; // guards against creating duplicate orders when the same Delivery appears twice in one file
+  var previewRows = rows.map(function(r){
+    var keyVal = String(r[matchIdx] || "").trim();
+    var documentVal = String(r[documentIdx] || "").trim();
+    var customerVal = String(r[customerIdx] || "").trim();
+    var incotermsVal = String(r[incotermsIdx] || "").trim();
+    var plannedGiDateVal = normalizeDateString(String(r[plannedGiDateIdx] || "").trim());
+    var actualGiDateVal = String(r[giDateIdx] || "").trim();
+    var sapStatusResolved = actualGiDateVal ? "GI Complete" : "Not Yet Shipped";
+    var order = keyVal ? findOrderByCevaRef(keyVal) : null;
+
+    if (order){
+      var oldVal = order.sapStatus || "";
+      var unchanged = sapStatusResolved === oldVal;
+      updateCount++;
+      if (unchanged) unchangedCount++;
+      return {action:"update", key: keyVal, document: documentVal, customer: customerVal, incoterms: incotermsVal,
+              giDateVal: actualGiDateVal, oldVal: oldVal, resolved: sapStatusResolved, order: order, unchanged: unchanged};
+    }
+
+    // Nothing usable to create an order from (blank row / stray line) — skip entirely.
+    if (!keyVal && !documentVal && !customerVal){
+      skipCount++;
+      return {action:"skip", key: keyVal, document: documentVal, customer: customerVal, incoterms: incotermsVal,
+              giDateVal: actualGiDateVal, resolved: sapStatusResolved, order: null, unchanged: false};
+    }
+
+    var dedupeKey = keyVal || ("doc:" + documentVal);
+    if (seenNewKeys[dedupeKey]){
+      skipCount++;
+      return {action:"skip", key: keyVal, document: documentVal, customer: customerVal, incoterms: incotermsVal,
+              giDateVal: actualGiDateVal, resolved: sapStatusResolved, order: null, unchanged: false, dupInFile: true};
+    }
+    seenNewKeys[dedupeKey] = true;
+    createCount++;
+    return {action:"create", key: keyVal, document: documentVal, customer: customerVal, incoterms: incotermsVal,
+            giDate: plannedGiDateVal, giDateVal: actualGiDateVal, resolved: sapStatusResolved, order: null, unchanged: false};
+  });
+
+  var summary = document.getElementById("vl06oSummary");
+  summary.innerHTML =
+    '<span><b>' + updateCount + '</b> matched existing</span>' +
+    '<span><b>' + (updateCount - unchangedCount) + '</b> will update</span>' +
+    '<span><b>' + unchangedCount + '</b> already up to date</span>' +
+    '<span><b>' + createCount + '</b> new order' + (createCount === 1 ? "" : "s") + ' will be created</span>' +
+    (skipCount ? '<span>' + skipCount + ' skipped (blank / duplicate row)</span>' : "");
+
+  var table = document.getElementById("vl06oPreviewTable");
+  var head = '<tr><th>Action</th><th>Delivery Nbr</th><th>Order Nbr</th><th>Customer</th><th>Incoterms</th><th>SAP Status</th></tr>';
+  var body = previewRows.slice(0, 300).map(function(pr){
+    var cls, label, statusCell;
+    if (pr.action === "update"){
+      cls = pr.unchanged ? "matched unchanged-row" : "matched";
+      label = "\u2713 Update";
+      statusCell = pr.unchanged
+        ? esc(pr.resolved) + ' <span class="unchanged-tag">(no change)</span>'
+        : esc(pr.oldVal || "\u2014") + ' \u2192 <b>' + esc(pr.resolved) + '</b>';
+    } else if (pr.action === "create"){
+      cls = "matched";
+      label = "+ Create";
+      statusCell = '<b>' + esc(pr.resolved) + '</b>';
+    } else {
+      cls = "unmatched";
+      label = pr.dupInFile ? "\u2014 Dup in file" : "\u2014 Skip";
+      statusCell = "\u2014";
+    }
+    var custCell = pr.action === "update" ? (pr.order.customer || pr.order.stoIFF) : (pr.customer || "\u2014");
+    return '<tr class="' + cls + '"><td>' + label + '</td><td>' + esc(pr.key || "\u2014") + '</td><td>' + esc(pr.document || (pr.order ? pr.order.stoIFF : "") || "\u2014") + '</td><td>' + esc(custCell) + '</td><td>' + esc(pr.incoterms || (pr.order ? pr.order.incoterms : "") || "\u2014") + '</td><td>' + statusCell + '</td></tr>';
+  }).join("");
+  table.innerHTML = head + body;
+
+  document.getElementById("btnApplyVl06o").disabled = (updateCount - unchangedCount) === 0 && createCount === 0;
+  STATE.vl06oPreviewRows = previewRows;
+}
+
+function applyVl06oImport(){
+  var rows = STATE.vl06oPreviewRows || [];
+  var updating = rows.filter(function(pr){ return pr.action === "update" && !pr.unchanged; });
+  var creating = rows.filter(function(pr){ return pr.action === "create"; });
+
+  if (!updating.length && !creating.length){
+    showToast("Nothing to apply — matched orders are already up to date and no new orders were found.");
+    closeVl06oModal();
+    return;
+  }
+
+  var parts = [];
+  if (updating.length) parts.push("update SAP Status on " + updating.length + " existing order" + (updating.length === 1 ? "" : "s"));
+  if (creating.length) parts.push("create " + creating.length + " new order" + (creating.length === 1 ? "" : "s") + " (Sales Document Type and TOT will need to be filled in manually)");
+  var msg = "This will " + parts.join(" and ") + ".\n\nA backup of the current data will download automatically first, in case anything needs to be undone.\n\nContinue?";
+  if (!window.confirm(msg)) return;
+
+  backupJson();
+
+  updating.forEach(function(pr){
+    pr.order.sapStatus = pr.resolved;
+  });
+
+  creating.forEach(function(pr){
+    var o = blankOrder();
+    o.cevaRef = pr.key;
+    o.stoIFF = pr.document;
+    o.customer = pr.customer;
+    o.incoterms = pr.incoterms;
+    o.giDate = pr.giDate || "";
+    o.sapStatus = pr.resolved;
+    STATE.orders.push(o);
+  });
+
+  saveData();
+  updating.forEach(function(pr){ syncPushOrder(pr.order); });
+  // Push the newly created orders (added to the end of STATE.orders just above).
+  var newlyCreated = STATE.orders.slice(STATE.orders.length - creating.length);
+  newlyCreated.forEach(function(o){ syncPushOrder(o); });
+
+  renderAll();
+
+  var msgParts = [];
+  if (updating.length) msgParts.push(updating.length + " updated");
+  if (creating.length) msgParts.push(creating.length + " created");
+  showToast(msgParts.join(", ") + " from VL06O Upload. Backup downloaded.");
+  closeVl06oModal();
 }
 
 /* ===================== PKMS ORDER STATUS UPLOAD ===================== */
@@ -2352,6 +2639,38 @@ function wireEvents(){
     if (e.target.files && e.target.files[0]) restoreJson(e.target.files[0]);
     e.target.value = "";
   });
+
+  // VL06O Upload modal
+  document.getElementById("btnVl06oUpload").addEventListener("click", openVl06oUploadModal);
+  document.getElementById("vl06oModalClose").addEventListener("click", closeVl06oModal);
+  document.getElementById("btnCancelVl06o").addEventListener("click", closeVl06oModal);
+  document.getElementById("vl06oModalOverlay").addEventListener("click", function(e){
+    if (e.target === this) closeVl06oModal();
+  });
+  document.getElementById("vl06oDropzone").addEventListener("click", function(){
+    document.getElementById("vl06oFileInput").click();
+  });
+  document.getElementById("vl06oDropzone").addEventListener("dragover", function(e){
+    e.preventDefault(); this.classList.add("drag");
+  });
+  document.getElementById("vl06oDropzone").addEventListener("dragleave", function(){
+    this.classList.remove("drag");
+  });
+  document.getElementById("vl06oDropzone").addEventListener("drop", function(e){
+    e.preventDefault(); this.classList.remove("drag");
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) handleVl06oFile(e.dataTransfer.files[0]);
+  });
+  document.getElementById("vl06oFileInput").addEventListener("change", function(e){
+    if (e.target.files && e.target.files[0]) handleVl06oFile(e.target.files[0]);
+  });
+  document.getElementById("vl06oHeaderRow").addEventListener("change", refreshVl06oColumns);
+  document.getElementById("vl06oMatchCol").addEventListener("change", renderVl06oPreview);
+  document.getElementById("vl06oDocumentCol").addEventListener("change", renderVl06oPreview);
+  document.getElementById("vl06oCustomerCol").addEventListener("change", renderVl06oPreview);
+  document.getElementById("vl06oIncotermsCol").addEventListener("change", renderVl06oPreview);
+  document.getElementById("vl06oPlannedGiDateCol").addEventListener("change", renderVl06oPreview);
+  document.getElementById("vl06oGiDateCol").addEventListener("change", renderVl06oPreview);
+  document.getElementById("btnApplyVl06o").addEventListener("click", applyVl06oImport);
 
   // PKMS Order Status Upload modal
   document.getElementById("btnPkmsUpload").addEventListener("click", openPkmsUploadModal);
