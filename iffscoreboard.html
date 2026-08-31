@@ -14,7 +14,7 @@
   --text:#e9ecf1; --muted:#8a94a3; --muted-dim:#5f6875;
   --amber:#f2a93b; --amber-deep:#c9821a; --blue:#5b93ff; --red:#e4572e; --green:#46b378; --teal:#3ec9c9;
   --mono:'IBM Plex Mono','Consolas',monospace; --disp:'Oswald','Segoe UI Semibold',sans-serif; --sans:'Inter','Segoe UI',sans-serif;
-  --sap:#7fb8ff; --ops:#0a2f6b;
+  --sap:#7fb8ff; --ops:#0a2f6b; --hot:#c084fc; --intl:#ff8a3d;
 }
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;}
@@ -102,7 +102,6 @@ input[type=file]{display:none;}
 .lane-card.st-invoiced{border-top-color:var(--green);}
 .lane-card.empty{background:var(--panel-alt);border-style:dashed;}
 .lane-card.unassigned{border-style:dashed;}
-.lane-card.hot-incoterm{box-shadow:0 0 0 2px var(--red) inset;}
 .lane-card .lc-head{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:9px;}
 .lane-card .lc-code{font-family:var(--disp);font-size:14px;font-weight:700;letter-spacing:0.4px;}
 .lane-card.empty .lc-code{color:var(--muted);}
@@ -110,7 +109,6 @@ input[type=file]{display:none;}
 .lane-card .lc-row .lc-label{font-family:var(--mono);font-size:8.5px;text-transform:uppercase;letter-spacing:0.4px;color:var(--muted-dim);}
 .lane-card .lc-row .lc-value{font-family:var(--sans);font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .lane-card.empty .lc-empty-msg{font-size:12px;color:var(--muted-dim);text-align:center;padding:14px 0 4px;}
-.hot-incoterm-tag{font-family:var(--mono);font-size:8.5px;font-weight:700;letter-spacing:0.4px;color:#ffb199;background:rgba(228,87,46,0.16);border:1px solid rgba(228,87,46,0.5);border-radius:5px;padding:1px 5px;margin-left:6px;white-space:nowrap;}
 
 /* ---------- Badges / status colors ---------- */
 .badge{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.3px;padding:3px 8px;border-radius:5px;border:1px solid;display:inline-block;white-space:nowrap;}
@@ -154,8 +152,14 @@ table.order-table{width:100%;border-collapse:collapse;font-size:13px;min-width:1
 .order-table tbody td{padding:8px 8px;border-bottom:1px solid var(--border-soft);font-family:var(--mono);color:var(--text);white-space:nowrap;}
 .order-table tbody tr:hover{background:rgba(255,255,255,0.02);}
 .order-table tbody tr.row-error td{background:rgba(228,87,46,0.05);}
-.order-table tbody tr.row-hot-incoterm td{background:rgba(228,87,46,0.07);}
-.order-table tbody tr.row-hot-incoterm.row-error td{background:rgba(228,87,46,0.12);}
+.order-table tbody tr.row-hot-incoterm td{background:rgba(192,132,252,0.10);}
+.order-table tbody tr.row-hot-incoterm.row-error td{background:rgba(200,120,240,0.14);}
+.order-table tbody tr.row-hot-incoterm td:first-child{box-shadow:inset 3px 0 0 0 var(--hot);}
+.order-table tbody tr.row-non-us td{background:rgba(255,138,61,0.10);}
+.order-table tbody tr.row-non-us.row-error td{background:rgba(255,138,61,0.16);}
+.order-table tbody tr.row-non-us td:first-child{box-shadow:inset 3px 0 0 0 var(--intl);}
+.order-table tbody tr.row-hot-incoterm.row-non-us td{background:linear-gradient(90deg, rgba(192,132,252,0.10), rgba(255,138,61,0.10));}
+.order-table tbody tr.row-hot-incoterm.row-non-us td:first-child{box-shadow:inset 3px 0 0 0 var(--hot), inset 6px 0 0 0 var(--intl);}
 .order-table td.comments-cell{white-space:normal;max-width:240px;font-family:var(--sans);color:var(--muted);font-size:12.5px;}
 .order-table td .chk{width:14px;height:14px;accent-color:var(--amber);cursor:pointer;}
 .row-actions{display:flex;gap:5px;}
@@ -264,6 +268,7 @@ table.csv-table{width:100%;border-collapse:collapse;font-size:11px;font-family:v
   </div>
   <div class="topbar-right">
     <span class="pill" id="syncPill"><span class="dot"></span>—</span>
+    <button class="upload-tile" id="btnVl10Upload"><span class="ut-icon">⇪</span><span class="ut-label">VL10<br>Upload</span></button>
     <button class="upload-tile" id="btnVl06oUpload"><span class="ut-icon">⇪</span><span class="ut-label">VL06O<br>Upload</span></button>
     <button class="upload-tile" id="btnPkmsUpload"><span class="ut-icon">⇪</span><span class="ut-label">PKMS Order Status<br>Upload</span></button>
     <button class="upload-tile" id="btnShiptifyUpload"><span class="ut-icon">⇪</span><span class="ut-label">Shiptify<br>Upload</span></button>
@@ -289,7 +294,7 @@ table.csv-table{width:100%;border-collapse:collapse;font-size:11px;font-family:v
 
     <div class="card">
       <h2>Staging Dashboard</h2>
-      <p class="hint">Every lane, grouped by area. Colors reflect PKMS status of the order currently assigned. Orders with Incoterms 151 or 152 are outlined in red. Click an occupied lane to edit it, or an empty lane to assign an order to it.</p>
+      <p class="hint">Every lane, grouped by area. Colors reflect PKMS status of the order currently assigned. Click an occupied lane to edit it, or an empty lane to assign an order to it.</p>
       <div class="map-legend" id="mapLegend"></div>
     </div>
 
@@ -323,6 +328,13 @@ table.csv-table{width:100%;border-collapse:collapse;font-size:11px;font-family:v
       <button class="btn ghost sm icon-only" id="btnSortSecondaryDir" title="Toggle ascending/descending">▲</button>
     </div>
 
+    <div class="toolbar column-filter-toolbar" id="columnFilterToolbar"></div>
+
+    <div class="map-legend" style="margin-bottom:10px;">
+      <div class="item"><span class="sw" style="background:var(--hot);"></span>Incoterms 151/152</div>
+      <div class="item"><span class="sw" style="background:var(--intl);"></span>Ship Country not US (from VL10)</div>
+    </div>
+
     <div class="table-scroll">
       <table class="order-table" id="orderTable">
         <thead>
@@ -336,7 +348,7 @@ table.csv-table{width:100%;border-collapse:collapse;font-size:11px;font-family:v
 </div>
 
 <div class="footnote">
-  Data is stored locally in this browser (no live SAP / PKMS / Shiptify connection). Use <b>VL06O Upload</b> to bulk-update SAP Status from a VL06O extract, <b>Import PKMS CSV</b> to bulk-update PKMS Status from a PKMS export, and <b>Backup / Restore JSON</b> to move the board between devices or share with teammates.
+  Data is stored locally in this browser (no live SAP / PKMS / Shiptify connection). Four uploads reconcile the board: <b>VL10 Upload</b> creates orders from SAP order creation, <b>VL06O Upload</b> updates SAP Status and creates any orders VL10 hasn't, <b>PKMS Upload</b> updates PKMS Status, and <b>Shiptify Upload</b> updates Carrier and Scheduled Pickup. Use <b>Backup / Restore JSON</b> to move the board between devices or share with teammates.
 </div>
 
 <!-- Toast -->
@@ -365,6 +377,72 @@ table.csv-table{width:100%;border-collapse:collapse;font-size:11px;font-family:v
       <div style="flex:1;"></div>
       <button class="btn ghost sm" id="btnCancelOrder">Cancel</button>
       <button class="btn primary sm" id="btnSaveOrder">Save Order</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== VL10 UPLOAD MODAL ===================== -->
+<div class="modal-overlay hidden" id="vl10ModalOverlay">
+  <div class="modal wide">
+    <div class="modal-head">
+      <h3>VL10 Upload</h3>
+      <button class="modal-close" id="vl10ModalClose">×</button>
+    </div>
+    <p class="hint" style="margin-bottom:12px;">Upload a VL10 extract (.csv or .xlsx). VL10 lists orders before a delivery/Delivery Nbr exists, so rows are matched by <b>Order Nbr</b> instead. Rows with no matching order are <b>created as new orders</b>, using OriginDoc. → Order Nbr, Name 1 → Customer/Supplier, IncoT → Incoterms, ShpCountry → Ship Country, SaTy → Sales Document Type, Open qty → TOT, and Goods Issue → Planned GI Date. If an order already exists for that Order Nbr, this only fills in whichever of those fields are currently blank on it — it never overwrites a value you've already entered.</p>
+
+    <div class="dropzone" id="vl10Dropzone">
+      <div class="dz-title">Click to choose a CSV or XLSX file, or drag one here</div>
+      <div class="dz-sub" id="vl10FileName">No file selected</div>
+    </div>
+    <input type="file" id="vl10FileInput" accept=".csv,.xlsx,text/csv">
+
+    <div id="vl10MapSection" style="display:none;">
+      <div class="csv-map-grid">
+        <div class="field">
+          <label>Header Row</label>
+          <select id="vl10HeaderRow"></select>
+        </div>
+        <div class="field">
+          <label>OriginDoc. Column (→ Order Nbr, match key)</label>
+          <select id="vl10MatchCol"></select>
+        </div>
+        <div class="field">
+          <label>Name 1 Column (→ Customer/Supplier)</label>
+          <select id="vl10CustomerCol"></select>
+        </div>
+        <div class="field">
+          <label>IncoT Column (→ Incoterms)</label>
+          <select id="vl10IncotermsCol"></select>
+        </div>
+        <div class="field">
+          <label>ShpCountry Column (→ Ship Country)</label>
+          <select id="vl10ShpCountryCol"></select>
+        </div>
+        <div class="field">
+          <label>SaTy Column (→ Sales Document Type)</label>
+          <select id="vl10DocTypeCol"></select>
+        </div>
+        <div class="field">
+          <label>Open qty Column (→ TOT)</label>
+          <select id="vl10TotCol"></select>
+        </div>
+        <div class="field">
+          <label>Goods Issue Column (→ Planned GI Date)</label>
+          <select id="vl10GiDateCol"></select>
+        </div>
+      </div>
+
+      <div class="import-summary" id="vl10Summary"></div>
+
+      <div class="csv-preview">
+        <table class="csv-table" id="vl10PreviewTable"></table>
+      </div>
+    </div>
+
+    <div class="modal-foot">
+      <div style="flex:1;"></div>
+      <button class="btn ghost sm" id="btnCancelVl10">Cancel</button>
+      <button class="btn primary sm" id="btnApplyVl10" disabled>Apply Updates</button>
     </div>
   </div>
 </div>
@@ -484,7 +562,7 @@ table.csv-table{width:100%;border-collapse:collapse;font-size:11px;font-family:v
       <h3>Shiptify Upload</h3>
       <button class="modal-close" id="shiptifyModalClose">×</button>
     </div>
-    <p class="hint" style="margin-bottom:12px;">Upload a Shiptify export (.csv or .xlsx). Rows are matched by Slot Name against each order's Order Nbr or Delivery Nbr, and only Carrier and Scheduled Pickup Date are updated. This doesn't touch any other field — you can still edit an order individually any time.</p>
+    <p class="hint" style="margin-bottom:12px;">Upload a Shiptify export (.csv or .xlsx). Rows are matched by Slot Name against each order's Order Nbr or Delivery Nbr, and Carrier, Scheduled Pickup Date, and Status are updated. This doesn't touch any other field — you can still edit an order individually any time.</p>
 
     <div class="dropzone" id="shiptifyDropzone">
       <div class="dz-title">Click to choose a CSV or XLSX file, or drag one here</div>
@@ -509,6 +587,10 @@ table.csv-table{width:100%;border-collapse:collapse;font-size:11px;font-family:v
         <div class="field">
           <label>Planned Date Column</label>
           <select id="shiptifyDateCol"></select>
+        </div>
+        <div class="field">
+          <label>Status Column</label>
+          <select id="shiptifyStatusCol"></select>
         </div>
       </div>
       <p class="hint" style="margin:-4px 0 10px;">Dates are parsed automatically (Shiptify uses DD/MM/YYYY).</p>
@@ -638,7 +720,8 @@ var SAP_FIELDS = [
   {k:"docType", label:"Sales Document Type", type:"text", required:true},
   {k:"tot", label:"TOT", type:"text", required:true},
   {k:"cevaRef", label:"Delivery Nbr", type:"text"},
-  {k:"shipmentNum", label:"Shipment #", type:"text"}
+  {k:"shipmentNum", label:"Shipment #", type:"text"},
+  {k:"shpCountry", label:"Ship Country", type:"text"}
 ];
 
 var OPS_FIELDS = [
@@ -646,7 +729,8 @@ var OPS_FIELDS = [
   {k:"sapStatus", label:"SAP Status", type:"select", options:SAP_STATUS_OPTIONS},
   {k:"doorLane", label:"Assigned Door #", type:"select", options:null /* filled from LANES */},
   {k:"carrier", label:"Carrier", type:"text"},
-  {k:"schedPickup", label:"Scheduled P/U Date", type:"date"}
+  {k:"schedPickup", label:"Scheduled P/U Date", type:"date"},
+  {k:"shiptifyStatus", label:"Status", type:"text"}
 ];
 
 var COMMENTS_FIELD = {k:"comments", label:"Comments", type:"textarea", wide:true};
@@ -662,11 +746,13 @@ var TABLE_COLUMNS = [
   {k:"tot", label:"TOT", group:"sap"},
   {k:"cevaRef", label:"Delivery Nbr", group:"sap"},
   {k:"shipmentNum", label:"Shipment #", group:"sap"},
+  {k:"shpCountry", label:"Ship Country", group:"sap"},
   {k:"pkmsStatus", label:"PKMS Status", group:"ops"},
   {k:"sapStatus", label:"SAP Status", group:"ops"},
   {k:"doorLane", label:"Door / Lane", group:"ops"},
   {k:"carrier", label:"Carrier", group:"ops"},
   {k:"schedPickup", label:"Sched P/U", group:"ops"},
+  {k:"shiptifyStatus", label:"Status", group:"ops"},
   {k:"comments", label:"Comments", group:"ops"},
   {k:"__actions", label:"", group:"ops"}
 ];
@@ -745,6 +831,12 @@ function isHotIncoterm(order){
   return v === "151" || v === "152";
 }
 
+function isNonUSShipment(order){
+  var v = (order && order.shpCountry != null) ? String(order.shpCountry).trim().toUpperCase() : "";
+  if (!v) return false; // unknown / not from VL10 — don't flag
+  return v !== "US" && v !== "USA";
+}
+
 /* ===================== STATE ===================== */
 
 var STATE = {
@@ -756,6 +848,7 @@ var STATE = {
   activeStatFilter: "",
   searchTerm: "",
   statusFilter: "",
+  columnFilters: {},
   sortKey: "giDate",
   sortDir: 1,
   sortKey2: "",
@@ -986,6 +1079,7 @@ function startPolling(){
     var modalOpen = !document.getElementById("orderModalOverlay").classList.contains("hidden") ||
                     !document.getElementById("settingsModalOverlay").classList.contains("hidden") ||
                     !document.getElementById("pkmsModalOverlay").classList.contains("hidden") ||
+                    !document.getElementById("vl10ModalOverlay").classList.contains("hidden") ||
                     !document.getElementById("vl06oModalOverlay").classList.contains("hidden") ||
                     !document.getElementById("shiptifyModalOverlay").classList.contains("hidden");
     if (modalOpen) return;
@@ -1078,10 +1172,6 @@ function renderLegend(){
     item.innerHTML = '<span class="sw ' + s.cls + '"></span>' + esc(s.label);
     wrap.appendChild(item);
   });
-  var hotItem = document.createElement("div");
-  hotItem.className = "item";
-  hotItem.innerHTML = '<span class="hot-incoterm-tag">151/152</span> Incoterms 151 or 152';
-  wrap.appendChild(hotItem);
 }
 
 /* ===================== RENDER: ZONE DASHBOARD ===================== */
@@ -1111,11 +1201,10 @@ function buildLaneCard(laneCode){
 
   if (order){
     var stageKey = normalizeStatus(order.pkmsStatus);
-    var hot = isHotIncoterm(order);
-    card.className = "lane-card " + stageInfo(stageKey).cls + (hot ? " hot-incoterm" : "");
+    card.className = "lane-card " + stageInfo(stageKey).cls;
     if (STATE.activeStatFilter && stageKey !== STATE.activeStatFilter) card.style.opacity = "0.3";
     card.innerHTML =
-      '<div class="lc-head"><span class="lc-code">' + esc(laneCode) + (hot ? '<span class="hot-incoterm-tag">' + esc(order.incoterms) + '</span>' : '') + '</span><span class="badge ' + stageInfo(stageKey).cls + '">' + esc(order.pkmsStatus || "\u2014") + '</span></div>' +
+      '<div class="lc-head"><span class="lc-code">' + esc(laneCode) + '</span><span class="badge ' + stageInfo(stageKey).cls + '">' + esc(order.pkmsStatus || "\u2014") + '</span></div>' +
       '<div class="lc-rows">' +
         '<div class="lc-row"><div class="lc-label">Date Delivery Assigned</div><div class="lc-value">' + esc(fmtDate(order.giDate) || "\u2014") + '</div></div>' +
         '<div class="lc-row"><div class="lc-label">Delivery Nbr</div><div class="lc-value">' + esc(order.cevaRef || "\u2014") + '</div></div>' +
@@ -1155,12 +1244,11 @@ function orderStatusChips(orders){
 
 function buildUnassignedCard(order){
   var stageKey = normalizeStatus(order.pkmsStatus);
-  var hot = isHotIncoterm(order);
   var card = document.createElement("div");
-  card.className = "lane-card unassigned " + stageInfo(stageKey).cls + (hot ? " hot-incoterm" : "");
+  card.className = "lane-card unassigned " + stageInfo(stageKey).cls;
   if (STATE.activeStatFilter && stageKey !== STATE.activeStatFilter) card.style.opacity = "0.3";
   card.innerHTML =
-    '<div class="lc-head"><span class="lc-code">' + esc(order.customer || order.stoIFF || "Unassigned") + (hot ? '<span class="hot-incoterm-tag">' + esc(order.incoterms) + '</span>' : '') + '</span><span class="badge ' + stageInfo(stageKey).cls + '">' + esc(order.pkmsStatus || "\u2014") + '</span></div>' +
+    '<div class="lc-head"><span class="lc-code">' + esc(order.customer || order.stoIFF || "Unassigned") + '</span><span class="badge ' + stageInfo(stageKey).cls + '">' + esc(order.pkmsStatus || "\u2014") + '</span></div>' +
     '<div class="lc-rows">' +
       '<div class="lc-row"><div class="lc-label">Date Delivery Assigned</div><div class="lc-value">' + esc(fmtDate(order.giDate) || "\u2014") + '</div></div>' +
       '<div class="lc-row"><div class="lc-label">Delivery Nbr</div><div class="lc-value">' + esc(order.cevaRef || "\u2014") + '</div></div>' +
@@ -1279,10 +1367,58 @@ function populateStatusFilterOptions(){
   });
 }
 
+/* ---- Per-column filters (Order Log) ---- */
+
+var FILTERABLE_COLUMNS = [
+  {k:"incoterms", label:"Incoterms"},
+  {k:"shpCountry", label:"Ship Country"},
+  {k:"docType", label:"Doc Type"},
+  {k:"sapStatus", label:"SAP Status"},
+  {k:"carrier", label:"Carrier"},
+  {k:"doorLane", label:"Door/Lane"},
+  {k:"shiptifyStatus", label:"Status"}
+];
+
+function distinctColumnValues(key){
+  var seen = {};
+  var out = [];
+  STATE.orders.forEach(function(o){
+    var v = (o[key] == null ? "" : String(o[key])).trim();
+    if (v && !seen[v]){ seen[v] = true; out.push(v); }
+  });
+  out.sort(function(a,b){ return a.localeCompare(b, undefined, {numeric:true, sensitivity:"base"}); });
+  return out;
+}
+
+function renderColumnFilters(){
+  var wrap = document.getElementById("columnFilterToolbar");
+  if (!wrap) return;
+  wrap.innerHTML = '<span class="sort-label">Filter by</span>';
+  FILTERABLE_COLUMNS.forEach(function(col){
+    var values = distinctColumnValues(col.k);
+    var sel = document.createElement("select");
+    sel.className = "filter-select";
+    sel.style.maxWidth = "170px";
+    sel.innerHTML = '<option value="">' + esc(col.label) + ': All</option>' +
+      values.map(function(v){ return '<option value="' + esc(v) + '">' + esc(v) + '</option>'; }).join("");
+    sel.value = STATE.columnFilters[col.k] || "";
+    sel.addEventListener("change", function(){
+      if (sel.value) STATE.columnFilters[col.k] = sel.value;
+      else delete STATE.columnFilters[col.k];
+      renderTable();
+    });
+    wrap.appendChild(sel);
+  });
+}
+
 function getFilteredSortedOrders(){
   var term = STATE.searchTerm.trim().toLowerCase();
   var list = STATE.orders.filter(function(o){
     if (STATE.statusFilter && normalizeStatus(o.pkmsStatus) !== STATE.statusFilter) return false;
+    for (var ck in STATE.columnFilters){
+      var fv = STATE.columnFilters[ck];
+      if (fv && (o[ck] == null ? "" : String(o[ck])) !== fv) return false;
+    }
     if (!term) return true;
     var hay = [o.customer,o.stoIFF,o.carrier,o.doorLane,o.cevaRef,o.shipmentNum,o.comments]
       .map(function(v){ return (v||"").toString().toLowerCase(); }).join(" ");
@@ -1450,6 +1586,7 @@ function renderTable(){
     var rowClasses = [];
     if (normalizeStatus(o.pkmsStatus) === "error") rowClasses.push("row-error");
     if (isHotIncoterm(o)) rowClasses.push("row-hot-incoterm");
+    if (isNonUSShipment(o)) rowClasses.push("row-non-us");
     if (rowClasses.length) tr.className = rowClasses.join(" ");
 
     getOrderedColumns().forEach(function(col){
@@ -1502,7 +1639,6 @@ function renderTable(){
 
       if (col.k === "incoterms"){
         td.textContent = o.incoterms || "";
-        if (isHotIncoterm(o)) td.innerHTML = esc(o.incoterms) + ' <span class="hot-incoterm-tag">HOT</span>';
         tr.appendChild(td);
         return;
       }
@@ -1787,6 +1923,18 @@ function findOrderByCevaRef(key){
   return null;
 }
 
+// Used by the VL10 upload: VL10 runs before a delivery exists, so it has no Delivery Nbr
+// to match on — it matches by Order Nbr (STO) instead.
+function findOrderByOrderNbr(key){
+  if (!key) return null;
+  var nk = normalizeKey(key);
+  if (!nk) return null;
+  for (var i=0;i<STATE.orders.length;i++){
+    if (normalizeKey(STATE.orders[i].stoIFF) === nk) return STATE.orders[i];
+  }
+  return null;
+}
+
 function normalizeDateString(s){
   if (!s) return "";
   s = String(s).trim();
@@ -1854,6 +2002,210 @@ function populateColumnSelect(selectEl, headers, candidates){
   selectEl.innerHTML = headers.map(function(h,idx){ return '<option value="'+idx+'">' + esc(h) + '</option>'; }).join("");
   var guess = guessColumn(headers, candidates);
   selectEl.value = guess !== -1 ? guess : 0;
+}
+
+/* ===================== VL10 UPLOAD ===================== */
+/* VL10 lists SAP orders before a delivery (and therefore a Delivery Nbr) exists, so rows are
+   matched by Order Nbr instead. Unmatched rows CREATE a new order using OriginDoc. (→ Order
+   Nbr), Name 1 (→ Customer/Supplier), IncoT (→ Incoterms), ShpCountry (→ Ship Country), SaTy
+   (→ Sales Document Type), Open qty (→ TOT), and Goods Issue (→ Planned GI Date). Matched
+   rows only have their currently-blank fields backfilled — anything already entered on the
+   order is left alone. */
+
+var VL10_MATCH_CANDIDATES = ["origindoc.","origindoc","order nbr","order number","sto"];
+var VL10_CUSTOMER_CANDIDATES = ["name 1","customer","ship-to party"];
+var VL10_INCOTERMS_CANDIDATES = ["incot","incoterms"];
+var VL10_SHPCOUNTRY_CANDIDATES = ["shpcountry","ship country","country"];
+var VL10_DOCTYPE_CANDIDATES = ["saty","sales document type","doc type"];
+var VL10_TOT_CANDIDATES = ["open qty","tot"];
+var VL10_GIDATE_CANDIDATES = ["goods issue","gi date","planned gi date"];
+
+var VL10_BACKFILL_FIELDS = [
+  {orderKey:"customer", label:"Customer"},
+  {orderKey:"incoterms", label:"Incoterms"},
+  {orderKey:"shpCountry", label:"Ship Country"},
+  {orderKey:"docType", label:"Doc Type"},
+  {orderKey:"tot", label:"TOT"},
+  {orderKey:"giDate", label:"Planned GI Date"}
+];
+
+function openVl10UploadModal(){
+  document.getElementById("vl10ModalOverlay").classList.remove("hidden");
+}
+
+function closeVl10Modal(){
+  document.getElementById("vl10ModalOverlay").classList.add("hidden");
+  document.getElementById("vl10MapSection").style.display = "none";
+  document.getElementById("vl10FileName").textContent = "No file selected";
+  document.getElementById("vl10FileInput").value = "";
+  STATE.vl10AllRows = null;
+  STATE.vl10PreviewRows = null;
+}
+
+function handleVl10File(file){
+  readUploadFile(file, function(rows){
+    STATE.vl10AllRows = rows;
+    document.getElementById("vl10FileName").textContent = file.name + " — " + rows.length + " rows";
+    document.getElementById("vl10MapSection").style.display = "block";
+
+    var guessIdx = guessHeaderRowIndex(rows);
+    populateHeaderRowSelect(document.getElementById("vl10HeaderRow"), rows, guessIdx);
+    refreshVl10Columns();
+  });
+}
+
+function currentVl10Headers(){
+  var headerIdx = parseInt(document.getElementById("vl10HeaderRow").value, 10);
+  var rows = STATE.vl10AllRows || [];
+  return {headers: rows[headerIdx] || [], dataRows: rows.slice(headerIdx + 1)};
+}
+
+function refreshVl10Columns(){
+  var ctx = currentVl10Headers();
+  populateColumnSelect(document.getElementById("vl10MatchCol"), ctx.headers, VL10_MATCH_CANDIDATES);
+  populateColumnSelect(document.getElementById("vl10CustomerCol"), ctx.headers, VL10_CUSTOMER_CANDIDATES);
+  populateColumnSelect(document.getElementById("vl10IncotermsCol"), ctx.headers, VL10_INCOTERMS_CANDIDATES);
+  populateColumnSelect(document.getElementById("vl10ShpCountryCol"), ctx.headers, VL10_SHPCOUNTRY_CANDIDATES);
+  populateColumnSelect(document.getElementById("vl10DocTypeCol"), ctx.headers, VL10_DOCTYPE_CANDIDATES);
+  populateColumnSelect(document.getElementById("vl10TotCol"), ctx.headers, VL10_TOT_CANDIDATES);
+  populateColumnSelect(document.getElementById("vl10GiDateCol"), ctx.headers, VL10_GIDATE_CANDIDATES);
+  renderVl10Preview();
+}
+
+function renderVl10Preview(){
+  var ctx = currentVl10Headers();
+  var matchIdx = parseInt(document.getElementById("vl10MatchCol").value, 10);
+  var customerIdx = parseInt(document.getElementById("vl10CustomerCol").value, 10);
+  var incotermsIdx = parseInt(document.getElementById("vl10IncotermsCol").value, 10);
+  var shpCountryIdx = parseInt(document.getElementById("vl10ShpCountryCol").value, 10);
+  var docTypeIdx = parseInt(document.getElementById("vl10DocTypeCol").value, 10);
+  var totIdx = parseInt(document.getElementById("vl10TotCol").value, 10);
+  var giDateIdx = parseInt(document.getElementById("vl10GiDateCol").value, 10);
+  var rows = ctx.dataRows;
+
+  var updateCount = 0, createCount = 0, skipCount = 0, noBackfillCount = 0;
+  var seenNewKeys = {}; // guards against creating duplicate orders when the same Order Nbr appears twice in one file
+  var previewRows = rows.map(function(r){
+    var keyVal = String(r[matchIdx] || "").trim();
+    var extracted = {
+      customer: String(r[customerIdx] || "").trim(),
+      incoterms: String(r[incotermsIdx] || "").trim(),
+      shpCountry: String(r[shpCountryIdx] || "").trim(),
+      docType: String(r[docTypeIdx] || "").trim(),
+      tot: String(r[totIdx] || "").trim(),
+      giDate: normalizeDateString(String(r[giDateIdx] || "").trim())
+    };
+    var order = keyVal ? findOrderByOrderNbr(keyVal) : null;
+
+    if (order){
+      var fills = VL10_BACKFILL_FIELDS.filter(function(f){
+        var current = (order[f.orderKey] || "").toString().trim();
+        return !current && extracted[f.orderKey];
+      });
+      updateCount++;
+      if (!fills.length) noBackfillCount++;
+      return {action:"update", key: keyVal, extracted: extracted, order: order, fills: fills};
+    }
+
+    if (!keyVal && !extracted.customer){
+      skipCount++;
+      return {action:"skip", key: keyVal, extracted: extracted, order: null};
+    }
+
+    var dedupeKey = keyVal || ("cust:" + extracted.customer + ":" + extracted.tot);
+    if (seenNewKeys[dedupeKey]){
+      skipCount++;
+      return {action:"skip", key: keyVal, extracted: extracted, order: null, dupInFile: true};
+    }
+    seenNewKeys[dedupeKey] = true;
+    createCount++;
+    return {action:"create", key: keyVal, extracted: extracted, order: null};
+  });
+
+  var summary = document.getElementById("vl10Summary");
+  summary.innerHTML =
+    '<span><b>' + updateCount + '</b> matched existing</span>' +
+    '<span><b>' + (updateCount - noBackfillCount) + '</b> will get fields backfilled</span>' +
+    '<span><b>' + noBackfillCount + '</b> already complete</span>' +
+    '<span><b>' + createCount + '</b> new order' + (createCount === 1 ? "" : "s") + ' will be created</span>' +
+    (skipCount ? '<span>' + skipCount + ' skipped (blank / duplicate row)</span>' : "");
+
+  var table = document.getElementById("vl10PreviewTable");
+  var head = '<tr><th>Action</th><th>Order Nbr</th><th>Customer</th><th>Incoterms</th><th>Ship Country</th><th>Doc Type</th><th>TOT</th><th>Planned GI</th></tr>';
+  var body = previewRows.slice(0, 300).map(function(pr){
+    var cls, label;
+    if (pr.action === "update"){
+      cls = pr.fills.length ? "matched" : "matched unchanged-row";
+      label = pr.fills.length ? ("\u2713 Fill " + pr.fills.map(function(f){ return f.label; }).join(", ")) : "\u2713 Up to date";
+    } else if (pr.action === "create"){
+      cls = "matched";
+      label = "+ Create";
+    } else {
+      cls = "unmatched";
+      label = pr.dupInFile ? "\u2014 Dup in file" : "\u2014 Skip";
+    }
+    var e = pr.extracted;
+    var custCell = pr.action === "update" ? (pr.order.customer || e.customer) : e.customer;
+    var incoCell = pr.action === "update" ? (pr.order.incoterms || e.incoterms) : e.incoterms;
+    var countryCell = pr.action === "update" ? (pr.order.shpCountry || e.shpCountry) : e.shpCountry;
+    var docCell = pr.action === "update" ? (pr.order.docType || e.docType) : e.docType;
+    var totCell = pr.action === "update" ? (pr.order.tot || e.tot) : e.tot;
+    var giCell = pr.action === "update" ? (pr.order.giDate || e.giDate) : e.giDate;
+    return '<tr class="' + cls + '"><td>' + label + '</td><td>' + esc(pr.key || "\u2014") + '</td><td>' + esc(custCell || "\u2014") + '</td><td>' + esc(incoCell || "\u2014") + '</td><td>' + esc(countryCell || "\u2014") + '</td><td>' + esc(docCell || "\u2014") + '</td><td>' + esc(totCell || "\u2014") + '</td><td>' + esc(giCell || "\u2014") + '</td></tr>';
+  }).join("");
+  table.innerHTML = head + body;
+
+  document.getElementById("btnApplyVl10").disabled = (updateCount - noBackfillCount) === 0 && createCount === 0;
+  STATE.vl10PreviewRows = previewRows;
+}
+
+function applyVl10Import(){
+  var rows = STATE.vl10PreviewRows || [];
+  var updating = rows.filter(function(pr){ return pr.action === "update" && pr.fills.length; });
+  var creating = rows.filter(function(pr){ return pr.action === "create"; });
+
+  if (!updating.length && !creating.length){
+    showToast("Nothing to apply — matched orders are already complete and no new orders were found.");
+    closeVl10Modal();
+    return;
+  }
+
+  var parts = [];
+  if (updating.length) parts.push("fill in blank fields on " + updating.length + " existing order" + (updating.length === 1 ? "" : "s"));
+  if (creating.length) parts.push("create " + creating.length + " new order" + (creating.length === 1 ? "" : "s"));
+  var msg = "This will " + parts.join(" and ") + ".\n\nA backup of the current data will download automatically first, in case anything needs to be undone.\n\nContinue?";
+  if (!window.confirm(msg)) return;
+
+  backupJson();
+
+  updating.forEach(function(pr){
+    pr.fills.forEach(function(f){ pr.order[f.orderKey] = pr.extracted[f.orderKey]; });
+  });
+
+  creating.forEach(function(pr){
+    var o = blankOrder();
+    o.stoIFF = pr.key;
+    o.customer = pr.extracted.customer;
+    o.incoterms = pr.extracted.incoterms;
+    o.shpCountry = pr.extracted.shpCountry;
+    o.docType = pr.extracted.docType;
+    o.tot = pr.extracted.tot;
+    o.giDate = pr.extracted.giDate;
+    STATE.orders.push(o);
+  });
+
+  saveData();
+  updating.forEach(function(pr){ syncPushOrder(pr.order); });
+  var newlyCreated = STATE.orders.slice(STATE.orders.length - creating.length);
+  newlyCreated.forEach(function(o){ syncPushOrder(o); });
+
+  renderAll();
+
+  var msgParts = [];
+  if (updating.length) msgParts.push(updating.length + " backfilled");
+  if (creating.length) msgParts.push(creating.length + " created");
+  showToast(msgParts.join(", ") + " from VL10 Upload. Backup downloaded.");
+  closeVl10Modal();
 }
 
 /* ===================== VL06O UPLOAD ===================== */
@@ -2184,12 +2536,13 @@ function applyPkmsImport(){
 }
 
 /* ===================== SHIPTIFY UPLOAD ===================== */
-/* Matches Slot Name -> Order Nbr or Delivery Nbr, updates Carrier and Scheduled Pickup
-   Date together per matched row. Nothing else on the order changes. */
+/* Matches Slot Name -> Order Nbr or Delivery Nbr, updates Carrier, Scheduled Pickup Date,
+   and Status together per matched row. Nothing else on the order changes. */
 
 var SHIPTIFY_MATCH_CANDIDATES = ["slot name","sto","delivery"];
 var SHIPTIFY_CARRIER_CANDIDATES = ["carrier"];
 var SHIPTIFY_DATE_CANDIDATES = ["planned date","scheduled pickup date","scheduled p/u date"];
+var SHIPTIFY_STATUS_CANDIDATES = ["status"];
 
 function openShiptifyUploadModal(){
   document.getElementById("shiptifyModalOverlay").classList.remove("hidden");
@@ -2227,6 +2580,7 @@ function refreshShiptifyColumns(){
   populateColumnSelect(document.getElementById("shiptifyMatchCol"), ctx.headers, SHIPTIFY_MATCH_CANDIDATES);
   populateColumnSelect(document.getElementById("shiptifyCarrierCol"), ctx.headers, SHIPTIFY_CARRIER_CANDIDATES);
   populateColumnSelect(document.getElementById("shiptifyDateCol"), ctx.headers, SHIPTIFY_DATE_CANDIDATES);
+  populateColumnSelect(document.getElementById("shiptifyStatusCol"), ctx.headers, SHIPTIFY_STATUS_CANDIDATES);
   renderShiptifyPreview();
 }
 
@@ -2235,6 +2589,7 @@ function renderShiptifyPreview(){
   var matchIdx = parseInt(document.getElementById("shiptifyMatchCol").value, 10);
   var carrierIdx = parseInt(document.getElementById("shiptifyCarrierCol").value, 10);
   var dateIdx = parseInt(document.getElementById("shiptifyDateCol").value, 10);
+  var statusIdx = parseInt(document.getElementById("shiptifyStatusCol").value, 10);
   var rows = ctx.dataRows;
 
   var matchedCount = 0, unmatchedCount = 0, unchangedCount = 0;
@@ -2242,15 +2597,18 @@ function renderShiptifyPreview(){
     var keyVal = r[matchIdx] || "";
     var carrierVal = String(r[carrierIdx] || "").trim();
     var dateVal = normalizeDateString(String(r[dateIdx] || "").trim());
+    var statusVal = String(r[statusIdx] || "").trim();
     var order = findOrderForImportKey(keyVal);
     var oldCarrier = order ? (order.carrier || "") : "";
     var oldDate = order ? (order.schedPickup || "") : "";
+    var oldStatus = order ? (order.shiptifyStatus || "") : "";
     var carrierChanges = order && carrierVal !== "" && carrierVal !== oldCarrier;
     var dateChanges = order && dateVal !== "" && dateVal !== oldDate;
-    var unchanged = order && !carrierChanges && !dateChanges;
+    var statusChanges = order && statusVal !== "" && statusVal !== oldStatus;
+    var unchanged = order && !carrierChanges && !dateChanges && !statusChanges;
     if (order) matchedCount++; else unmatchedCount++;
     if (unchanged) unchangedCount++;
-    return {key: keyVal, carrier: carrierVal, schedPickup: dateVal, oldCarrier: oldCarrier, oldSchedPickup: oldDate, order: order, unchanged: unchanged, carrierChanges: carrierChanges, dateChanges: dateChanges};
+    return {key: keyVal, carrier: carrierVal, schedPickup: dateVal, status: statusVal, oldCarrier: oldCarrier, oldSchedPickup: oldDate, oldStatus: oldStatus, order: order, unchanged: unchanged, carrierChanges: carrierChanges, dateChanges: dateChanges, statusChanges: statusChanges};
   });
 
   var summary = document.getElementById("shiptifySummary");
@@ -2261,7 +2619,7 @@ function renderShiptifyPreview(){
     '<span><b>' + unmatchedCount + '</b> unmatched (ignored)</span>';
 
   var table = document.getElementById("shiptifyPreviewTable");
-  var head = '<tr><th>Match</th><th>Slot Name</th><th>Current Carrier</th><th>New Carrier</th><th>Current Pickup</th><th>New Pickup</th><th>Matched Order</th></tr>';
+  var head = '<tr><th>Match</th><th>Slot Name</th><th>Current Carrier</th><th>New Carrier</th><th>Current Pickup</th><th>New Pickup</th><th>Current Status</th><th>New Status</th><th>Matched Order</th></tr>';
   var body = previewRows.slice(0, 300).map(function(pr){
     var cls = pr.order ? "matched" : "unmatched";
     if (pr.unchanged) cls += " unchanged-row";
@@ -2269,7 +2627,8 @@ function renderShiptifyPreview(){
     var custName = pr.order ? (pr.order.customer || pr.order.stoIFF) : "No match";
     var newCarrierCell = pr.carrierChanges ? '<b>' + esc(pr.carrier) + '</b>' : esc(pr.carrier || "\u2014");
     var newDateCell = pr.dateChanges ? '<b>' + esc(pr.schedPickup) + '</b>' : esc(pr.schedPickup || "\u2014");
-    return '<tr class="' + cls + '"><td>' + label + '</td><td>' + esc(pr.key) + '</td><td>' + esc(pr.oldCarrier || "\u2014") + '</td><td>' + newCarrierCell + '</td><td>' + esc(pr.oldSchedPickup || "\u2014") + '</td><td>' + newDateCell + '</td><td>' + esc(custName) + '</td></tr>';
+    var newStatusCell = pr.statusChanges ? '<b>' + esc(pr.status) + '</b>' : esc(pr.status || "\u2014");
+    return '<tr class="' + cls + '"><td>' + label + '</td><td>' + esc(pr.key) + '</td><td>' + esc(pr.oldCarrier || "\u2014") + '</td><td>' + newCarrierCell + '</td><td>' + esc(pr.oldSchedPickup || "\u2014") + '</td><td>' + newDateCell + '</td><td>' + esc(pr.oldStatus || "\u2014") + '</td><td>' + newStatusCell + '</td><td>' + esc(custName) + '</td></tr>';
   }).join("");
   table.innerHTML = head + body;
 
@@ -2287,7 +2646,7 @@ function applyShiptifyImport(){
     return;
   }
 
-  var msg = "This will update Carrier and/or Scheduled Pickup Date on " + changing.length + " order" + (changing.length === 1 ? "" : "s") + ".\n\nA backup of the current data will download automatically first, in case anything needs to be undone.\n\nContinue?";
+  var msg = "This will update Carrier, Scheduled Pickup Date, and/or Status on " + changing.length + " order" + (changing.length === 1 ? "" : "s") + ".\n\nA backup of the current data will download automatically first, in case anything needs to be undone.\n\nContinue?";
   if (!window.confirm(msg)) return;
 
   backupJson();
@@ -2296,6 +2655,7 @@ function applyShiptifyImport(){
   changing.forEach(function(pr){
     if (pr.carrierChanges) pr.order.carrier = pr.carrier;
     if (pr.dateChanges) pr.order.schedPickup = pr.schedPickup;
+    if (pr.statusChanges) pr.order.shiptifyStatus = pr.status;
     applied++;
   });
   if (applied){
@@ -2562,6 +2922,7 @@ function renderAll(){
   renderStats();
   renderLegend();
   renderZones();
+  renderColumnFilters();
   renderTableHead();
   renderTable();
   updateSyncPill();
@@ -2624,9 +2985,10 @@ function wireEvents(){
   });
   document.getElementById("btnResetColumns").addEventListener("click", resetColumnOrder);
   document.getElementById("btnClearFilter").addEventListener("click", function(){
-    STATE.searchTerm = ""; STATE.statusFilter = "";
+    STATE.searchTerm = ""; STATE.statusFilter = ""; STATE.columnFilters = {};
     document.getElementById("searchInput").value = "";
     document.getElementById("statusFilter").value = "";
+    renderColumnFilters();
     renderTable();
   });
 
@@ -2639,6 +3001,39 @@ function wireEvents(){
     if (e.target.files && e.target.files[0]) restoreJson(e.target.files[0]);
     e.target.value = "";
   });
+
+  // VL10 Upload modal
+  document.getElementById("btnVl10Upload").addEventListener("click", openVl10UploadModal);
+  document.getElementById("vl10ModalClose").addEventListener("click", closeVl10Modal);
+  document.getElementById("btnCancelVl10").addEventListener("click", closeVl10Modal);
+  document.getElementById("vl10ModalOverlay").addEventListener("click", function(e){
+    if (e.target === this) closeVl10Modal();
+  });
+  document.getElementById("vl10Dropzone").addEventListener("click", function(){
+    document.getElementById("vl10FileInput").click();
+  });
+  document.getElementById("vl10Dropzone").addEventListener("dragover", function(e){
+    e.preventDefault(); this.classList.add("drag");
+  });
+  document.getElementById("vl10Dropzone").addEventListener("dragleave", function(){
+    this.classList.remove("drag");
+  });
+  document.getElementById("vl10Dropzone").addEventListener("drop", function(e){
+    e.preventDefault(); this.classList.remove("drag");
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) handleVl10File(e.dataTransfer.files[0]);
+  });
+  document.getElementById("vl10FileInput").addEventListener("change", function(e){
+    if (e.target.files && e.target.files[0]) handleVl10File(e.target.files[0]);
+  });
+  document.getElementById("vl10HeaderRow").addEventListener("change", refreshVl10Columns);
+  document.getElementById("vl10MatchCol").addEventListener("change", renderVl10Preview);
+  document.getElementById("vl10CustomerCol").addEventListener("change", renderVl10Preview);
+  document.getElementById("vl10IncotermsCol").addEventListener("change", renderVl10Preview);
+  document.getElementById("vl10ShpCountryCol").addEventListener("change", renderVl10Preview);
+  document.getElementById("vl10DocTypeCol").addEventListener("change", renderVl10Preview);
+  document.getElementById("vl10TotCol").addEventListener("change", renderVl10Preview);
+  document.getElementById("vl10GiDateCol").addEventListener("change", renderVl10Preview);
+  document.getElementById("btnApplyVl10").addEventListener("click", applyVl10Import);
 
   // VL06O Upload modal
   document.getElementById("btnVl06oUpload").addEventListener("click", openVl06oUploadModal);
@@ -2727,6 +3122,7 @@ function wireEvents(){
   document.getElementById("shiptifyMatchCol").addEventListener("change", renderShiptifyPreview);
   document.getElementById("shiptifyCarrierCol").addEventListener("change", renderShiptifyPreview);
   document.getElementById("shiptifyDateCol").addEventListener("change", renderShiptifyPreview);
+  document.getElementById("shiptifyStatusCol").addEventListener("change", renderShiptifyPreview);
   document.getElementById("btnApplyShiptify").addEventListener("click", applyShiptifyImport);
 
   // Settings modal
