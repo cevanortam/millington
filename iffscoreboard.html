@@ -1021,7 +1021,7 @@ function syncPullAll(showErrors){
       // very first time a Sync URL is connected to a brand-new (empty) Google Sheet —
       // in that case we seed the sheet FROM the local data instead of overwriting it.
       if (showErrors) showToast("Sheet is empty — pushing " + STATE.orders.length + " local orders to seed it.");
-      var pushes = STATE.orders.map(function(o){ return syncFetch("upsertOrder", {order: o}); });
+      var pushes = STATE.orders.map(function(o){ return enqueueSyncTask(function(){ return syncFetchWithRetry("upsertOrder", {order: o}); }); });
       return Promise.all(pushes).then(function(){
         saveLocalOrders(); saveLocalSettings();
         updateSyncPill();
@@ -1042,35 +1042,90 @@ function syncPullAll(showErrors){
   });
 }
 
+/* ---- Serialized sync write queue ----
+   Google Apps Script Web Apps serialize writes with LockService. Firing many upsert/delete
+   requests at once (a bulk PKMS/VL06O/VL10/Shiptify import, or Restore JSON, each does one
+   request per order) causes them to pile up server-side waiting on the same lock, and the
+   ones at the back of the pile eventually time out. Routing every write through this queue
+   keeps at most one sync request in flight at a time, and retries a request that hits a
+   lock timeout (with backoff) instead of immediately failing it. */
+var syncQueue = [];
+var syncQueueRunning = false;
+
+function runSyncQueue(){
+  if (syncQueueRunning || !syncQueue.length) return;
+  syncQueueRunning = true;
+  var item = syncQueue.shift();
+  item.run().then(function(result){
+    item.resolve({ok:true, result:result});
+  }).catch(function(err){
+    item.resolve({ok:false, error:err});
+  }).then(function(){
+    syncQueueRunning = false;
+    runSyncQueue();
+  });
+}
+
+function enqueueSyncTask(taskFn){
+  return new Promise(function(resolve){
+    syncQueue.push({run: taskFn, resolve: resolve});
+    runSyncQueue();
+  });
+}
+
+function isLockTimeoutError(err){
+  return !!(err && /lock timeout/i.test(err.message || ""));
+}
+
+function syncFetchWithRetry(action, payload, maxAttempts){
+  maxAttempts = maxAttempts || 4;
+  function attempt(n){
+    return syncFetch(action, payload).catch(function(err){
+      if (n < maxAttempts && isLockTimeoutError(err)){
+        var delay = 600 * n; // backoff: 600ms, 1200ms, 1800ms…
+        return new Promise(function(res){ setTimeout(res, delay); }).then(function(){ return attempt(n + 1); });
+      }
+      throw err;
+    });
+  }
+  return attempt(1);
+}
+
 function syncPushOrder(order){
   saveLocalOrders();
   if (!syncConfigured()) return;
-  syncFetch("upsertOrder", {order: order}).then(function(){
-    STATE.sync.connected = true; STATE.sync.lastSyncAt = Date.now(); updateSyncPill();
-  }).catch(function(err){
-    STATE.sync.connected = false; updateSyncPill();
-    showToast("Saved locally, but could not sync to Google Sheet: " + err.message, true);
+  enqueueSyncTask(function(){ return syncFetchWithRetry("upsertOrder", {order: order}); }).then(function(res){
+    if (res.ok){
+      STATE.sync.connected = true; STATE.sync.lastSyncAt = Date.now(); updateSyncPill();
+    } else {
+      STATE.sync.connected = false; updateSyncPill();
+      showToast("Saved locally, but could not sync to Google Sheet: " + res.error.message, true);
+    }
   });
 }
 
 function syncPushDelete(id){
   if (!syncConfigured()) return;
-  syncFetch("deleteOrder", {id: id}).then(function(){
-    STATE.sync.connected = true; STATE.sync.lastSyncAt = Date.now(); updateSyncPill();
-  }).catch(function(err){
-    STATE.sync.connected = false; updateSyncPill();
-    showToast("Deleted locally, but could not sync to Google Sheet: " + err.message, true);
+  enqueueSyncTask(function(){ return syncFetchWithRetry("deleteOrder", {id: id}); }).then(function(res){
+    if (res.ok){
+      STATE.sync.connected = true; STATE.sync.lastSyncAt = Date.now(); updateSyncPill();
+    } else {
+      STATE.sync.connected = false; updateSyncPill();
+      showToast("Deleted locally, but could not sync to Google Sheet: " + res.error.message, true);
+    }
   });
 }
 
 function syncPushConfig(){
   saveLocalSettings();
   if (!syncConfigured()) return Promise.resolve();
-  return syncFetch("updateConfig", {statusOptions: STATE.statusOptions, passwordHash: STATE.passwordHash}).then(function(){
-    STATE.sync.connected = true; STATE.sync.lastSyncAt = Date.now(); updateSyncPill();
-  }).catch(function(err){
-    STATE.sync.connected = false; updateSyncPill();
-    showToast("Saved locally, but could not sync settings to Google Sheet: " + err.message, true);
+  return enqueueSyncTask(function(){ return syncFetchWithRetry("updateConfig", {statusOptions: STATE.statusOptions, passwordHash: STATE.passwordHash}); }).then(function(res){
+    if (res.ok){
+      STATE.sync.connected = true; STATE.sync.lastSyncAt = Date.now(); updateSyncPill();
+    } else {
+      STATE.sync.connected = false; updateSyncPill();
+      showToast("Saved locally, but could not sync settings to Google Sheet: " + res.error.message, true);
+    }
   });
 }
 
