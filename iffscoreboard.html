@@ -2003,16 +2003,35 @@ function findOrderByOrderNbr(key){
   return null;
 }
 
-function normalizeDateString(s){
+// Shiptify exports dates as DD/MM/YYYY.
+function normalizeDateStringDMY(s){
   if (!s) return "";
   s = String(s).trim();
   if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
   var m = s.match(/^(\d{4})(\d{2})(\d{2})$/);
   if (m) return m[1] + "-" + m[2] + "-" + m[3];
-  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); // Shiptify uses DD/MM/YYYY
+  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (m){
     var day = m[1].length < 2 ? "0"+m[1] : m[1];
     var mon = m[2].length < 2 ? "0"+m[2] : m[2];
+    return m[3] + "-" + mon + "-" + day;
+  }
+  return s;
+}
+
+// VL06O and VL10 export dates as MM/DD/YYYY (US format) — confirmed against real extracts
+// (e.g. an "08/xx" column where xx ranges up to 31 can only be a day, not a month, so the
+// first number is the month). Using the DD/MM parser on these swapped month and day.
+function normalizeDateStringMDY(s){
+  if (!s) return "";
+  s = String(s).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  var m = s.match(/^(\d{4})(\d{2})(\d{2})$/);
+  if (m) return m[1] + "-" + m[2] + "-" + m[3];
+  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m){
+    var mon = m[1].length < 2 ? "0"+m[1] : m[1];
+    var day = m[2].length < 2 ? "0"+m[2] : m[2];
     return m[3] + "-" + mon + "-" + day;
   }
   return s;
@@ -2161,7 +2180,7 @@ function renderVl10Preview(){
       shpCountry: String(r[shpCountryIdx] || "").trim(),
       docType: String(r[docTypeIdx] || "").trim(),
       tot: String(r[totIdx] || "").trim(),
-      giDate: normalizeDateString(String(r[giDateIdx] || "").trim())
+      giDate: normalizeDateStringMDY(String(r[giDateIdx] || "").trim())
     };
     var order = keyVal ? findOrderByOrderNbr(keyVal) : null;
 
@@ -2350,7 +2369,7 @@ function renderVl06oPreview(){
     var documentVal = String(r[documentIdx] || "").trim();
     var customerVal = String(r[customerIdx] || "").trim();
     var incotermsVal = String(r[incotermsIdx] || "").trim();
-    var plannedGiDateVal = normalizeDateString(String(r[plannedGiDateIdx] || "").trim());
+    var plannedGiDateVal = normalizeDateStringMDY(String(r[plannedGiDateIdx] || "").trim());
     var actualGiDateVal = String(r[giDateIdx] || "").trim();
     var sapStatusResolved = actualGiDateVal ? "GI Complete" : "Not Yet Shipped";
     var order = keyVal ? findOrderByCevaRef(keyVal) : null;
@@ -2664,7 +2683,7 @@ function renderShiptifyPreview(){
   var previewRows = rows.map(function(r){
     var keyVal = r[matchIdx] || "";
     var carrierVal = String(r[carrierIdx] || "").trim();
-    var dateVal = normalizeDateString(String(r[dateIdx] || "").trim());
+    var dateVal = normalizeDateStringDMY(String(r[dateIdx] || "").trim());
     var statusVal = String(r[statusIdx] || "").trim();
     var order = findOrderForImportKey(keyVal);
     var oldCarrier = order ? (order.carrier || "") : "";
