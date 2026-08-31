@@ -314,6 +314,7 @@ table.csv-table{width:100%;border-collapse:collapse;font-size:11px;font-family:v
       <div class="toolbar-actions">
         <button class="btn ghost sm" id="btnClearFilter">Clear filters</button>
         <button class="btn ghost sm" id="btnResetColumns">Reset columns</button>
+        <button class="btn ghost sm" id="btnFindDuplicates">Find Duplicates</button>
       </div>
     </div>
 
@@ -432,6 +433,11 @@ table.csv-table{width:100%;border-collapse:collapse;font-size:11px;font-family:v
         </div>
       </div>
 
+      <label class="checkbox-row" style="margin:12px 0 10px;">
+        <input type="checkbox" id="vl10ForceOverwrite">
+        Overwrite existing values instead of only filling blanks (use this to correct data on orders that already have a value — e.g. fixing a bad date from before a parsing fix)
+      </label>
+
       <div class="import-summary" id="vl10Summary"></div>
 
       <div class="csv-preview">
@@ -443,6 +449,29 @@ table.csv-table{width:100%;border-collapse:collapse;font-size:11px;font-family:v
       <div style="flex:1;"></div>
       <button class="btn ghost sm" id="btnCancelVl10">Cancel</button>
       <button class="btn primary sm" id="btnApplyVl10" disabled>Apply Updates</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MERGE DUPLICATE ORDERS MODAL ===================== -->
+<div class="modal-overlay hidden" id="dedupeModalOverlay">
+  <div class="modal wide">
+    <div class="modal-head">
+      <h3>Merge Duplicate Orders</h3>
+      <button class="modal-close" id="dedupeModalClose">×</button>
+    </div>
+    <p class="hint" style="margin-bottom:12px;">Finds orders that share the same Order Nbr with no Delivery Nbr to tell them apart — usually caused by a sync hiccup creating a second copy of the same order. For each group, the most complete record is kept; any field it's missing gets filled in from its duplicate(s) first, then the duplicate(s) are deleted. Uncheck a group to leave it alone.</p>
+
+    <div class="import-summary" id="dedupeSummary"></div>
+
+    <div class="csv-preview">
+      <table class="csv-table" id="dedupePreviewTable"></table>
+    </div>
+
+    <div class="modal-foot">
+      <div style="flex:1;"></div>
+      <button class="btn ghost sm" id="btnCancelDedupe">Cancel</button>
+      <button class="btn primary sm" id="btnApplyDedupe" disabled>Merge Selected</button>
     </div>
   </div>
 </div>
@@ -1146,6 +1175,7 @@ function startPolling(){
     var modalOpen = !document.getElementById("orderModalOverlay").classList.contains("hidden") ||
                     !document.getElementById("settingsModalOverlay").classList.contains("hidden") ||
                     !document.getElementById("pkmsModalOverlay").classList.contains("hidden") ||
+                    !document.getElementById("dedupeModalOverlay").classList.contains("hidden") ||
                     !document.getElementById("vl10ModalOverlay").classList.contains("hidden") ||
                     !document.getElementById("vl06oModalOverlay").classList.contains("hidden") ||
                     !document.getElementById("shiptifyModalOverlay").classList.contains("hidden");
@@ -1743,6 +1773,123 @@ function confirmDelete(id){
   showToast("Order deleted.");
 }
 
+/* ===================== MERGE DUPLICATE ORDERS ===================== */
+/* Groups orders that share the same Order Nbr with no Delivery Nbr to distinguish them —
+   the signature of a sync hiccup creating a second copy rather than a legitimately separate
+   delivery under the same STO (which would have its own Delivery Nbr once assigned). For
+   each group, keeps whichever record has the most fields already filled in, backfills any
+   blanks on it from the duplicate(s) — never overwriting a value it already has — then
+   deletes the duplicate(s). */
+
+function findDuplicateOrderGroups(){
+  var groups = {};
+  STATE.orders.forEach(function(o){
+    var soKey = normalizeKey(o.stoIFF);
+    if (!soKey) return; // nothing to group on
+    var key = soKey + "|" + normalizeKey(o.cevaRef);
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(o);
+  });
+  return Object.keys(groups).map(function(k){ return groups[k]; }).filter(function(g){ return g.length > 1; });
+}
+
+function computeMergePlan(group){
+  var scored = group.map(function(o){
+    var score = ALL_FIELDS.filter(function(f){ return String(o[f.k] || "").trim() !== ""; }).length;
+    return {order: o, score: score};
+  });
+  scored.sort(function(a, b){ return b.score - a.score; }); // most complete first
+  var keep = scored[0].order;
+  var others = scored.slice(1).map(function(s){ return s.order; });
+
+  var fills = [];
+  ALL_FIELDS.forEach(function(f){
+    var current = String(keep[f.k] || "").trim();
+    if (current) return; // keep already has this — never overwrite
+    for (var i = 0; i < others.length; i++){
+      var v = String(others[i][f.k] || "").trim();
+      if (v){ fills.push({orderKey: f.k, label: f.label, value: others[i][f.k]}); break; }
+    }
+  });
+
+  return {keep: keep, remove: others, fills: fills};
+}
+
+function openDedupeModal(){
+  var groups = findDuplicateOrderGroups();
+  STATE.dedupePlans = groups.map(computeMergePlan);
+  renderDedupePreview();
+  document.getElementById("dedupeModalOverlay").classList.remove("hidden");
+}
+
+function closeDedupeModal(){
+  document.getElementById("dedupeModalOverlay").classList.add("hidden");
+  STATE.dedupePlans = null;
+}
+
+function renderDedupePreview(){
+  var plans = STATE.dedupePlans || [];
+  var totalRemove = plans.reduce(function(s, g){ return s + g.remove.length; }, 0);
+
+  var summary = document.getElementById("dedupeSummary");
+  summary.innerHTML = plans.length
+    ? ('<span><b>' + plans.length + '</b> duplicate order number' + (plans.length === 1 ? "" : "s") + ' found</span>' +
+       '<span><b>' + totalRemove + '</b> duplicate row' + (totalRemove === 1 ? "" : "s") + ' will be removed</span>')
+    : '<span>No duplicate orders found — nothing to merge.</span>';
+
+  var table = document.getElementById("dedupePreviewTable");
+  var head = '<tr><th></th><th>Order Nbr</th><th>Copies</th><th>Keeping</th><th>Fields Filled In</th></tr>';
+  var body = plans.map(function(g, idx){
+    var fillsLabel = g.fills.length ? g.fills.map(function(f){ return f.label; }).join(", ") : "\u2014";
+    return '<tr class="matched"><td><input type="checkbox" class="chk" checked data-group-idx="' + idx + '"></td>' +
+      '<td>' + esc(g.keep.stoIFF || "\u2014") + '</td>' +
+      '<td>' + (g.remove.length + 1) + '</td>' +
+      '<td>' + esc(g.keep.customer || g.keep.stoIFF || "\u2014") + '</td>' +
+      '<td>' + esc(fillsLabel) + '</td></tr>';
+  }).join("");
+  table.innerHTML = head + body;
+
+  document.getElementById("btnApplyDedupe").disabled = plans.length === 0;
+}
+
+function applyDedupe(){
+  var plans = STATE.dedupePlans || [];
+  var toApply = plans.filter(function(g, idx){
+    var chk = document.querySelector('#dedupePreviewTable input[data-group-idx="' + idx + '"]');
+    return chk ? chk.checked : true;
+  });
+
+  if (!toApply.length){
+    showToast("Nothing selected to merge.");
+    return;
+  }
+
+  var totalRemoved = toApply.reduce(function(s, g){ return s + g.remove.length; }, 0);
+  var msg = "This will merge " + toApply.length + " duplicate group" + (toApply.length === 1 ? "" : "s") +
+    ", deleting " + totalRemoved + " duplicate order" + (totalRemoved === 1 ? "" : "s") + " total. " +
+    "Any fields the kept record is missing will be filled in from its duplicate(s) first.\n\n" +
+    "A backup of the current data will download automatically first, in case anything needs to be undone.\n\nContinue?";
+  if (!window.confirm(msg)) return;
+
+  backupJson();
+
+  toApply.forEach(function(g){
+    g.fills.forEach(function(f){ g.keep[f.orderKey] = f.value; });
+    var removeIds = g.remove.map(function(o){ return o.id; });
+    STATE.orders = STATE.orders.filter(function(o){ return removeIds.indexOf(o.id) === -1; });
+  });
+
+  saveData();
+  toApply.forEach(function(g){
+    syncPushOrder(g.keep);
+    g.remove.forEach(function(o){ syncPushDelete(o.id); });
+  });
+
+  renderAll();
+  showToast(totalRemoved + " duplicate order" + (totalRemoved === 1 ? "" : "s") + " removed. Backup downloaded.");
+  closeDedupeModal();
+}
+
 /* ===================== ORDER MODAL (ADD/EDIT) ===================== */
 
 function fieldControlHtml(f, val){
@@ -2125,6 +2272,7 @@ function closeVl10Modal(){
   document.getElementById("vl10MapSection").style.display = "none";
   document.getElementById("vl10FileName").textContent = "No file selected";
   document.getElementById("vl10FileInput").value = "";
+  document.getElementById("vl10ForceOverwrite").checked = false;
   STATE.vl10AllRows = null;
   STATE.vl10PreviewRows = null;
 }
@@ -2168,6 +2316,7 @@ function renderVl10Preview(){
   var docTypeIdx = parseInt(document.getElementById("vl10DocTypeCol").value, 10);
   var totIdx = parseInt(document.getElementById("vl10TotCol").value, 10);
   var giDateIdx = parseInt(document.getElementById("vl10GiDateCol").value, 10);
+  var forceOverwrite = document.getElementById("vl10ForceOverwrite").checked;
   var rows = ctx.dataRows;
 
   var updateCount = 0, createCount = 0, skipCount = 0, noBackfillCount = 0;
@@ -2187,7 +2336,9 @@ function renderVl10Preview(){
     if (order){
       var fills = VL10_BACKFILL_FIELDS.filter(function(f){
         var current = (order[f.orderKey] || "").toString().trim();
-        return !current && extracted[f.orderKey];
+        var incoming = extracted[f.orderKey];
+        if (!incoming) return false; // nothing in the file for this field — never clear existing data
+        return forceOverwrite ? (incoming !== current) : !current;
       });
       updateCount++;
       if (!fills.length) noBackfillCount++;
@@ -2212,10 +2363,11 @@ function renderVl10Preview(){
   var summary = document.getElementById("vl10Summary");
   summary.innerHTML =
     '<span><b>' + updateCount + '</b> matched existing</span>' +
-    '<span><b>' + (updateCount - noBackfillCount) + '</b> will get fields backfilled</span>' +
-    '<span><b>' + noBackfillCount + '</b> already complete</span>' +
+    '<span><b>' + (updateCount - noBackfillCount) + '</b> will ' + (forceOverwrite ? 'be overwritten' : 'get fields backfilled') + '</span>' +
+    '<span><b>' + noBackfillCount + '</b> already ' + (forceOverwrite ? 'match' : 'complete') + '</span>' +
     '<span><b>' + createCount + '</b> new order' + (createCount === 1 ? "" : "s") + ' will be created</span>' +
-    (skipCount ? '<span>' + skipCount + ' skipped (blank / duplicate row)</span>' : "");
+    (skipCount ? '<span>' + skipCount + ' skipped (blank / duplicate row)</span>' : "") +
+    (forceOverwrite ? '<span style="color:var(--red);"><b>\u26a0 Overwrite mode</b> — existing values will be replaced</span>' : "");
 
   var table = document.getElementById("vl10PreviewTable");
   var head = '<tr><th>Action</th><th>Order Nbr</th><th>Customer</th><th>Incoterms</th><th>Ship Country</th><th>Doc Type</th><th>TOT</th><th>Planned GI</th></tr>';
@@ -2223,7 +2375,7 @@ function renderVl10Preview(){
     var cls, label;
     if (pr.action === "update"){
       cls = pr.fills.length ? "matched" : "matched unchanged-row";
-      label = pr.fills.length ? ("\u2713 Fill " + pr.fills.map(function(f){ return f.label; }).join(", ")) : "\u2713 Up to date";
+      label = pr.fills.length ? ("\u2713 " + (forceOverwrite ? "Overwrite " : "Fill ") + pr.fills.map(function(f){ return f.label; }).join(", ")) : "\u2713 Up to date";
     } else if (pr.action === "create"){
       cls = "matched";
       label = "+ Create";
@@ -2232,13 +2384,14 @@ function renderVl10Preview(){
       label = pr.dupInFile ? "\u2014 Dup in file" : "\u2014 Skip";
     }
     var e = pr.extracted;
-    var custCell = pr.action === "update" ? (pr.order.customer || e.customer) : e.customer;
-    var incoCell = pr.action === "update" ? (pr.order.incoterms || e.incoterms) : e.incoterms;
-    var countryCell = pr.action === "update" ? (pr.order.shpCountry || e.shpCountry) : e.shpCountry;
-    var docCell = pr.action === "update" ? (pr.order.docType || e.docType) : e.docType;
-    var totCell = pr.action === "update" ? (pr.order.tot || e.tot) : e.tot;
-    var giCell = pr.action === "update" ? (pr.order.giDate || e.giDate) : e.giDate;
-    return '<tr class="' + cls + '"><td>' + label + '</td><td>' + esc(pr.key || "\u2014") + '</td><td>' + esc(custCell || "\u2014") + '</td><td>' + esc(incoCell || "\u2014") + '</td><td>' + esc(countryCell || "\u2014") + '</td><td>' + esc(docCell || "\u2014") + '</td><td>' + esc(totCell || "\u2014") + '</td><td>' + esc(giCell || "\u2014") + '</td></tr>';
+    function cell(fieldKey, label2){
+      if (pr.action !== "update") return esc(e[fieldKey] || "\u2014");
+      var changing = pr.fills.some(function(f){ return f.orderKey === fieldKey; });
+      var oldVal = pr.order[fieldKey] || "\u2014";
+      if (!changing) return esc(oldVal);
+      return '<span class="unchanged-tag" style="text-decoration:line-through;">' + esc(oldVal) + '</span> \u2192 <b>' + esc(e[fieldKey]) + '</b>';
+    }
+    return '<tr class="' + cls + '"><td>' + label + '</td><td>' + esc(pr.key || "\u2014") + '</td><td>' + cell("customer") + '</td><td>' + cell("incoterms") + '</td><td>' + cell("shpCountry") + '</td><td>' + cell("docType") + '</td><td>' + cell("tot") + '</td><td>' + cell("giDate") + '</td></tr>';
   }).join("");
   table.innerHTML = head + body;
 
@@ -2248,19 +2401,22 @@ function renderVl10Preview(){
 
 function applyVl10Import(){
   var rows = STATE.vl10PreviewRows || [];
+  var forceOverwrite = document.getElementById("vl10ForceOverwrite").checked;
   var updating = rows.filter(function(pr){ return pr.action === "update" && pr.fills.length; });
   var creating = rows.filter(function(pr){ return pr.action === "create"; });
 
   if (!updating.length && !creating.length){
-    showToast("Nothing to apply — matched orders are already complete and no new orders were found.");
+    showToast("Nothing to apply — matched orders are already " + (forceOverwrite ? "matching" : "complete") + " and no new orders were found.");
     closeVl10Modal();
     return;
   }
 
   var parts = [];
-  if (updating.length) parts.push("fill in blank fields on " + updating.length + " existing order" + (updating.length === 1 ? "" : "s"));
+  if (updating.length) parts.push((forceOverwrite ? "overwrite fields on " : "fill in blank fields on ") + updating.length + " existing order" + (updating.length === 1 ? "" : "s"));
   if (creating.length) parts.push("create " + creating.length + " new order" + (creating.length === 1 ? "" : "s"));
-  var msg = "This will " + parts.join(" and ") + ".\n\nA backup of the current data will download automatically first, in case anything needs to be undone.\n\nContinue?";
+  var msg = "This will " + parts.join(" and ") + ".";
+  if (forceOverwrite) msg += "\n\n\u26a0 Overwrite mode is on — this will replace existing values on matched orders, not just fill in blanks.";
+  msg += "\n\nA backup of the current data will download automatically first, in case anything needs to be undone.\n\nContinue?";
   if (!window.confirm(msg)) return;
 
   backupJson();
@@ -2289,7 +2445,7 @@ function applyVl10Import(){
   renderAll();
 
   var msgParts = [];
-  if (updating.length) msgParts.push(updating.length + " backfilled");
+  if (updating.length) msgParts.push(updating.length + (forceOverwrite ? " overwritten" : " backfilled"));
   if (creating.length) msgParts.push(creating.length + " created");
   showToast(msgParts.join(", ") + " from VL10 Upload. Backup downloaded.");
   closeVl10Modal();
@@ -3089,6 +3245,15 @@ function wireEvents(){
     e.target.value = "";
   });
 
+  // Merge Duplicate Orders modal
+  document.getElementById("btnFindDuplicates").addEventListener("click", openDedupeModal);
+  document.getElementById("dedupeModalClose").addEventListener("click", closeDedupeModal);
+  document.getElementById("btnCancelDedupe").addEventListener("click", closeDedupeModal);
+  document.getElementById("dedupeModalOverlay").addEventListener("click", function(e){
+    if (e.target === this) closeDedupeModal();
+  });
+  document.getElementById("btnApplyDedupe").addEventListener("click", applyDedupe);
+
   // VL10 Upload modal
   document.getElementById("btnVl10Upload").addEventListener("click", openVl10UploadModal);
   document.getElementById("vl10ModalClose").addEventListener("click", closeVl10Modal);
@@ -3120,6 +3285,7 @@ function wireEvents(){
   document.getElementById("vl10DocTypeCol").addEventListener("change", renderVl10Preview);
   document.getElementById("vl10TotCol").addEventListener("change", renderVl10Preview);
   document.getElementById("vl10GiDateCol").addEventListener("change", renderVl10Preview);
+  document.getElementById("vl10ForceOverwrite").addEventListener("change", renderVl10Preview);
   document.getElementById("btnApplyVl10").addEventListener("click", applyVl10Import);
 
   // VL06O Upload modal
