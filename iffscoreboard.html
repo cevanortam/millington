@@ -134,6 +134,8 @@ input[type=file]{display:none;}
 .search-input,.filter-select{width:100%;background:var(--panel-alt);border:1px solid var(--border);border-radius:7px;padding:8px 11px;color:var(--text);font-family:var(--mono);font-size:12.5px;}
 .search-input:focus,.filter-select:focus{outline:none;border-color:var(--amber);}
 .toolbar-actions{display:flex;gap:8px;flex-wrap:wrap;}
+.filter-daterange{display:inline-flex;align-items:center;gap:6px;}
+.filter-daterange input[type=date]{width:auto;}
 
 .table-scroll{overflow-x:auto;border:1px solid var(--border);border-radius:10px;}
 table.order-table{width:100%;border-collapse:collapse;font-size:13px;min-width:1000px;}
@@ -171,6 +173,7 @@ table.order-table{width:100%;border-collapse:collapse;font-size:13px;min-width:1
 .upload-tile{display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:var(--panel-alt);color:var(--text);cursor:pointer;transition:all .12s ease;}
 .upload-tile:hover{border-color:var(--amber-deep);background:rgba(242,169,59,0.08);transform:translateY(-1px);}
 .upload-tile .ut-icon{font-size:15px;color:var(--amber);flex:none;}
+.upload-tile .ut-step{font-family:var(--mono);font-size:9px;font-weight:700;color:#1a1305;background:var(--amber);border-radius:50%;width:15px;height:15px;flex:none;display:inline-flex;align-items:center;justify-content:center;}
 .upload-tile .ut-label{font-family:var(--disp);font-size:10.5px;text-transform:uppercase;letter-spacing:0.3px;line-height:1.25;text-align:left;font-weight:600;}
 
 /* ---------- Settings ---------- */
@@ -268,10 +271,10 @@ table.csv-table{width:100%;border-collapse:collapse;font-size:11px;font-family:v
   </div>
   <div class="topbar-right">
     <span class="pill" id="syncPill"><span class="dot"></span>—</span>
-    <button class="upload-tile" id="btnVl10Upload"><span class="ut-icon">⇪</span><span class="ut-label">VL10<br>Upload</span></button>
-    <button class="upload-tile" id="btnVl06oUpload"><span class="ut-icon">⇪</span><span class="ut-label">VL06O<br>Upload</span></button>
-    <button class="upload-tile" id="btnPkmsUpload"><span class="ut-icon">⇪</span><span class="ut-label">PKMS Order Status<br>Upload</span></button>
-    <button class="upload-tile" id="btnShiptifyUpload"><span class="ut-icon">⇪</span><span class="ut-label">Shiptify<br>Upload</span></button>
+    <button class="upload-tile" id="btnVl10Upload" title="Step 1 — run first: creates/updates orders before a delivery exists"><span class="ut-step">1</span><span class="ut-label">VL10<br>Upload</span></button>
+    <button class="upload-tile" id="btnVl06oUpload" title="Step 2 — run once deliveries exist in SAP: attaches Delivery Nbr and SAP status"><span class="ut-step">2</span><span class="ut-label">VL06O<br>Upload</span></button>
+    <button class="upload-tile" id="btnPkmsUpload" title="Step 3 — run once PKMS has picked up the delivery: updates PKMS status"><span class="ut-step">3</span><span class="ut-label">PKMS Order Status<br>Upload</span></button>
+    <button class="upload-tile" id="btnShiptifyUpload" title="Step 4 — run once a carrier/pickup is booked: updates carrier, pickup date and status"><span class="ut-step">4</span><span class="ut-label">Shiptify<br>Upload</span></button>
     <button class="btn ghost sm" id="btnExportCsv">⇩ Export CSV</button>
     <button class="btn ghost sm" id="btnBackup">⇩ Backup JSON</button>
     <button class="btn ghost sm" id="btnRestore">⇧ Restore JSON</button>
@@ -389,7 +392,7 @@ table.csv-table{width:100%;border-collapse:collapse;font-size:11px;font-family:v
       <h3>VL10 Upload</h3>
       <button class="modal-close" id="vl10ModalClose">×</button>
     </div>
-    <p class="hint" style="margin-bottom:12px;">Upload a VL10 extract (.csv or .xlsx). VL10 lists orders before a delivery/Delivery Nbr exists, so rows are matched by <b>Order Nbr</b> instead. Rows with no matching order are <b>created as new orders</b>, using OriginDoc. → Order Nbr, Name 1 → Customer/Supplier, IncoT → Incoterms, ShpCountry → Ship Country, SaTy → Sales Document Type, Open qty → TOT, and Goods Issue → Planned GI Date. If an order already exists for that Order Nbr, this only fills in whichever of those fields are currently blank on it — it never overwrites a value you've already entered.</p>
+    <p class="hint" style="margin-bottom:12px;">Upload a VL10 extract (.csv or .xlsx). VL10 lists orders before a delivery/Delivery Nbr exists, so rows are matched by <b>Order Nbr</b> instead. Rows with no matching order are <b>created as new orders</b>, using OriginDoc. → Order Nbr, Name 1 → Customer/Supplier, IncoT → Incoterms, ShpCountry → Ship Country, SaTy → Sales Document Type, Open qty → TOT, and Goods Issue → Planned GI Date. If an order already exists for that Order Nbr, this only fills in whichever of those fields are currently blank on it — it never overwrites a value you've already entered. <b>Planned GI Date is the one exception:</b> VL10 is the system of record for it, so it's always updated to match this file even if a value is already on the order (whether or not Overwrite mode below is checked).</p>
 
     <div class="dropzone" id="vl10Dropzone">
       <div class="dz-title">Click to choose a CSV or XLSX file, or drag one here</div>
@@ -435,7 +438,7 @@ table.csv-table{width:100%;border-collapse:collapse;font-size:11px;font-family:v
 
       <label class="checkbox-row" style="margin:12px 0 10px;">
         <input type="checkbox" id="vl10ForceOverwrite">
-        Overwrite existing values instead of only filling blanks (use this to correct data on orders that already have a value — e.g. fixing a bad date from before a parsing fix)
+        Overwrite existing values instead of only filling blanks (Customer, Incoterms, Ship Country, Doc Type, TOT only — Planned GI Date always updates from VL10 regardless of this checkbox)
       </label>
 
       <div class="import-summary" id="vl10Summary"></div>
@@ -460,7 +463,7 @@ table.csv-table{width:100%;border-collapse:collapse;font-size:11px;font-family:v
       <h3>Merge Duplicate Orders</h3>
       <button class="modal-close" id="dedupeModalClose">×</button>
     </div>
-    <p class="hint" style="margin-bottom:12px;">Finds orders that share the same Order Nbr with no Delivery Nbr to tell them apart — usually caused by a sync hiccup creating a second copy of the same order. For each group, the most complete record is kept; any field it's missing gets filled in from its duplicate(s) first, then the duplicate(s) are deleted. Uncheck a group to leave it alone.</p>
+    <p class="hint" style="margin-bottom:12px;">Finds orders that share the same Order Nbr and appear to be the same delivery split into two records — either an exact sync hiccup, or one copy that has a Delivery Nbr and one that doesn't (e.g. a VL06O/PKMS row that couldn't be linked back to its VL10 order before the auto-link fix). Orders that each have their own distinct Delivery Nbr are treated as a real split shipment and left alone. For each group, the most complete record is kept; any field it's missing gets filled in from its duplicate(s) first, then the duplicate(s) are deleted. Uncheck a group to leave it alone.</p>
 
     <div class="import-summary" id="dedupeSummary"></div>
 
@@ -483,7 +486,7 @@ table.csv-table{width:100%;border-collapse:collapse;font-size:11px;font-family:v
       <h3>VL06O Upload</h3>
       <button class="modal-close" id="vl06oModalClose">×</button>
     </div>
-    <p class="hint" style="margin-bottom:12px;">Upload a VL06O extract (.csv or .xlsx). Rows are matched by Delivery against each order's Delivery Nbr. Matched orders get SAP Status set to "GI Complete" when the row has an Actual GI Date, or "Not Yet Shipped" when it doesn't — nothing else on a matched order is touched. Rows with no matching order are <b>created as new orders</b>, using Delivery → Delivery Nbr, Document → Order Nbr, Name of the ship-to party → Customer/Supplier, IncoT → Incoterms, and GI Date → Planned GI Date. Sales Document Type and TOT aren't in a VL06O extract, so those are left blank for you to fill in manually.</p>
+    <p class="hint" style="margin-bottom:12px;">Upload a VL06O extract (.csv or .xlsx). Rows are matched by Delivery against each order's Delivery Nbr. Matched orders get SAP Status set to "GI Complete" when the row has an Actual GI Date, or "Not Yet Shipped" when it doesn't — nothing else on a matched order is touched. <b>If a row's Delivery Nbr isn't on any order yet</b>, this looks for a VL10 order with the same Order Nbr that doesn't have a Delivery Nbr on it either — VL10 runs before a delivery exists, so this is the normal case for an order that's progressed from VL10 to VL06O — and links the Delivery Nbr onto it (again touching only SAP Status; Planned GI Date, Doc Type, TOT etc. stay whatever VL10 set). Only rows that still can't be matched at all are <b>created as new orders</b>, using Delivery → Delivery Nbr, Document → Order Nbr, Name of the ship-to party → Customer/Supplier, IncoT → Incoterms, and GI Date → Planned GI Date as a placeholder until VL10 provides the real one. Sales Document Type and TOT aren't in a VL06O extract, so those are left blank for you to fill in manually.</p>
 
     <div class="dropzone" id="vl06oDropzone">
       <div class="dz-title">Click to choose a CSV or XLSX file, or drag one here</div>
@@ -956,6 +959,24 @@ function saveLocalOrders(){
   }
 }
 
+// One-time cleanup for data already sitting in the sheet/local cache from before the date
+// parsing fix: re-runs every stored giDate/schedPickup through the flexible parser so mixed
+// formats (from old VL10/VL06O uploads, manual entry, etc.) all collapse to the same
+// YYYY-MM-DD internal representation. Values that still can't be parsed are left untouched
+// rather than silently blanked out.
+function normalizeExistingOrderDates(){
+  var changed = 0;
+  STATE.orders.forEach(function(o){
+    ["giDate","schedPickup"].forEach(function(k){
+      var raw = (o[k] || "").toString().trim();
+      if (!raw) return;
+      var iso = parseFlexibleDate(raw, false);
+      if (iso && iso !== raw){ o[k] = iso; changed++; }
+    });
+  });
+  return changed;
+}
+
 function seedOrders(){
   STATE.orders = SEED.map(function(row){
     var o = blankOrder();
@@ -1067,6 +1088,7 @@ function syncPullAll(showErrors){
     }
 
     STATE.orders = remoteOrders;
+    normalizeExistingOrderDates();
     saveLocalOrders(); saveLocalSettings();
     updateSyncPill();
     return true;
@@ -1202,11 +1224,14 @@ function esc(v){
   });
 }
 
+// Always displays as MM-DD-YYYY, regardless of how the value happens to be stored — this is
+// the single place that controls the on-screen date format (Order Log table + lane cards).
 function fmtDate(v){
   if (!v) return "";
-  var d = new Date(v + (String(v).length <= 10 ? "T00:00:00" : ""));
-  if (isNaN(d.getTime())) return v;
-  return (d.getMonth()+1) + "/" + d.getDate() + "/" + String(d.getFullYear()).slice(2);
+  var iso = parseFlexibleDate(v, false);
+  var m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return String(v); // couldn't parse it — show the raw value rather than hide it
+  return m[2] + "-" + m[3] + "-" + m[1];
 }
 
 function showToast(msg, isError){
@@ -1466,15 +1491,28 @@ function populateStatusFilterOptions(){
 }
 
 /* ---- Per-column filters (Order Log) ---- */
+/* Every column in the Order Log is filterable. Low-cardinality/categorical columns get a
+   dropdown of the distinct values present in the data; free-text/numeric columns get a
+   "contains" text box (a dropdown of every distinct Order Nbr or Customer would be
+   unusably long); the two date columns get a From/To range. */
 
 var FILTERABLE_COLUMNS = [
-  {k:"incoterms", label:"Incoterms"},
-  {k:"shpCountry", label:"Ship Country"},
-  {k:"docType", label:"Doc Type"},
-  {k:"sapStatus", label:"SAP Status"},
-  {k:"carrier", label:"Carrier"},
-  {k:"doorLane", label:"Door/Lane"},
-  {k:"shiptifyStatus", label:"Status"}
+  {k:"giDate", label:"Planned GI", type:"daterange"},
+  {k:"stoIFF", label:"Order Nbr", type:"text"},
+  {k:"customer", label:"Customer", type:"text"},
+  {k:"incoterms", label:"Incoterms", type:"select"},
+  {k:"docType", label:"Doc Type", type:"select"},
+  {k:"tot", label:"TOT", type:"text"},
+  {k:"cevaRef", label:"Delivery Nbr", type:"text"},
+  {k:"shipmentNum", label:"Shipment #", type:"text"},
+  {k:"shpCountry", label:"Ship Country", type:"select"},
+  {k:"pkmsStatus", label:"PKMS Status", type:"select"},
+  {k:"sapStatus", label:"SAP Status", type:"select"},
+  {k:"doorLane", label:"Door/Lane", type:"select"},
+  {k:"carrier", label:"Carrier", type:"select"},
+  {k:"schedPickup", label:"Sched P/U", type:"daterange"},
+  {k:"shiptifyStatus", label:"Status", type:"select"},
+  {k:"comments", label:"Comments", type:"text"}
 ];
 
 function distinctColumnValues(key){
@@ -1493,30 +1531,102 @@ function renderColumnFilters(){
   if (!wrap) return;
   wrap.innerHTML = '<span class="sort-label">Filter by</span>';
   FILTERABLE_COLUMNS.forEach(function(col){
-    var values = distinctColumnValues(col.k);
-    var sel = document.createElement("select");
-    sel.className = "filter-select";
-    sel.style.maxWidth = "170px";
-    sel.innerHTML = '<option value="">' + esc(col.label) + ': All</option>' +
-      values.map(function(v){ return '<option value="' + esc(v) + '">' + esc(v) + '</option>'; }).join("");
-    sel.value = STATE.columnFilters[col.k] || "";
-    sel.addEventListener("change", function(){
-      if (sel.value) STATE.columnFilters[col.k] = sel.value;
+    var current = STATE.columnFilters[col.k];
+
+    if (col.type === "select"){
+      var values = distinctColumnValues(col.k);
+      var sel = document.createElement("select");
+      sel.className = "filter-select";
+      sel.style.maxWidth = "170px";
+      sel.innerHTML = '<option value="">' + esc(col.label) + ': All</option>' +
+        values.map(function(v){ return '<option value="' + esc(v) + '">' + esc(v) + '</option>'; }).join("");
+      sel.value = (current && current.type === "select") ? current.value : "";
+      sel.addEventListener("change", function(){
+        if (sel.value) STATE.columnFilters[col.k] = {type:"select", value: sel.value};
+        else delete STATE.columnFilters[col.k];
+        renderTable();
+      });
+      wrap.appendChild(sel);
+      return;
+    }
+
+    if (col.type === "daterange"){
+      var group = document.createElement("span");
+      group.className = "filter-daterange";
+      var lbl = document.createElement("span");
+      lbl.className = "sort-label";
+      lbl.style.marginLeft = "2px";
+      lbl.textContent = col.label + ":";
+      var from = document.createElement("input");
+      from.type = "date";
+      from.className = "filter-select";
+      from.style.maxWidth = "140px";
+      from.title = col.label + " from";
+      from.value = (current && current.type === "daterange") ? (current.from || "") : "";
+      var to = document.createElement("input");
+      to.type = "date";
+      to.className = "filter-select";
+      to.style.maxWidth = "140px";
+      to.title = col.label + " to";
+      to.value = (current && current.type === "daterange") ? (current.to || "") : "";
+      function applyRange(){
+        var f = from.value, t = to.value;
+        if (f || t) STATE.columnFilters[col.k] = {type:"daterange", from:f, to:t};
+        else delete STATE.columnFilters[col.k];
+        renderTable();
+      }
+      from.addEventListener("change", applyRange);
+      to.addEventListener("change", applyRange);
+      group.appendChild(lbl);
+      group.appendChild(from);
+      group.appendChild(to);
+      wrap.appendChild(group);
+      return;
+    }
+
+    // text (contains, case-insensitive)
+    var input = document.createElement("input");
+    input.type = "text";
+    input.className = "filter-select search-input";
+    input.style.maxWidth = "150px";
+    input.placeholder = col.label + "\u2026";
+    input.value = (current && current.type === "text") ? current.value : "";
+    input.addEventListener("input", function(){
+      var v = input.value.trim();
+      if (v) STATE.columnFilters[col.k] = {type:"text", value: v};
       else delete STATE.columnFilters[col.k];
       renderTable();
     });
-    wrap.appendChild(sel);
+    wrap.appendChild(input);
   });
+}
+
+function orderMatchesColumnFilters(o){
+  for (var ck in STATE.columnFilters){
+    var f = STATE.columnFilters[ck];
+    if (!f) continue;
+    var raw = (o[ck] == null ? "" : String(o[ck]));
+    if (f.type === "select"){
+      if (f.value && raw !== f.value) return false;
+    } else if (f.type === "text"){
+      if (f.value && raw.toLowerCase().indexOf(f.value.toLowerCase()) === -1) return false;
+    } else if (f.type === "daterange"){
+      var iso = parseFlexibleDate(raw, false);
+      if (f.from || f.to){
+        if (!iso) return false; // no usable date on this order — excluded when a range is set
+        if (f.from && iso < f.from) return false;
+        if (f.to && iso > f.to) return false;
+      }
+    }
+  }
+  return true;
 }
 
 function getFilteredSortedOrders(){
   var term = STATE.searchTerm.trim().toLowerCase();
   var list = STATE.orders.filter(function(o){
     if (STATE.statusFilter && normalizeStatus(o.pkmsStatus) !== STATE.statusFilter) return false;
-    for (var ck in STATE.columnFilters){
-      var fv = STATE.columnFilters[ck];
-      if (fv && (o[ck] == null ? "" : String(o[ck])) !== fv) return false;
-    }
+    if (!orderMatchesColumnFilters(o)) return false;
     if (!term) return true;
     var hay = [o.customer,o.stoIFF,o.carrier,o.doorLane,o.cevaRef,o.shipmentNum,o.comments]
       .map(function(v){ return (v||"").toString().toLowerCase(); }).join(" ");
@@ -1540,6 +1650,7 @@ function getFilteredSortedOrders(){
   });
   return list;
 }
+
 
 /* ---- Column ordering (persisted per-browser; a display preference, not synced data) ---- */
 
@@ -1774,10 +1885,17 @@ function confirmDelete(id){
 }
 
 /* ===================== MERGE DUPLICATE ORDERS ===================== */
-/* Groups orders that share the same Order Nbr with no Delivery Nbr to distinguish them —
-   the signature of a sync hiccup creating a second copy rather than a legitimately separate
-   delivery under the same STO (which would have its own Delivery Nbr once assigned). For
-   each group, keeps whichever record has the most fields already filled in, backfills any
+/* Two ways a group of "duplicates" can arise, both handled here:
+   1) A sync hiccup creates a second copy of the exact same order (same Order Nbr AND same
+      Delivery Nbr, including both blank).
+   2) A row from VL06O or PKMS couldn't be linked back to the VL10 order it belongs to (same
+      Order Nbr) and created a second record instead — one copy has a Delivery Nbr, the other
+      doesn't. (VL06O now links these automatically going forward; this catches ones that
+      already got split before that fix.) A group is only treated as this kind of duplicate
+      when at most one member actually has a Delivery Nbr — two members that each have their
+      OWN distinct Delivery Nbr are a legitimately split STO, not a duplicate, and are left
+      alone.
+   For each group, keeps whichever record has the most fields already filled in, backfills any
    blanks on it from the duplicate(s) — never overwriting a value it already has — then
    deletes the duplicate(s). */
 
@@ -1790,7 +1908,29 @@ function findDuplicateOrderGroups(){
     if (!groups[key]) groups[key] = [];
     groups[key].push(o);
   });
-  return Object.keys(groups).map(function(k){ return groups[k]; }).filter(function(g){ return g.length > 1; });
+  var exact = Object.keys(groups).map(function(k){ return groups[k]; }).filter(function(g){ return g.length > 1; });
+
+  var byOrderNbr = {};
+  STATE.orders.forEach(function(o){
+    var soKey = normalizeKey(o.stoIFF);
+    if (!soKey) return;
+    if (!byOrderNbr[soKey]) byOrderNbr[soKey] = [];
+    byOrderNbr[soKey].push(o);
+  });
+  var loose = Object.keys(byOrderNbr).map(function(k){ return byOrderNbr[k]; }).filter(function(g){
+    if (g.length < 2) return false;
+    var withDelivery = g.filter(function(o){ return String(o.cevaRef || "").trim() !== ""; });
+    return withDelivery.length <= 1; // 2+ distinct Delivery Nbrs = real split shipment, not a duplicate
+  });
+
+  var seen = {};
+  exact.forEach(function(g){ seen[g.map(function(o){ return o.id; }).sort().join(",")] = true; });
+  var combined = exact.slice();
+  loose.forEach(function(g){
+    var key = g.map(function(o){ return o.id; }).sort().join(",");
+    if (!seen[key]){ seen[key] = true; combined.push(g); }
+  });
+  return combined;
 }
 
 function computeMergePlan(group){
@@ -1917,7 +2057,10 @@ function fieldControlHtml(f, val){
     return '<div class="field" style="grid-column:1/-1;">' + labelHtml + '<textarea id="' + id + '"' + (f.required ? ' required' : '') + '>' + esc(val) + '</textarea></div>';
   }
   if (f.type === "date"){
-    return '<div class="field">' + labelHtml + '<input type="date" id="' + id + '" value="' + esc(val) + '"' + (f.required ? ' required' : '') + '></div>';
+    // Native <input type=date> only renders a value it can read as YYYY-MM-DD — coerce
+    // whatever format is currently stored so the picker doesn't just show blank.
+    var isoVal = val ? (parseFlexibleDate(val, false) || "") : "";
+    return '<div class="field">' + labelHtml + '<input type="date" id="' + id + '" value="' + esc(isoVal) + '"' + (f.required ? ' required' : '') + '></div>';
   }
   return '<div class="field">' + labelHtml + '<input type="text" id="' + id + '" value="' + esc(val) + '"' + (f.required ? ' required' : '') + '></div>';
 }
@@ -2126,6 +2269,22 @@ function findOrderForImportKey(key){
   return null;
 }
 
+// VL06O fallback matching: a Delivery Nbr that doesn't match any existing order most likely
+// belongs to an order VL10 already created (VL10 runs before a delivery exists, so those
+// orders have no Delivery Nbr yet) — this links the two instead of creating a duplicate.
+// Only auto-links when exactly one still-open (no Delivery Nbr yet) order shares this Order
+// Nbr; a genuinely split STO can have more than one delivery, and guessing which is which
+// would risk linking the wrong one, so that case is left for manual handling instead.
+function findOpenOrderByOrderNbr(orderNbr){
+  if (!orderNbr) return null;
+  var nk = normalizeKey(orderNbr);
+  if (!nk) return null;
+  var matches = STATE.orders.filter(function(o){
+    return normalizeKey(o.stoIFF) === nk && !String(o.cevaRef || "").trim();
+  });
+  return matches.length === 1 ? matches[0] : null;
+}
+
 // Used by the PKMS and VL06O uploads: their key columns map specifically to Delivery Nbr
 // (per the defined workflow), so this matches that one field only rather than guessing.
 function findOrderByCevaRef(key){
@@ -2150,38 +2309,76 @@ function findOrderByOrderNbr(key){
   return null;
 }
 
-// Shiptify exports dates as DD/MM/YYYY.
-function normalizeDateStringDMY(s){
+function pad2(n){ n = String(n); return n.length < 2 ? "0"+n : n; }
+
+var MONTH_NAME_LOOKUP = {jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+
+// Canonical date normalizer used everywhere a date comes in from a file, a paste, or old
+// stored data: it accepts ISO, YYYYMMDD, numeric d/m/y or m/d/y with /,-,. separators (2 or
+// 4 digit years), "3-Aug-2026" / "Aug 3, 2026" style month names, and raw Excel serial day
+// numbers (in case a sheet cell comes through unformatted) — and always returns YYYY-MM-DD,
+// which is what every date is stored as internally so sorting/filtering stay correct
+// regardless of source. `dayFirst` only matters for the ambiguous "two small numbers, then a
+// year" case (e.g. 03/04/2026): Shiptify exports DD/MM/YYYY (dayFirst=true); VL10 and VL06O
+// export MM/DD/YYYY (dayFirst=false). Whenever one of the two numbers is >12 the format is
+// unambiguous and dayFirst is ignored. Returns "" if nothing usable could be parsed.
+function parseFlexibleDate(s, dayFirst){
   if (!s) return "";
   s = String(s).trim();
-  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-  var m = s.match(/^(\d{4})(\d{2})(\d{2})$/);
+  if (!s) return "";
+
+  var m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/); // ISO, incl. any trailing time/offset
+  if (m) return m[1] + "-" + pad2(m[2]) + "-" + pad2(m[3]);
+
+  m = s.match(/^(\d{4})(\d{2})(\d{2})$/);
   if (m) return m[1] + "-" + m[2] + "-" + m[3];
-  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+
+  m = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);
   if (m){
-    var day = m[1].length < 2 ? "0"+m[1] : m[1];
-    var mon = m[2].length < 2 ? "0"+m[2] : m[2];
-    return m[3] + "-" + mon + "-" + day;
+    var a = parseInt(m[1],10), b = parseInt(m[2],10), yr = m[3];
+    if (yr.length === 2) yr = (parseInt(yr,10) < 70 ? "20" : "19") + yr;
+    var month, day;
+    if (a > 12 && b <= 12){ day = a; month = b; }
+    else if (b > 12 && a <= 12){ month = a; day = b; }
+    else if (dayFirst){ day = a; month = b; }
+    else { month = a; day = b; }
+    if (month >= 1 && month <= 12 && day >= 1 && day <= 31) return yr + "-" + pad2(month) + "-" + pad2(day);
   }
-  return s;
+
+  m = s.match(/^([A-Za-z]{3,9})\.?\s+(\d{1,2}),?\s+(\d{4})$/); // "Aug 3, 2026" / "August 3 2026"
+  if (m && MONTH_NAME_LOOKUP[m[1].slice(0,3).toLowerCase()]){
+    return m[3] + "-" + pad2(MONTH_NAME_LOOKUP[m[1].slice(0,3).toLowerCase()]) + "-" + pad2(m[2]);
+  }
+  m = s.match(/^(\d{1,2})[\s\-]+([A-Za-z]{3,9})\.?[\s\-]+(\d{2,4})$/); // "3-Aug-2026" / "3 Aug 26"
+  if (m && MONTH_NAME_LOOKUP[m[2].slice(0,3).toLowerCase()]){
+    var yy = m[3]; if (yy.length === 2) yy = (parseInt(yy,10) < 70 ? "20" : "19") + yy;
+    return yy + "-" + pad2(MONTH_NAME_LOOKUP[m[2].slice(0,3).toLowerCase()]) + "-" + pad2(m[1]);
+  }
+
+  if (/^\d{4,6}$/.test(s)){ // bare Excel serial day number (cell wasn't formatted as a date)
+    var serial = parseInt(s,10);
+    if (serial > 20000 && serial < 60000){
+      var epoch = new Date(Date.UTC(1899,11,30));
+      var dt = new Date(epoch.getTime() + serial*86400000);
+      return dt.getUTCFullYear() + "-" + pad2(dt.getUTCMonth()+1) + "-" + pad2(dt.getUTCDate());
+    }
+  }
+
+  return ""; // unrecognized — caller decides what to do with the original string
+}
+
+// Shiptify exports dates as DD/MM/YYYY.
+function normalizeDateStringDMY(s){
+  var iso = parseFlexibleDate(s, true);
+  return iso || String(s || "").trim();
 }
 
 // VL06O and VL10 export dates as MM/DD/YYYY (US format) — confirmed against real extracts
 // (e.g. an "08/xx" column where xx ranges up to 31 can only be a day, not a month, so the
-// first number is the month). Using the DD/MM parser on these swapped month and day.
+// first number is the month).
 function normalizeDateStringMDY(s){
-  if (!s) return "";
-  s = String(s).trim();
-  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-  var m = s.match(/^(\d{4})(\d{2})(\d{2})$/);
-  if (m) return m[1] + "-" + m[2] + "-" + m[3];
-  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (m){
-    var mon = m[1].length < 2 ? "0"+m[1] : m[1];
-    var day = m[2].length < 2 ? "0"+m[2] : m[2];
-    return m[3] + "-" + mon + "-" + day;
-  }
-  return s;
+  var iso = parseFlexibleDate(s, false);
+  return iso || String(s || "").trim();
 }
 
 // Resolves a raw PKMS status code (e.g. "70") to its configured combination label
@@ -2254,14 +2451,21 @@ var VL10_DOCTYPE_CANDIDATES = ["saty","sales document type","doc type"];
 var VL10_TOT_CANDIDATES = ["open qty","tot"];
 var VL10_GIDATE_CANDIDATES = ["goods issue","gi date","planned gi date"];
 
+// These fields only ever backfill a currently-blank value (or, with Overwrite mode on,
+// replace whatever's there) — VL10 isn't necessarily the last word on them.
 var VL10_BACKFILL_FIELDS = [
   {orderKey:"customer", label:"Customer"},
   {orderKey:"incoterms", label:"Incoterms"},
   {orderKey:"shpCountry", label:"Ship Country"},
   {orderKey:"docType", label:"Doc Type"},
-  {orderKey:"tot", label:"TOT"},
-  {orderKey:"giDate", label:"Planned GI Date"}
+  {orderKey:"tot", label:"TOT"}
 ];
+
+// Planned GI Date is the exception: VL10 is the single source of truth for it (VL06O never
+// touches it on a matched order, PKMS/Shiptify don't carry it at all), so it's always kept in
+// sync with whatever VL10 says — independent of the Overwrite-existing-values checkbox, which
+// only governs the backfill-only fields above.
+var VL10_GIDATE_FIELD = {orderKey:"giDate", label:"Planned GI Date"};
 
 function openVl10UploadModal(){
   document.getElementById("vl10ModalOverlay").classList.remove("hidden");
@@ -2340,6 +2544,9 @@ function renderVl10Preview(){
         if (!incoming) return false; // nothing in the file for this field — never clear existing data
         return forceOverwrite ? (incoming !== current) : !current;
       });
+      // Planned GI Date always tracks VL10, regardless of the Overwrite toggle.
+      var curGiDate = (order.giDate || "").toString().trim();
+      if (extracted.giDate && extracted.giDate !== curGiDate) fills.push(VL10_GIDATE_FIELD);
       updateCount++;
       if (!fills.length) noBackfillCount++;
       return {action:"update", key: keyVal, extracted: extracted, order: order, fills: fills};
@@ -2518,7 +2725,7 @@ function renderVl06oPreview(){
   var giDateIdx = parseInt(document.getElementById("vl06oGiDateCol").value, 10);
   var rows = ctx.dataRows;
 
-  var updateCount = 0, createCount = 0, skipCount = 0, unchangedCount = 0;
+  var updateCount = 0, createCount = 0, skipCount = 0, unchangedCount = 0, linkCount = 0;
   var seenNewKeys = {}; // guards against creating duplicate orders when the same Delivery appears twice in one file
   var previewRows = rows.map(function(r){
     var keyVal = String(r[matchIdx] || "").trim();
@@ -2529,13 +2736,19 @@ function renderVl06oPreview(){
     var actualGiDateVal = String(r[giDateIdx] || "").trim();
     var sapStatusResolved = actualGiDateVal ? "GI Complete" : "Not Yet Shipped";
     var order = keyVal ? findOrderByCevaRef(keyVal) : null;
+    var linking = false;
+    if (!order && documentVal){
+      order = findOpenOrderByOrderNbr(documentVal);
+      linking = !!order;
+    }
 
     if (order){
       var oldVal = order.sapStatus || "";
-      var unchanged = sapStatusResolved === oldVal;
+      var unchanged = sapStatusResolved === oldVal && !linking;
       updateCount++;
+      if (linking) linkCount++;
       if (unchanged) unchangedCount++;
-      return {action:"update", key: keyVal, document: documentVal, customer: customerVal, incoterms: incotermsVal,
+      return {action: linking ? "link" : "update", key: keyVal, document: documentVal, customer: customerVal, incoterms: incotermsVal,
               giDateVal: actualGiDateVal, oldVal: oldVal, resolved: sapStatusResolved, order: order, unchanged: unchanged};
     }
 
@@ -2561,6 +2774,7 @@ function renderVl06oPreview(){
   var summary = document.getElementById("vl06oSummary");
   summary.innerHTML =
     '<span><b>' + updateCount + '</b> matched existing</span>' +
+    (linkCount ? '<span><b>' + linkCount + '</b> linked to a VL10 order by Order Nbr (no Delivery Nbr on file yet)</span>' : "") +
     '<span><b>' + (updateCount - unchangedCount) + '</b> will update</span>' +
     '<span><b>' + unchangedCount + '</b> already up to date</span>' +
     '<span><b>' + createCount + '</b> new order' + (createCount === 1 ? "" : "s") + ' will be created</span>' +
@@ -2570,9 +2784,9 @@ function renderVl06oPreview(){
   var head = '<tr><th>Action</th><th>Delivery Nbr</th><th>Order Nbr</th><th>Customer</th><th>Incoterms</th><th>SAP Status</th></tr>';
   var body = previewRows.slice(0, 300).map(function(pr){
     var cls, label, statusCell;
-    if (pr.action === "update"){
+    if (pr.action === "update" || pr.action === "link"){
       cls = pr.unchanged ? "matched unchanged-row" : "matched";
-      label = "\u2713 Update";
+      label = pr.action === "link" ? "\ud83d\udd17 Link + Update" : "\u2713 Update";
       statusCell = pr.unchanged
         ? esc(pr.resolved) + ' <span class="unchanged-tag">(no change)</span>'
         : esc(pr.oldVal || "\u2014") + ' \u2192 <b>' + esc(pr.resolved) + '</b>';
@@ -2585,7 +2799,7 @@ function renderVl06oPreview(){
       label = pr.dupInFile ? "\u2014 Dup in file" : "\u2014 Skip";
       statusCell = "\u2014";
     }
-    var custCell = pr.action === "update" ? (pr.order.customer || pr.order.stoIFF) : (pr.customer || "\u2014");
+    var custCell = (pr.action === "update" || pr.action === "link") ? (pr.order.customer || pr.order.stoIFF) : (pr.customer || "\u2014");
     return '<tr class="' + cls + '"><td>' + label + '</td><td>' + esc(pr.key || "\u2014") + '</td><td>' + esc(pr.document || (pr.order ? pr.order.stoIFF : "") || "\u2014") + '</td><td>' + esc(custCell) + '</td><td>' + esc(pr.incoterms || (pr.order ? pr.order.incoterms : "") || "\u2014") + '</td><td>' + statusCell + '</td></tr>';
   }).join("");
   table.innerHTML = head + body;
@@ -2597,9 +2811,10 @@ function renderVl06oPreview(){
 function applyVl06oImport(){
   var rows = STATE.vl06oPreviewRows || [];
   var updating = rows.filter(function(pr){ return pr.action === "update" && !pr.unchanged; });
+  var linking = rows.filter(function(pr){ return pr.action === "link"; });
   var creating = rows.filter(function(pr){ return pr.action === "create"; });
 
-  if (!updating.length && !creating.length){
+  if (!updating.length && !linking.length && !creating.length){
     showToast("Nothing to apply — matched orders are already up to date and no new orders were found.");
     closeVl06oModal();
     return;
@@ -2607,13 +2822,19 @@ function applyVl06oImport(){
 
   var parts = [];
   if (updating.length) parts.push("update SAP Status on " + updating.length + " existing order" + (updating.length === 1 ? "" : "s"));
+  if (linking.length) parts.push("link " + linking.length + " Delivery Nbr" + (linking.length === 1 ? "" : "s") + " onto matching VL10 order" + (linking.length === 1 ? "" : "s") + " (found by Order Nbr) and update SAP Status on them");
   if (creating.length) parts.push("create " + creating.length + " new order" + (creating.length === 1 ? "" : "s") + " (Sales Document Type and TOT will need to be filled in manually)");
-  var msg = "This will " + parts.join(" and ") + ".\n\nA backup of the current data will download automatically first, in case anything needs to be undone.\n\nContinue?";
+  var msg = "This will " + parts.join(", ") + ".\n\nA backup of the current data will download automatically first, in case anything needs to be undone.\n\nContinue?";
   if (!window.confirm(msg)) return;
 
   backupJson();
 
   updating.forEach(function(pr){
+    pr.order.sapStatus = pr.resolved;
+  });
+
+  linking.forEach(function(pr){
+    pr.order.cevaRef = pr.key;
     pr.order.sapStatus = pr.resolved;
   });
 
@@ -2630,6 +2851,7 @@ function applyVl06oImport(){
 
   saveData();
   updating.forEach(function(pr){ syncPushOrder(pr.order); });
+  linking.forEach(function(pr){ syncPushOrder(pr.order); });
   // Push the newly created orders (added to the end of STATE.orders just above).
   var newlyCreated = STATE.orders.slice(STATE.orders.length - creating.length);
   newlyCreated.forEach(function(o){ syncPushOrder(o); });
@@ -2638,6 +2860,7 @@ function applyVl06oImport(){
 
   var msgParts = [];
   if (updating.length) msgParts.push(updating.length + " updated");
+  if (linking.length) msgParts.push(linking.length + " linked to VL10 order" + (linking.length === 1 ? "" : "s"));
   if (creating.length) msgParts.push(creating.length + " created");
   showToast(msgParts.join(", ") + " from VL06O Upload. Backup downloaded.");
   closeVl06oModal();
@@ -3407,6 +3630,8 @@ function init(){
   var cached = loadLocalOrders();
   if (cached) STATE.orders = cached;
   else { seedOrders(); saveLocalOrders(); }
+
+  if (normalizeExistingOrderDates()) saveLocalOrders();
 
   populateStatusFilterOptions();
   populateSortControls();
