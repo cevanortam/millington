@@ -277,9 +277,21 @@ body {
 
 /* SSCCs inside quick-scan modal */
 .qs-recent-label { font-size: 10px; font-weight: 600; color: var(--text3); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 4px; }
-.qs-sscc-list { max-height: 80px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; background: var(--surface2); }
-.qs-sscc-item { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--text2); padding: 3px 8px; border-bottom: 1px solid var(--border); }
+.qs-sscc-list { max-height: 140px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; background: var(--surface2); }
+.qs-sscc-item {
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--text2);
+  padding: 3px 4px 3px 8px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
 .qs-sscc-item:last-child { border-bottom: none; }
+.qs-sscc-code { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qs-sscc-del {
+  flex-shrink: 0; width: 24px; height: 24px;
+  border: none; background: none; border-radius: 4px;
+  color: var(--red); font-size: 14px; font-weight: 700; line-height: 1;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.qs-sscc-del:hover, .qs-sscc-del:focus-visible { background: #fee2e2; outline: none; }
 
 /* ── TOAST ── */
 .toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 300; display: flex; flex-direction: column; gap: 8px; }
@@ -637,6 +649,11 @@ window.openQuickScan = function(poKey) {
   setTimeout(() => document.getElementById('quickScanInput').focus(), 80);
 };
 
+// Escape text before putting it into HTML / attributes
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
 // Keeps the modal header + list live as Firebase pushes updates
 function syncQuickScanModal() {
   if (!quickScanKey || !posData[quickScanKey]) return;
@@ -648,7 +665,11 @@ function syncQuickScanModal() {
   const ssccArr = po.sscc || [];
   listEl.innerHTML = ssccArr.length === 0
     ? '<div class="qs-sscc-item" style="color:var(--text3)">None yet</div>'
-    : [...ssccArr].reverse().map(s => `<div class="qs-sscc-item">${s}</div>`).join('');
+    : [...ssccArr].reverse().map(s => `
+        <div class="qs-sscc-item">
+          <span class="qs-sscc-code">${esc(s)}</span>
+          <button type="button" class="qs-sscc-del" data-sscc="${esc(s)}" title="Remove this SSCC" aria-label="Remove SSCC ${esc(s)}">✕</button>
+        </div>`).join('');
 }
 
 window.quickAddSSCC = async function() {
@@ -665,6 +686,23 @@ window.quickAddSSCC = async function() {
   document.getElementById('quickScanInput').focus();
 };
 document.getElementById('quickScanInput').addEventListener('keydown', e => { if (e.key === 'Enter') window.quickAddSSCC(); });
+
+// ── REMOVE A SINGLE SSCC (✕ on a line in the Add SSCC modal) ──
+async function removeSSCC(sscc) {
+  if (!db || !quickScanKey) return;
+  const po = posData[quickScanKey];
+  if (!po) { toast('PO not found — may have been moved.', 'error'); closeModal('quickScanModal'); return; }
+  if (!(po.sscc || []).includes(sscc)) { toast('SSCC is no longer on this PO.', 'error'); return; }
+  if (!confirm('Remove SSCC ' + sscc + ' from PO ' + po.po + '?')) return;
+  const newList = (po.sscc || []).filter(s => s !== sscc);
+  await update(ref(db, 'imstaging/pos/' + quickScanKey), { sscc: newList, updated: Date.now() });
+  toast('SSCC ' + sscc + ' removed — ' + newList.length + ' left on PO ' + po.po, 'warning');
+  document.getElementById('quickScanInput').focus();
+}
+document.getElementById('qsSsccList').addEventListener('click', e => {
+  const btn = e.target.closest('.qs-sscc-del');
+  if (btn) removeSSCC(btn.dataset.sscc);
+});
 
 // ── ADVANCE STATUS ──
 window.openMoveOut = function(e, poKey) {
