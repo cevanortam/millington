@@ -1713,10 +1713,18 @@ function wire(){
    drops. Every write goes out one at a time through a queue; every 30 seconds the page
    asks the sheet for its revision number and pulls everything only when it changed. */
 var SYNC_LS = "iffSync_v1", SYNC_POLL_MS = 30000;
+// Built-in connection to the team's Google Sheet, so nobody has to enter anything.
+// To point the scoreboard at a different sheet, change these two lines.
+var DEFAULT_SYNC_URL = "https://script.google.com/macros/s/AKfycbw3gdho8pdPLzwa2pxXhLuuSvzRG3T87eOBIRanksVuvIMTtrROiT0ICx1Wrj1baiyOpg/exec";
+var DEFAULT_SYNC_KEY = "3820";
 var SYNC = {url:"", key:"", name:"", rev:null, state:"off", msg:"", last:0, queue:[], busy:false, pendingNotes:{}, deferred:null};
 
 function syncLoadSettings(){
-  try{ var s = JSON.parse(localStorage.getItem(SYNC_LS) || "{}"); SYNC.url = s.url || ""; SYNC.key = s.key || ""; SYNC.name = s.name || ""; }catch(e){}
+  var s = {};
+  try{ s = JSON.parse(localStorage.getItem(SYNC_LS) || "{}"); }catch(e){}
+  SYNC.url = s.url || ""; SYNC.key = s.key || ""; SYNC.name = s.name || "";
+  // Nothing saved on this PC yet (and sharing wasn't turned off on purpose): use the built-in connection.
+  if (!SYNC.url && !s.off){ SYNC.url = DEFAULT_SYNC_URL; SYNC.key = DEFAULT_SYNC_KEY; SYNC.fromLink = true; }
   // Team link: <page>?sync=<web app url>&key=<access key> connects this browser in one click.
   try{
     var q = new URLSearchParams(location.search);
@@ -1728,7 +1736,7 @@ function syncLoadSettings(){
     }
   }catch(e){}
 }
-function syncSaveSettings(){ try{ localStorage.setItem(SYNC_LS, JSON.stringify({url:SYNC.url, key:SYNC.key, name:SYNC.name})); }catch(e){} }
+function syncSaveSettings(){ try{ localStorage.setItem(SYNC_LS, JSON.stringify({url:SYNC.url, key:SYNC.key, name:SYNC.name, off: !SYNC.url})); }catch(e){} }
 function syncOn(){ return !!(SYNC.url && SYNC.key); }
 
 function setSync(state, msg){
@@ -1956,7 +1964,7 @@ function init(){
   setSync("off");
   if (syncOn()){
     if (SYNC.fromLink) syncConnect(SYNC.url, SYNC.key).then(function(){
-      if (!SYNC.name){ openSyncModal(); $("sy-name").focus(); showToast("Connected. Add your name so the team can see who left each note."); }
+      if (!SYNC.name) showToast("Connected to the team's shared scoreboard. Optional: click the green status line to add your name to your notes.");
     }).catch(function(e){ setSync("error", e.message); showToast("Couldn't connect: " + e.message, true); });
     else syncCall("ping").then(function(p){ SYNC.sheetName = p.sheet; return syncCall("pull"); }).then(function(j){ applyPulled(j, true); })
       .catch(function(e){ setSync("error", e.message); });
