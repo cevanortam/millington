@@ -248,6 +248,38 @@ body {
 .status-staging      { background: #fef3c7; color: #92400e; }
 .status-shipped      { background: #dcfce7; color: #166534; }
 
+/* ── SUPERVISOR SEARCH ── */
+.search-bar {
+  background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--navy);
+  border-radius: 10px; padding: 10px 14px; margin-bottom: 12px;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.search-bar label { font-size: 11px; font-weight: 700; color: var(--navy); letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap; }
+.search-field { position: relative; flex: 1; min-width: 200px; }
+.search-input {
+  width: 100%; border: 1.5px solid var(--border2); border-radius: 6px;
+  padding: 7px 32px 7px 11px; font-family: 'IBM Plex Mono', monospace; font-size: 13px;
+  color: var(--text); background: var(--surface2); outline: none;
+}
+.search-input:focus { border-color: var(--accent); background: var(--surface); }
+.search-clear {
+  position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+  width: 26px; height: 26px; border: none; background: none; border-radius: 4px;
+  color: var(--text3); font-size: 15px; cursor: pointer; display: none;
+}
+.search-clear:hover { background: var(--surface3); color: var(--text); }
+.search-clear.show { display: block; }
+.search-result { font-size: 12px; color: var(--text2); white-space: nowrap; }
+.search-result .other-tab { color: var(--navy-mid); font-weight: 600; cursor: pointer; text-decoration: underline; background: none; border: none; font: inherit; padding: 0; }
+.sscc-item.hit, .hit-text { background: #fde68a; color: #1a2340; border-radius: 2px; font-weight: 700; }
+.po-card.search-hit { outline: 3px solid var(--navy-mid); outline-offset: 1px; }
+.search-empty { padding: 30px 20px; text-align: center; color: var(--text3); background: var(--surface); border: 1px dashed var(--border2); border-radius: 10px; font-size: 13px; }
+
+/* Delete shipped row */
+.btn-del { background: none; border: 1px solid var(--border); color: var(--red); }
+.btn-del:hover { background: #fee2e2; border-color: #fca5a5; }
+.pw-error { color: var(--red); font-size: 12px; margin-top: 6px; min-height: 16px; }
+
 /* ── MODAL ── */
 .modal-overlay {
   display: none; position: fixed; inset: 0;
@@ -342,6 +374,15 @@ body {
   <!-- ═══ PICKED STAGING ═══ -->
   <div class="tab-page active" id="tab-inbound">
 
+    <div class="search-bar">
+      <label for="searchIn">Search</label>
+      <div class="search-field">
+        <input type="search" class="search-input" id="searchIn" placeholder="PO, SSCC or lane number…" autocomplete="off">
+        <button type="button" class="search-clear" data-for="searchIn" aria-label="Clear search">✕</button>
+      </div>
+      <span class="search-result" id="searchInResult"></span>
+    </div>
+
     <div class="scan-bar">
       <label>SCAN SSCC</label>
       <input type="text" class="scan-input" id="ssccInput" placeholder="Scan or type SSCC barcode…" autocomplete="off">
@@ -382,6 +423,15 @@ body {
 
   <!-- ═══ OUTBOUND ═══ -->
   <div class="tab-page" id="tab-outbound">
+
+    <div class="search-bar">
+      <label for="searchOut">Search</label>
+      <div class="search-field">
+        <input type="search" class="search-input" id="searchOut" placeholder="PO, SSCC, lane or status…" autocomplete="off">
+        <button type="button" class="search-clear" data-for="searchOut" aria-label="Clear search">✕</button>
+      </div>
+      <span class="search-result" id="searchOutResult"></span>
+    </div>
 
     <div class="stats-row">
       <div class="stat-card"><div class="stat-label">Labels Printed</div><div class="stat-val" id="statLabels">0</div></div>
@@ -489,6 +539,23 @@ body {
   </div>
 </div>
 
+<!-- ── DELETE SHIPPED LINE (password) ── -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal">
+    <div class="modal-title">Delete Shipped Line</div>
+    <div class="modal-body" id="deleteBody"></div>
+    <div class="form-row">
+      <label class="form-label" for="deletePw">Supervisor password</label>
+      <input type="password" class="form-input" id="deletePw" inputmode="numeric" autocomplete="off">
+      <div class="pw-error" id="deletePwError"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('deleteModal')">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmDeleteShipped()">Delete</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── REMOVE PO ── -->
 <div class="modal-overlay" id="removeModal">
   <div class="modal">
@@ -526,6 +593,8 @@ let lanesData = {}, posData = {}, outboundData = {};
 let activeLanes = [];
 let pendingMoveKey = null, pendingReverseKey = null, pendingShipKey = null, pendingRemoveKey = null;
 let quickScanKey = null;
+let pendingDeleteKey = null;
+const DELETE_PASSWORD = '3820';
 
 // ── STATUS FLOW ──
 // Stored codes are kept the same as before for the first and the old
@@ -841,6 +910,76 @@ window.outboundAdvance = function(key) {
   }
 };
 
+// ── DELETE SHIPPED LINE (password protected) ──
+window.openDeleteShipped = function(key) {
+  const po = outboundData[key];
+  if (!po || po.status !== 'SHIPPED') return;
+  pendingDeleteKey = key;
+  document.getElementById('deleteBody').innerHTML =
+    'Permanently delete shipped <strong>PO ' + esc(po.po) + '</strong> (Lane ' + po.lane + ', ' +
+    (po.sscc||[]).length + ' SSCCs) from the log? <strong>This cannot be undone.</strong>';
+  document.getElementById('deletePw').value = '';
+  document.getElementById('deletePwError').textContent = '';
+  openModal('deleteModal');
+  setTimeout(() => document.getElementById('deletePw').focus(), 80);
+};
+window.confirmDeleteShipped = async function() {
+  if (!pendingDeleteKey) return;
+  const pwEl = document.getElementById('deletePw');
+  if (pwEl.value !== DELETE_PASSWORD) {
+    document.getElementById('deletePwError').textContent = 'Wrong password.';
+    pwEl.value = ''; pwEl.focus();
+    return;
+  }
+  const po = outboundData[pendingDeleteKey];
+  if (!po) { toast('That line was already deleted by someone else.', 'warning'); closeModal('deleteModal'); pendingDeleteKey = null; return; }
+  if (po.status !== 'SHIPPED') { toast('Only shipped lines can be deleted.', 'error'); closeModal('deleteModal'); pendingDeleteKey = null; return; }
+  await remove(ref(db, 'imstaging/outbound/' + pendingDeleteKey));
+  toast('Shipped PO ' + po.po + ' deleted.', 'warning');
+  closeModal('deleteModal'); pendingDeleteKey = null;
+};
+document.getElementById('deletePw').addEventListener('keydown', e => { if (e.key === 'Enter') window.confirmDeleteShipped(); });
+
+// ── SUPERVISOR SEARCH ──
+// Matches PO number, any SSCC on the PO, "lane 5" / "5", or status name.
+function getQuery(id) { return document.getElementById(id).value.trim().toLowerCase(); }
+function poMatches(po, q) {
+  if (!q) return true;
+  if (String(po.po || '').toLowerCase().includes(q)) return true;
+  if ((po.sscc || []).some(s => String(s).toLowerCase().includes(q))) return true;
+  const laneQ = q.replace(/^lane\s*/, '');
+  if (laneQ && /^\d+$/.test(laneQ) && String(po.lane) === laneQ) return true;
+  if (label(po.status).toLowerCase().includes(q)) return true;
+  return false;
+}
+function ssccHit(s, q) { return q && String(s).toLowerCase().includes(q); }
+// How many matches sit on the other tab, so a supervisor isn't stuck searching the wrong page
+function otherTabHint(count, tab, name) {
+  return count ? ` · <button type="button" class="other-tab" onclick="jumpToTab('${tab}')">${count} on ${name} →</button>` : '';
+}
+window.jumpToTab = function(tab) {
+  const fromId = tab === 'outbound' ? 'searchIn' : 'searchOut';
+  const toId   = tab === 'outbound' ? 'searchOut' : 'searchIn';
+  document.getElementById(toId).value = document.getElementById(fromId).value;
+  const btn = document.querySelectorAll('.tab-btn')[tab === 'outbound' ? 1 : 0];
+  window.switchTab(tab, btn);
+  refreshSearchUI(); renderInbound(); renderOutbound();
+};
+function refreshSearchUI() {
+  ['searchIn','searchOut'].forEach(id => {
+    document.querySelector(`.search-clear[data-for="${id}"]`).classList.toggle('show', !!document.getElementById(id).value);
+  });
+}
+['searchIn','searchOut'].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener('input', () => { refreshSearchUI(); renderInbound(); renderOutbound(); });
+  el.addEventListener('keydown', e => { if (e.key === 'Escape') { el.value = ''; refreshSearchUI(); renderInbound(); renderOutbound(); } });
+});
+document.querySelectorAll('.search-clear').forEach(b => b.addEventListener('click', () => {
+  const el = document.getElementById(b.dataset.for);
+  el.value = ''; el.focus(); refreshSearchUI(); renderInbound(); renderOutbound();
+}));
+
 // ── HELPERS ──
 function getAgeInfo(ts) {
   const hrs = (Date.now() - ts) / 3600000;
@@ -855,14 +994,25 @@ function fmtDate(ts) { return new Date(ts).toLocaleDateString('en-US',{month:'sh
 // ── RENDER PICKED STAGING ──
 function renderInbound() {
   const wrapper = document.getElementById('lanesWrapper');
+  const q = getQuery('searchIn');
+  const resultEl = document.getElementById('searchInResult');
+  if (q) {
+    const hits  = Object.values(posData).filter(p => p.status === 'INBOUND' && poMatches(p, q)).length;
+    const other = Object.values(outboundData).filter(p => poMatches(p, q)).length;
+    resultEl.innerHTML = `${hits} match${hits === 1 ? '' : 'es'} here` + otherTabHint(other, 'outbound', 'Outbound / Shipped');
+  } else {
+    resultEl.innerHTML = '';
+  }
   if (activeLanes.length === 0) {
     wrapper.innerHTML = `<div class="lanes-empty"><div class="lanes-empty-icon">📦</div><div class="lanes-empty-text">No active lanes.<br>Click "+ Lane" to add one.</div></div>`;
     return;
   }
   let html = '';
   activeLanes.forEach(laneNum => {
-    const lanePOs  = Object.entries(posData).filter(([k,v]) => v.lane == laneNum && v.status === 'INBOUND').sort((a,b) => a[1].inducted - b[1].inducted);
-    const totalPcs = lanePOs.reduce((s,[k,v]) => s + (v.sscc||[]).length, 0);
+    const allLanePOs = Object.entries(posData).filter(([k,v]) => v.lane == laneNum && v.status === 'INBOUND').sort((a,b) => a[1].inducted - b[1].inducted);
+    const lanePOs  = q ? allLanePOs.filter(([k,v]) => poMatches(v, q)) : allLanePOs;
+    if (q && lanePOs.length === 0) return; // hide lanes with no match while searching
+    const totalPcs = allLanePOs.reduce((s,[k,v]) => s + (v.sscc||[]).length, 0);
     html += `<div class="lane-group">
       <div class="lane-header">
         <span class="lane-num">Lane ${laneNum}</span>
@@ -874,7 +1024,7 @@ function renderInbound() {
       lanePOs.forEach(([poKey, po]) => {
         const age = getAgeInfo(po.inducted);
         const ssccList = po.sscc || [];
-        html += `<div class="po-card ${age.cardCls}" onclick="openQuickScan('${poKey}')">
+        html += `<div class="po-card ${age.cardCls}${q ? ' search-hit' : ''}" onclick="openQuickScan('${poKey}')">
           <div class="po-card-header">
             <div class="po-number">${esc(po.po)}</div>
             <span class="age-badge ${age.cls}">${age.badge}</span>
@@ -884,7 +1034,7 @@ function renderInbound() {
             <div><div class="po-meta-label">Age</div><div class="po-meta-val">${age.label}</div></div>
           </div>
           <div class="po-inducted">${fmtDate(po.inducted)}</div>
-          <div class="sscc-list">${ssccList.map(s=>`<div class="sscc-item">${esc(s)}</div>`).join('')}</div>
+          <div class="sscc-list">${ssccList.map(s=>`<div class="sscc-item${ssccHit(s,q)?' hit':''}">${esc(s)}</div>`).join('')}</div>
           <div class="po-scan-hint">tap to add SSCC</div>
           <div class="po-card-footer">
             <button class="btn btn-ghost btn-sm" style="flex:1" onclick="openMoveOut(event,'${poKey}')">→ Advance</button>
@@ -895,15 +1045,32 @@ function renderInbound() {
     }
     html += `</div>`;
   });
+  if (q && !html) {
+    wrapper.innerHTML = `<div class="search-empty" style="grid-column:1/-1">Nothing on Picked Staging matches “${esc(q)}”.</div>`;
+    return;
+  }
   wrapper.innerHTML = html;
 }
 
 // ── RENDER OUTBOUND ──
 function renderOutbound() {
   const tbody   = document.getElementById('outboundTableBody');
-  const entries = Object.entries(outboundData).sort((a,b) => b[1].updated - a[1].updated);
-  if (entries.length === 0) {
+  const q = getQuery('searchOut');
+  const all = Object.entries(outboundData).sort((a,b) => b[1].updated - a[1].updated);
+  const entries = q ? all.filter(([k,v]) => poMatches(v, q)) : all;
+  const resultEl = document.getElementById('searchOutResult');
+  if (q) {
+    const other = Object.values(posData).filter(p => p.status === 'INBOUND' && poMatches(p, q)).length;
+    resultEl.innerHTML = `${entries.length} of ${all.length} line${all.length === 1 ? '' : 's'}` + otherTabHint(other, 'inbound', 'Picked Staging');
+  } else {
+    resultEl.innerHTML = '';
+  }
+  if (all.length === 0) {
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text3)">No outbound activity yet.</td></tr>';
+    return;
+  }
+  if (entries.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text3)">Nothing on Outbound / Shipped matches “${esc(q)}”.</td></tr>`;
     return;
   }
   tbody.innerHTML = entries.map(([key, po]) => {
@@ -911,10 +1078,11 @@ function renderOutbound() {
     const idx     = STATUS_FLOW.indexOf(po.status);
     const next    = STATUS_FLOW[idx+1];
     const prev    = STATUS_FLOW[idx-1];
+    const ssccHits = q ? (po.sscc||[]).filter(s => ssccHit(s, q)) : [];
     return `<tr>
       <td class="mono">${esc(po.po)}</td>
       <td>Lane ${po.lane}</td>
-      <td>${(po.sscc||[]).length}</td>
+      <td>${(po.sscc||[]).length}${ssccHits.length ? `<div class="mono" style="font-size:10px;margin-top:3px">${ssccHits.slice(0,3).map(s=>`<span class="hit-text">${esc(s)}</span>`).join('<br>')}${ssccHits.length > 3 ? `<br>+${ssccHits.length-3} more` : ''}</div>` : ''}</td>
       <td><span class="status-badge ${STATUS_CLASS[po.status]||''}">${label(po.status)}</span></td>
       <td style="font-size:11px;color:var(--text2)">${fmtDate(po.inducted)}</td>
       <td style="font-size:11px;color:var(--text2)">${fmtDate(po.updated)}</td>
@@ -922,7 +1090,8 @@ function renderOutbound() {
         <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
           ${!shipped && next ? `<button class="btn btn-primary btn-sm" onclick="outboundAdvance('${key}')">${next==='SHIPPED'?'Ship':'→ '+label(next)}</button>` : ''}
           ${!shipped && prev ? `<button class="btn btn-ghost btn-sm" style="color:var(--yellow)" onclick="openReverse('${key}')">← Reverse</button>` : ''}
-          ${shipped ? `<span style="font-size:10px;color:var(--text3)">Shipped ${fmtDate(po.shipped)}</span>` : ''}
+          ${shipped ? `<span style="font-size:10px;color:var(--text3)">Shipped ${fmtDate(po.shipped)}</span>
+            <button class="btn btn-del btn-sm" onclick="openDeleteShipped('${key}')" title="Delete this shipped line (password required)">🗑 Delete</button>` : ''}
         </div>
       </td>
     </tr>`;
