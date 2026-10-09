@@ -241,10 +241,11 @@ body {
 .mono { font-family: 'IBM Plex Mono', monospace; }
 
 /* ── STATUS BADGES ── */
-.status-badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; letter-spacing: 0.04em; text-transform: uppercase; }
-.status-inbound      { background: #dbeafe; color: #1e40af; }
+.status-badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; }
+.status-picked       { background: #dbeafe; color: #1e40af; }
+.status-labels       { background: #cffafe; color: #155e75; }
 .status-relabeling   { background: #ede9fe; color: #5b21b6; }
-.status-repalletized { background: #fef3c7; color: #92400e; }
+.status-staging      { background: #fef3c7; color: #92400e; }
 .status-shipped      { background: #dcfce7; color: #166534; }
 
 /* ── MODAL ── */
@@ -332,13 +333,13 @@ body {
 
 <!-- TABS -->
 <div class="tabs">
-  <button class="tab-btn active" onclick="switchTab('inbound',this)">Inbound Staging <span class="tab-badge" id="inboundCount">0</span></button>
+  <button class="tab-btn active" onclick="switchTab('inbound',this)">Picked Staging <span class="tab-badge" id="inboundCount">0</span></button>
   <button class="tab-btn" onclick="switchTab('outbound',this)">Outbound / Shipped <span class="tab-badge" id="outboundCount">0</span></button>
 </div>
 
 <div class="main">
 
-  <!-- ═══ INBOUND ═══ -->
+  <!-- ═══ PICKED STAGING ═══ -->
   <div class="tab-page active" id="tab-inbound">
 
     <div class="scan-bar">
@@ -383,8 +384,9 @@ body {
   <div class="tab-page" id="tab-outbound">
 
     <div class="stats-row">
+      <div class="stat-card"><div class="stat-label">Labels Printed</div><div class="stat-val" id="statLabels">0</div></div>
       <div class="stat-card"><div class="stat-label">Relabeling</div><div class="stat-val" id="statRelabeling">0</div></div>
-      <div class="stat-card"><div class="stat-label">Repalletized</div><div class="stat-val" id="statRepalletized">0</div></div>
+      <div class="stat-card"><div class="stat-label">Staging Outbound</div><div class="stat-val" id="statStagingOut">0</div></div>
       <div class="stat-card"><div class="stat-label">Shipped</div><div class="stat-val green" id="statShipped">0</div></div>
     </div>
 
@@ -504,7 +506,7 @@ body {
 ══════════════════════════════ -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getDatabase, ref, set, push, onValue, remove, update }
+import { getDatabase, ref, set, push, onValue, remove, update, runTransaction }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 const firebaseConfig = {
@@ -524,7 +526,27 @@ let lanesData = {}, posData = {}, outboundData = {};
 let activeLanes = [];
 let pendingMoveKey = null, pendingReverseKey = null, pendingShipKey = null, pendingRemoveKey = null;
 let quickScanKey = null;
-const STATUS_FLOW = ['INBOUND','RELABELING','REPALLETIZED','SHIPPED'];
+
+// ── STATUS FLOW ──
+// Stored codes are kept the same as before for the first and the old
+// "repalletized" step, so POs already in the database keep working.
+// What people see on screen comes from STATUS_LABEL.
+const STATUS_FLOW = ['INBOUND','LABELS_PRINTED','RELABELING','REPALLETIZED','SHIPPED'];
+const STATUS_LABEL = {
+  INBOUND:        'Picked Staging',
+  LABELS_PRINTED: 'Labels Printed',
+  RELABELING:     'Relabeling',
+  REPALLETIZED:   'Staging Outbound',
+  SHIPPED:        'Shipped'
+};
+const STATUS_CLASS = {
+  INBOUND:        'status-picked',
+  LABELS_PRINTED: 'status-labels',
+  RELABELING:     'status-relabeling',
+  REPALLETIZED:   'status-staging',
+  SHIPPED:        'status-shipped'
+};
+const label = s => STATUS_LABEL[s] || s;
 
 // ── FIREBASE INIT ──
 try {
@@ -587,6 +609,23 @@ function rebuildLaneSelect() {
   if (prev) sel.value = prev;
 }
 
+// ── ADD SSCC SAFELY (multi-user) ──
+// Uses a transaction so two scanners adding to the same PO at the same
+// moment can't overwrite each other's scans.
+// Returns 'added' | 'duplicate' | 'gone'
+async function addSsccToPO(poKey, sscc) {
+  let outcome = 'gone';
+  const res = await runTransaction(ref(db, 'imstaging/pos/' + poKey), cur => {
+    if (cur === null) { outcome = 'gone'; return cur; }
+    const list = cur.sscc || [];
+    if (list.includes(sscc)) { outcome = 'duplicate'; return; } // abort
+    outcome = 'added';
+    return { ...cur, sscc: [...list, sscc], updated: Date.now() };
+  });
+  if (outcome === 'added' && !res.committed) outcome = 'gone';
+  return { outcome, po: res.snapshot.val() };
+}
+
 // ── INDUCT SSCC (scan bar) ──
 window.inductSSCC = async function() {
   if (!db) { toast('Firebase not connected.', 'error'); return; }
@@ -603,7 +642,6 @@ window.inductSSCC = async function() {
   }
 
   // ── 1-PO-PER-LANE RULE ──
-  // If the lane already has an INBOUND PO and it's a DIFFERENT PO number, block it
   if (!poKey) {
     const laneOccupant = Object.values(posData).find(v => v.lane == lane && v.status === 'INBOUND');
     if (laneOccupant) {
@@ -613,9 +651,9 @@ window.inductSSCC = async function() {
   }
 
   if (poKey) {
-    if ((posData[poKey].sscc || []).includes(sscc)) { toast('SSCC already scanned for this PO.', 'error'); return; }
-    const newList = [...(posData[poKey].sscc || []), sscc];
-    await update(ref(db, 'imstaging/pos/' + poKey), { sscc: newList, updated: Date.now() });
+    const { outcome } = await addSsccToPO(poKey, sscc);
+    if (outcome === 'duplicate') { toast('SSCC already scanned for this PO.', 'error'); return; }
+    if (outcome === 'gone')      { toast('PO ' + po + ' was just moved or removed by someone else.', 'error'); return; }
     toast('SSCC added to PO ' + po, 'success');
   } else {
     await push(ref(db, 'imstaging/pos'), { po, lane: Number(lane), sscc: [sscc], inducted: Date.now(), updated: Date.now(), status: 'INBOUND' });
@@ -676,12 +714,10 @@ window.quickAddSSCC = async function() {
   if (!quickScanKey) return;
   const sscc = document.getElementById('quickScanInput').value.trim();
   if (!sscc) { toast('Scan or type an SSCC.', 'error'); return; }
-  const po = posData[quickScanKey];
-  if (!po) { toast('PO not found — may have been moved.', 'error'); closeModal('quickScanModal'); return; }
-  if ((po.sscc || []).includes(sscc)) { toast('SSCC already on this PO.', 'error'); return; }
-  const newList = [...(po.sscc || []), sscc];
-  await update(ref(db, 'imstaging/pos/' + quickScanKey), { sscc: newList, updated: Date.now() });
-  toast('SSCC added — ' + newList.length + ' total on PO ' + po.po, 'success');
+  const { outcome, po } = await addSsccToPO(quickScanKey, sscc);
+  if (outcome === 'gone')      { toast('PO not found — may have been moved.', 'error'); closeModal('quickScanModal'); return; }
+  if (outcome === 'duplicate') { toast('SSCC already on this PO.', 'error'); return; }
+  toast('SSCC added — ' + (po.sscc || []).length + ' total on PO ' + po.po, 'success');
   document.getElementById('quickScanInput').value = '';
   document.getElementById('quickScanInput').focus();
 };
@@ -694,9 +730,18 @@ async function removeSSCC(sscc) {
   if (!po) { toast('PO not found — may have been moved.', 'error'); closeModal('quickScanModal'); return; }
   if (!(po.sscc || []).includes(sscc)) { toast('SSCC is no longer on this PO.', 'error'); return; }
   if (!confirm('Remove SSCC ' + sscc + ' from PO ' + po.po + '?')) return;
-  const newList = (po.sscc || []).filter(s => s !== sscc);
-  await update(ref(db, 'imstaging/pos/' + quickScanKey), { sscc: newList, updated: Date.now() });
-  toast('SSCC ' + sscc + ' removed — ' + newList.length + ' left on PO ' + po.po, 'warning');
+  let outcome = 'gone';
+  const res = await runTransaction(ref(db, 'imstaging/pos/' + quickScanKey), cur => {
+    if (cur === null) { outcome = 'gone'; return cur; }
+    const list = cur.sscc || [];
+    if (!list.includes(sscc)) { outcome = 'missing'; return; } // abort
+    outcome = 'removed';
+    return { ...cur, sscc: list.filter(s => s !== sscc), updated: Date.now() };
+  });
+  if (outcome === 'gone' || !res.committed && outcome === 'removed') { toast('PO not found — may have been moved.', 'error'); closeModal('quickScanModal'); return; }
+  if (outcome === 'missing') { toast('SSCC is no longer on this PO.', 'error'); return; }
+  const left = (res.snapshot.val().sscc || []).length;
+  toast('SSCC ' + sscc + ' removed — ' + left + ' left on PO ' + po.po, 'warning');
   document.getElementById('quickScanInput').focus();
 }
 document.getElementById('qsSsccList').addEventListener('click', e => {
@@ -704,37 +749,36 @@ document.getElementById('qsSsccList').addEventListener('click', e => {
   if (btn) removeSSCC(btn.dataset.sscc);
 });
 
-// ── ADVANCE STATUS ──
+// ── ADVANCE STATUS (from a lane card) ──
 window.openMoveOut = function(e, poKey) {
   e.stopPropagation();
   pendingMoveKey = poKey;
   const po = posData[poKey];
   const nextStatus = STATUS_FLOW[STATUS_FLOW.indexOf(po.status) + 1];
-  if (!nextStatus || nextStatus === 'SHIPPED') {
-    pendingShipKey = poKey;
-    document.getElementById('shipBody').innerHTML = 'Systemically ship <strong>PO ' + po.po + '</strong> (' + (po.sscc||[]).length + ' SSCCs)? <strong>This cannot be reversed.</strong>';
-    openModal('shipModal'); return;
-  }
-  document.getElementById('moveOutBody').innerHTML = 'Advance <strong>PO ' + po.po + '</strong> from <strong>' + po.status + '</strong> → <strong>' + nextStatus + '</strong>?';
+  document.getElementById('moveOutBody').innerHTML = 'Advance <strong>PO ' + esc(po.po) + '</strong> from <strong>' + label(po.status) + '</strong> → <strong>' + label(nextStatus) + '</strong>?';
   openModal('moveOutModal');
 };
 window.confirmMoveOut = async function() {
   if (!pendingMoveKey) return;
   const po = posData[pendingMoveKey];
+  if (!po) { toast('PO was already moved by someone else.', 'warning'); closeModal('moveOutModal'); pendingMoveKey = null; return; }
   const nextStatus = STATUS_FLOW[STATUS_FLOW.indexOf(po.status) + 1];
-  await push(ref(db, 'imstaging/outbound'), { ...po, status: nextStatus, updated: Date.now() });
-  await remove(ref(db, 'imstaging/pos/' + pendingMoveKey));
-  toast('PO ' + po.po + ' moved to ' + nextStatus, 'success');
+  // Move in one atomic write so the PO is never in both places (or neither)
+  const newKey = push(ref(db, 'imstaging/outbound')).key;
+  await update(ref(db, 'imstaging'), {
+    ['outbound/' + newKey]: { ...po, status: nextStatus, updated: Date.now() },
+    ['pos/' + pendingMoveKey]: null
+  });
+  toast('PO ' + po.po + ' moved to ' + label(nextStatus), 'success');
   closeModal('moveOutModal'); pendingMoveKey = null;
 };
 
 // ── SHIP ──
 window.confirmShip = async function() {
   const key = pendingShipKey; if (!key) return;
-  const po = outboundData[key] || posData[key]; if (!po) return;
+  const po = outboundData[key]; if (!po) return;
   await update(ref(db, 'imstaging/outbound/' + key), { status: 'SHIPPED', shipped: Date.now(), updated: Date.now() });
-  if (posData[key]) await remove(ref(db, 'imstaging/pos/' + key));
-  toast('PO ' + po.po + ' marked SHIPPED.', 'success');
+  toast('PO ' + po.po + ' marked Shipped.', 'success');
   closeModal('shipModal'); pendingShipKey = null;
 };
 
@@ -743,22 +787,26 @@ window.openReverse = function(poKey) {
   pendingReverseKey = poKey;
   const po = outboundData[poKey];
   const prevStatus = STATUS_FLOW[STATUS_FLOW.indexOf(po.status) - 1];
-  document.getElementById('reverseBody').innerHTML = 'Reverse <strong>PO ' + po.po + '</strong> from <strong>' + po.status + '</strong> → <strong>' + prevStatus + '</strong>?';
+  document.getElementById('reverseBody').innerHTML = 'Reverse <strong>PO ' + esc(po.po) + '</strong> from <strong>' + label(po.status) + '</strong> → <strong>' + label(prevStatus) + '</strong>?';
   openModal('reverseModal');
 };
 window.confirmReverse = async function() {
   if (!pendingReverseKey) return;
   const po = outboundData[pendingReverseKey];
+  if (!po) { toast('PO was already changed by someone else.', 'warning'); closeModal('reverseModal'); pendingReverseKey = null; return; }
   const prevStatus = STATUS_FLOW[STATUS_FLOW.indexOf(po.status) - 1];
   if (prevStatus === 'INBOUND') {
     const entry = { ...po, status: 'INBOUND', updated: Date.now() };
     delete entry.shipped;
-    await push(ref(db, 'imstaging/pos'), entry);
-    await remove(ref(db, 'imstaging/outbound/' + pendingReverseKey));
-    toast('PO ' + po.po + ' reversed back to INBOUND.', 'warning');
+    const newKey = push(ref(db, 'imstaging/pos')).key;
+    await update(ref(db, 'imstaging'), {
+      ['pos/' + newKey]: entry,
+      ['outbound/' + pendingReverseKey]: null
+    });
+    toast('PO ' + po.po + ' reversed back to ' + label('INBOUND') + '.', 'warning');
   } else {
     await update(ref(db, 'imstaging/outbound/' + pendingReverseKey), { status: prevStatus, updated: Date.now() });
-    toast('PO ' + po.po + ' reversed to ' + prevStatus, 'warning');
+    toast('PO ' + po.po + ' reversed to ' + label(prevStatus), 'warning');
   }
   closeModal('reverseModal'); pendingReverseKey = null;
 };
@@ -768,14 +816,14 @@ window.openRemovePO = function(e, poKey) {
   e.stopPropagation();
   pendingRemoveKey = poKey;
   const po = posData[poKey];
-  document.getElementById('removeBody').innerHTML = 'Remove <strong>PO ' + po.po + '</strong> and its ' + (po.sscc||[]).length + ' SSCC(s) from Lane ' + po.lane + '? This will delete the record.';
+  document.getElementById('removeBody').innerHTML = 'Remove <strong>PO ' + esc(po.po) + '</strong> and its ' + (po.sscc||[]).length + ' SSCC(s) from Lane ' + po.lane + '? This will delete the record.';
   openModal('removeModal');
 };
 window.confirmRemove = async function() {
   if (!pendingRemoveKey) return;
   const po = posData[pendingRemoveKey];
   await remove(ref(db, 'imstaging/pos/' + pendingRemoveKey));
-  toast('PO ' + po.po + ' removed.', 'warning');
+  toast('PO ' + (po ? po.po : '') + ' removed.', 'warning');
   closeModal('removeModal'); pendingRemoveKey = null;
 };
 
@@ -785,11 +833,11 @@ window.outboundAdvance = function(key) {
   const nextStatus = STATUS_FLOW[STATUS_FLOW.indexOf(po.status) + 1];
   if (nextStatus === 'SHIPPED') {
     pendingShipKey = key;
-    document.getElementById('shipBody').innerHTML = 'Systemically ship <strong>PO ' + po.po + '</strong>? <strong>This cannot be reversed.</strong>';
+    document.getElementById('shipBody').innerHTML = 'Systemically ship <strong>PO ' + esc(po.po) + '</strong>? <strong>This cannot be reversed.</strong>';
     openModal('shipModal');
   } else {
     update(ref(db, 'imstaging/outbound/' + key), { status: nextStatus, updated: Date.now() });
-    toast('PO ' + po.po + ' advanced to ' + nextStatus, 'success');
+    toast('PO ' + po.po + ' advanced to ' + label(nextStatus), 'success');
   }
 };
 
@@ -804,7 +852,7 @@ function fmtDur(hrs) { return hrs < 1 ? Math.round(hrs*60)+'m' : hrs.toFixed(1)+
 function fmtTime(ts) { return new Date(ts).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}); }
 function fmtDate(ts) { return new Date(ts).toLocaleDateString('en-US',{month:'short',day:'numeric'})+' '+fmtTime(ts); }
 
-// ── RENDER INBOUND ──
+// ── RENDER PICKED STAGING ──
 function renderInbound() {
   const wrapper = document.getElementById('lanesWrapper');
   if (activeLanes.length === 0) {
@@ -828,7 +876,7 @@ function renderInbound() {
         const ssccList = po.sscc || [];
         html += `<div class="po-card ${age.cardCls}" onclick="openQuickScan('${poKey}')">
           <div class="po-card-header">
-            <div class="po-number">${po.po}</div>
+            <div class="po-number">${esc(po.po)}</div>
             <span class="age-badge ${age.cls}">${age.badge}</span>
           </div>
           <div class="po-meta">
@@ -836,7 +884,7 @@ function renderInbound() {
             <div><div class="po-meta-label">Age</div><div class="po-meta-val">${age.label}</div></div>
           </div>
           <div class="po-inducted">${fmtDate(po.inducted)}</div>
-          <div class="sscc-list">${ssccList.map(s=>`<div class="sscc-item">${s}</div>`).join('')}</div>
+          <div class="sscc-list">${ssccList.map(s=>`<div class="sscc-item">${esc(s)}</div>`).join('')}</div>
           <div class="po-scan-hint">tap to add SSCC</div>
           <div class="po-card-footer">
             <button class="btn btn-ghost btn-sm" style="flex:1" onclick="openMoveOut(event,'${poKey}')">→ Advance</button>
@@ -858,22 +906,21 @@ function renderOutbound() {
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text3)">No outbound activity yet.</td></tr>';
     return;
   }
-  const sc = { RELABELING:'status-relabeling', REPALLETIZED:'status-repalletized', SHIPPED:'status-shipped', INBOUND:'status-inbound' };
   tbody.innerHTML = entries.map(([key, po]) => {
     const shipped = po.status === 'SHIPPED';
     const idx     = STATUS_FLOW.indexOf(po.status);
     const next    = STATUS_FLOW[idx+1];
     const prev    = STATUS_FLOW[idx-1];
     return `<tr>
-      <td class="mono">${po.po}</td>
+      <td class="mono">${esc(po.po)}</td>
       <td>Lane ${po.lane}</td>
       <td>${(po.sscc||[]).length}</td>
-      <td><span class="status-badge ${sc[po.status]||''}">${po.status}</span></td>
+      <td><span class="status-badge ${STATUS_CLASS[po.status]||''}">${label(po.status)}</span></td>
       <td style="font-size:11px;color:var(--text2)">${fmtDate(po.inducted)}</td>
       <td style="font-size:11px;color:var(--text2)">${fmtDate(po.updated)}</td>
       <td>
         <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
-          ${!shipped && next ? `<button class="btn btn-primary btn-sm" onclick="outboundAdvance('${key}')">${next==='SHIPPED'?'Ship':'→ '+next}</button>` : ''}
+          ${!shipped && next ? `<button class="btn btn-primary btn-sm" onclick="outboundAdvance('${key}')">${next==='SHIPPED'?'Ship':'→ '+label(next)}</button>` : ''}
           ${!shipped && prev ? `<button class="btn btn-ghost btn-sm" style="color:var(--yellow)" onclick="openReverse('${key}')">← Reverse</button>` : ''}
           ${shipped ? `<span style="font-size:10px;color:var(--text3)">Shipped ${fmtDate(po.shipped)}</span>` : ''}
         </div>
@@ -897,11 +944,13 @@ function updateStats() {
   document.getElementById('statYellow').textContent    = y;
   document.getElementById('statRed').textContent       = r;
   const ob = Object.values(outboundData);
-  document.getElementById('statRelabeling').textContent   = ob.filter(p=>p.status==='RELABELING').length;
-  document.getElementById('statRepalletized').textContent = ob.filter(p=>p.status==='REPALLETIZED').length;
-  document.getElementById('statShipped').textContent      = ob.filter(p=>p.status==='SHIPPED').length;
-  document.getElementById('inboundCount').textContent     = inb.length;
-  document.getElementById('outboundCount').textContent    = ob.length;
+  const count = s => ob.filter(p => p.status === s).length;
+  document.getElementById('statLabels').textContent     = count('LABELS_PRINTED');
+  document.getElementById('statRelabeling').textContent = count('RELABELING');
+  document.getElementById('statStagingOut').textContent = count('REPALLETIZED');
+  document.getElementById('statShipped').textContent    = count('SHIPPED');
+  document.getElementById('inboundCount').textContent   = inb.length;
+  document.getElementById('outboundCount').textContent  = ob.length;
 }
 
 // Refresh age badges every 30s without a Firebase round-trip
