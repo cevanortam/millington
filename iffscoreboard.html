@@ -198,6 +198,18 @@ input[type=file]{display:none;}
 .sync-status.error{border-left:4px solid var(--red);}
 .sync-status.off{border-left:4px solid var(--muted-dim);}
 
+.sel-col{width:34px;padding-left:12px !important;padding-right:0 !important;}
+.sel-col input{width:16px;height:16px;accent-color:var(--amber);cursor:pointer;vertical-align:middle;}
+.grid tbody tr.selected td{background:var(--amber-soft) !important;}
+.grid tbody tr.excepted td{color:var(--muted);}
+.exc-why{font-family:var(--sans);font-size:11.5px;color:var(--muted);margin-top:3px;max-width:200px;white-space:normal;}
+.selbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--amber-deep);border-radius:10px;padding:10px 12px;margin-bottom:10px;box-shadow:0 6px 18px rgba(0,0,0,0.12);}
+.selbar input{flex:1;min-width:220px;font-family:var(--sans);}
+.exc-detail{font-size:13px;margin-bottom:10px;padding:8px 10px;border-left:3px solid var(--muted-dim);background:var(--panel);border-radius:6px;}
+.exc-link{background:none;border:none;text-align:left;cursor:pointer;font-size:12.5px;color:var(--muted);padding:2px 0;}
+.exc-link span{color:var(--blue);font-weight:700;margin-left:4px;}
+.exc-link:hover{color:var(--text);}
+
 /* Tabs */
 .tabbar{display:flex;gap:18px;padding:0 22px;border-bottom:1px solid var(--border);background:var(--panel);}
 .tab-btn{font-family:var(--disp);font-size:14px;letter-spacing:0.4px;font-weight:600;color:var(--muted);background:transparent;border:none;border-bottom:2px solid transparent;padding:12px 2px 11px;cursor:pointer;display:flex;align-items:center;gap:8px;}
@@ -229,7 +241,7 @@ input[type=file]{display:none;}
 .view-note{font-size:12px;color:var(--muted);margin:-4px 0 12px;}
 
 /* Stat strip */
-.stat-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:16px;}
+.stat-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:8px;margin-bottom:16px;}
 .stat{background:var(--panel);border:1px solid var(--border);border-radius:9px;padding:11px 12px;text-align:left;cursor:pointer;border-top:3px solid var(--border);}
 .stat:hover{border-color:var(--muted-dim);}
 .stat.active{outline:2px solid var(--amber);outline-offset:-1px;}
@@ -374,7 +386,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:13px;min-width:1050px;}
   <div id="tableArea"></div>
 
   <div class="footnote">
-    Delivery numbers are matched after trimming spaces, dropping leading zeros, and dropping trailing letters, so SAP <b>0081175873</b>, PKMS <b>81175873</b>, <b>81175873X</b> and <b>81175873XX</b> are treated as the same delivery. In ORDSTS, when the Pickticket# column has a value (manually entered orders, like control number 29 with Pickticket# 81182054), Pickticket# is used as the delivery number. A delivery that appears more than once in ORDSTS is a redropped order, and the latest drop's status counts. A delivery with more than one ASN (like 81175282 and 81175282X) is received once any ASN is received, and put away only when all of them are. ORDSTS has no invoice date, so outbound invoice dates are worked out by comparing each day's ORDSTS upload with the one before it. Upload ORDSTS every day to keep them exact. Files, notes and that history are saved in this browser only.
+    Delivery numbers are matched after trimming spaces, dropping leading zeros, and dropping trailing letters, so SAP <b>0081175873</b>, PKMS <b>81175873</b>, <b>81175873X</b> and <b>81175873XX</b> are treated as the same delivery. In ORDSTS, when the Pickticket# column has a value (manually entered orders, like control number 29 with Pickticket# 81182054), Pickticket# is used as the delivery number. A delivery that appears more than once in ORDSTS is a redropped order, and the latest drop's status counts. A delivery with more than one ASN (like 81175282 and 81175282X) is received once any ASN is received, and put away only when all of them are. ORDSTS has no invoice date, so outbound invoice dates are worked out by comparing each day's ORDSTS upload with the one before it. Upload ORDSTS every day to keep them exact. Deliveries marked as exceptions stay listed but no longer count as open problems; if one later reconciles it shows as Reconciled. Files, notes and that history are saved in this browser only.
   </div>
 </div>
 
@@ -520,6 +532,7 @@ var STATE = {
   notes: {},
   tab: "in",
   day: "",
+  sel: {}, selReason: "", viewKeys: [], lastSel: null,
   ordHist: {}, ordSnaps: [],
   search: "",
   resultFilter: "",
@@ -821,6 +834,11 @@ var RESULT = {
   OUT:  {short:"Can't check", cls:"muted", sev:4, out:"Before MB51 date range", in:"Before MB51 date range"}
 };
 function isExc(r){ return r.result === "SAP" || r.result === "PKMS"; }
+RESULT.EXC = {short:"Exception", cls:"muted", sev:5, out:"Marked as exception", in:"Marked as exception"};
+// A delivery someone marked as an exception. Saved and shared like a note, under "x:<in|out>:<delivery>",
+// with the reason as the note text.
+function excKey(dir, key){ return "x:" + dir + ":" + key; }
+function excReason(dir, key){ return STATE.notes[excKey(dir, key)] || ""; }
 function statusNum(s){ var m = String(s||"").match(/\d+/); return m ? parseInt(m[0],10) : -1; }
 
 function buildRows(dir){
@@ -886,6 +904,9 @@ function buildRows(dir){
     else if (posted) result = "SAP";
     else if (pDone) result = (pDate && mbMin && pDate < mbMin) ? "OUT" : "PKMS";
     else result = "OPEN";
+    // Marked as an exception: no longer counted as a problem. If it later reconciles, it shows as Reconciled.
+    var origResult = result;
+    if (result !== "REC" && STATE.notes[excKey(dir, k)]) result = "EXC";
     var statusLabel = "";
     if (p){
       if (dir === "out") statusLabel = ordLabel(cur.status);
@@ -893,7 +914,7 @@ function buildRows(dir){
       else statusLabel = asnLabel(p.recs[0].status);
     }
     return {
-      key:k, dir:dir, result:result,
+      key:k, dir:dir, result:result, origResult:origResult,
       sapFound:!!s, sapPosted:posted, sapReversed:!!(s && s.revs && !posted),
       sapDate: sapDates.length ? sapDates[sapDates.length-1] : "", sapFirst: sapDates[0] || "", sapDays: sapDates.filter(function(d,i,a){ return a.indexOf(d) === i; }), sapQty: s ? s.qty : null, sapUnit: s ? s.unit : "",
       sapLines: s ? s.lines : [], sapRaws: s ? Object.keys(s.raws) : [], sapMats: s ? Object.keys(s.mats).length : 0,
@@ -925,10 +946,10 @@ function viewRows(dir){
   }
   // Stat counts follow the column filters (but not the stat card's own result filter).
   var counted = base.filter(function(r){ return passesFilters(dir, r, null); });
-  var counts = {ALL:counted.length, REC:0, SAP:0, PKMS:0, OPEN:0, OUT:0, NOPUT:0};
-  counted.forEach(function(r){ if (dir === "in" && r.pkmsFound && !r.pkmsPutaway) counts.NOPUT++; });
+  var counts = {ALL:counted.length, REC:0, SAP:0, PKMS:0, OPEN:0, OUT:0, NOPUT:0, EXC:0};
+  counted.forEach(function(r){ if (dir === "in" && r.pkmsFound && !r.pkmsPutaway && r.result !== "EXC") counts.NOPUT++; });
   counted.forEach(function(r){ counts[r.result]++; });
-  var pre = STATE.resultFilter ? base.filter(function(r){ return STATE.resultFilter === "NOPUT" ? (r.pkmsFound && !r.pkmsPutaway) : r.result === STATE.resultFilter; }) : base.slice();
+  var pre = STATE.resultFilter ? base.filter(function(r){ return STATE.resultFilter === "NOPUT" ? (r.pkmsFound && !r.pkmsPutaway && r.result !== "EXC") : r.result === STATE.resultFilter; }) : base.slice();
   var list = pre.filter(function(r){ return passesFilters(dir, r, null); });
 
   var levels = STATE.sort[dir];
@@ -1040,7 +1061,8 @@ function renderStats(dir, counts){
     {k:"SAP", cls:"k-sap", n:counts.SAP, l:RESULT.SAP[dir]},
     {k:"PKMS", cls:"k-pkms", n:counts.PKMS, l:RESULT.PKMS[dir]},
     {k:"OPEN", cls:"k-open", n:counts.OPEN, l:RESULT.OPEN[dir]},
-    {k:"OUT", cls:"k-out", n:counts.OUT, l:"Can't check (before MB51 range)"}
+    {k:"OUT", cls:"k-out", n:counts.OUT, l:"Can't check (before MB51 range)"},
+    {k:"EXC", cls:"k-out", n:counts.EXC, l:"Marked as exception"}
   ];
   if (dir === "in") defs.splice(5, 0, {k:"NOPUT", cls:"k-open", n:counts.NOPUT, l:"Received in PKMS, not put away"});
   var denom = counts.REC + counts.SAP + counts.PKMS;
@@ -1076,12 +1098,15 @@ function renderMain(){
   var tokens = searchTokens();
   var note = "";
   if (tokens.length) note = "Showing deliveries matching your search.";
-  else note = "Showing every delivery in the loaded files, exceptions first.";
+  else note = "Showing every delivery in the loaded files, problems first. Tick the boxes on the left to mark deliveries as exceptions.";
   $("viewNote").textContent = note;
 
   var cols = columns(dir), levels = STATE.sort[dir], F = STATE.filters[dir];
   renderChips(dir);
-  var head = '<tr>' + cols.map(function(c){
+  var visKeys = v.list.slice(0, 1500).map(function(r){ return r.key; });
+  STATE.viewKeys = visKeys;
+  var nSel = selectedKeys(dir).length, allOn = visKeys.length && visKeys.every(function(k){ return STATE.sel[dir+":"+k]; });
+  var head = '<tr><th class="sel-col"><input type="checkbox" id="selAll" aria-label="Select all deliveries shown"'+(allOn?" checked":"")+'></th>' + cols.map(function(c){
     var cls = c.grp === "sap" ? "sap-col" : (c.grp === "pkms" ? "pkms-col" : "");
     if (c.num) cls += " num";
     var li = -1; levels.forEach(function(L, i){ if (L.k === c.k) li = i; });
@@ -1092,7 +1117,7 @@ function renderMain(){
   }).join("") + '</tr>';
 
   if (!v.list.length){
-    $("tableArea").innerHTML = '<div class="table-scroll"><table class="grid"><thead>'+head+'</thead><tbody><tr><td colspan="'+cols.length+'" class="empty-state" style="border:none;">No deliveries match these filters. Clear a filter above or change the search.</td></tr></tbody></table></div>';
+    $("tableArea").innerHTML = '<div class="table-scroll"><table class="grid"><thead>'+head+'</thead><tbody><tr><td colspan="'+(cols.length+1)+'" class="empty-state" style="border:none;">No deliveries match these filters. Clear a filter above or change the search.</td></tr></tbody></table></div>';
     wireTable(dir);
     return;
   }
@@ -1103,9 +1128,12 @@ function renderMain(){
     var flags = "";
     if (r.pkmsMulti && dir === "out") flags += '<span class="flag" title="Order was redropped. Status shown is from the latest drop. All drops: '+esc(r.pkmsRecs.map(function(x){ return x.raw+" ("+x.status+")"; }).join(", "))+'">Redropped ×'+(r.pkmsRecs.length-1)+'</span>';
     if (r.pkmsMulti && dir === "in") flags += '<span class="flag" title="A second ASN was created to receive items left off the first. ASNs: '+esc(r.pkmsRecs.map(function(x){ return x.raw+" ("+x.status+")"; }).join(", "))+'">'+r.pkmsRecs.length+' ASNs</span>';
-    var tr = '<tr class="'+(isExc(r)?"exc":"")+'">' +
+    var on = !!STATE.sel[id], why = r.result === "EXC" ? excReason(dir, r.key) : "";
+    var tr = '<tr class="'+(isExc(r)?"exc":"")+(r.result === "EXC"?" excepted":"")+(on?" selected":"")+'">' +
+      '<td class="sel-col"><input type="checkbox" data-sel="'+esc(r.key)+'" aria-label="Select '+esc(r.key)+'"'+(on?" checked":"")+'></td>' +
       '<td><button class="key-btn'+(open?" open":"")+'" data-exp="'+esc(id)+'"><span class="car">▶</span>'+esc(r.key)+'</button>'+flags+'</td>' +
-      '<td><span class="res '+RESULT[r.result].cls+'" title="'+esc(RESULT[r.result][dir])+'">'+RESULT[r.result].short+'</span></td>' +
+      '<td><span class="res '+RESULT[r.result].cls+'" title="'+esc(r.result === "EXC" ? "Marked as exception: " + why + " (was: " + RESULT[r.origResult].short + ")" : RESULT[r.result][dir])+'">'+RESULT[r.result].short+'</span>' +
+        (r.result === "EXC" ? '<div class="exc-why">'+esc(why)+'</div>' : '') + '</td>' +
       '<td>' + yn(r.sapFound, r.sapPosted, r.sapReversed) + '</td>' +
       '<td>' + esc(fmtDate(r.sapDate)) + '</td>' +
       '<td>' + yn(r.pkmsFound, r.pkmsDone) + '</td>' +
@@ -1113,15 +1141,19 @@ function renderMain(){
       '<td>' + esc(fmtDate(dir === "out" ? r.pkmsCreated : r.pkmsReceipt)) + '</td>' +
       '<td><input class="note-input" data-note="'+esc(id)+'" value="'+esc(STATE.notes[id] || "")+'" placeholder="Add note"></td>' +
       '</tr>';
-    if (open) tr += '<tr class="detail"><td colspan="'+cols.length+'">' + detailHtml(r) + '</td></tr>';
+    if (open) tr += '<tr class="detail"><td colspan="'+(cols.length+1)+'">' + detailHtml(r) + '</td></tr>';
     return tr;
   }).join("");
   var more = v.list.length > MAX ? '<p class="view-note" style="margin-top:8px;">Showing the first '+MAX+' of '+v.list.length+'. Narrow the date or search to see the rest.</p>' : "";
-  $("tableArea").innerHTML = '<div class="table-scroll"><table class="grid"><thead>'+head+'</thead><tbody>'+body+'</tbody></table></div>' + more;
+  $("tableArea").innerHTML = selBar(dir, nSel) + '<div class="table-scroll"><table class="grid"><thead>'+head+'</thead><tbody>'+body+'</tbody></table></div>' + more;
   wireTable(dir);
 }
 
 function detailHtml(r){
+  if (r.result === "EXC") return '<div class="exc-detail"><b>Marked as exception:</b> ' + esc(excReason(r.dir, r.key)) + '. Without it this delivery would show as <b>' + esc(RESULT[r.origResult][r.dir]) + '</b>. To undo, tick it and click Remove exception.</div>' + detailHtmlInner(r);
+  return detailHtmlInner(r);
+}
+function detailHtmlInner(r){
   var sapPart = r.sapLines.length
     ? '<table class="sub"><thead><tr><th>MvT</th><th>Posting date</th><th>Reference</th><th>Material</th><th>Batch</th><th>Description</th><th class="num">Qty</th><th>User</th></tr></thead><tbody>' +
       r.sapLines.map(function(l){ return '<tr><td>'+esc(l.mvt)+'</td><td>'+esc(fmtDate(l.date))+'</td><td>'+esc(l.raw)+'</td><td>'+esc(l.material)+'</td><td>'+esc(l.batch)+'</td><td>'+esc(l.desc)+'</td><td class="num">'+esc(fmtNum(l.qty))+' '+esc(l.unit)+'</td><td>'+esc(l.user)+'</td></tr>'; }).join("") +
@@ -1139,8 +1171,61 @@ function detailHtml(r){
   return '<div class="sub-tables"><div><h4>SAP MB51 lines</h4>'+sapPart+'</div><div><h4>PKMS records</h4>'+pkPart+'</div></div>';
 }
 
+/* ---------- marking deliveries as exceptions ---------- */
+function selectedKeys(dir){
+  var p = dir + ":";
+  return Object.keys(STATE.sel).filter(function(id){ return id.indexOf(p) === 0 && STATE.sel[id]; }).map(function(id){ return id.slice(p.length); });
+}
+function selBar(dir, n){
+  if (!n) return '';
+  var keys = selectedKeys(dir);
+  var nEx = keys.filter(function(k){ return !!excReason(dir, k); }).length;
+  return '<div class="selbar" role="region" aria-label="Selected deliveries">' +
+    '<b>' + n + ' selected</b>' +
+    '<input class="text-input" id="selReason" placeholder="Reason (optional), e.g. Old ASN, cleared with client" value="'+esc(STATE.selReason || "")+'">' +
+    '<button class="btn primary sm" id="btnMarkExc">Mark as exception</button>' +
+    (nEx ? '<button class="btn ghost sm" id="btnUnmarkExc">Remove exception' + (nEx > 1 ? ' (' + nEx + ')' : '') + '</button>' : '') +
+    '<button class="btn ghost sm" id="btnSelClear">Clear selection</button></div>';
+}
+function setExceptions(dir, keys, reason){
+  var items = keys.map(function(k){ return {id: excKey(dir, k), v: reason}; });
+  items.forEach(function(it){ if (it.v) STATE.notes[it.id] = it.v; else delete STATE.notes[it.id]; });
+  STATE.sel = {}; STATE.rowsCache = {};
+  save(); renderAll();
+  syncPushNotes(items, (reason ? "Marked " : "Removed exception on ") + keys.length + " " + (dir === "in" ? "inbound" : "outbound") + " " + plural(keys.length, "delivery", "deliveries"));
+}
+
 function wireTable(dir){
   var area = $("tableArea");
+  if ($("selAll")) $("selAll").addEventListener("change", function(e){
+    STATE.viewKeys.forEach(function(k){ if (e.target.checked) STATE.sel[dir+":"+k] = true; else delete STATE.sel[dir+":"+k]; });
+    renderMain();
+  });
+  area.querySelectorAll("[data-sel]").forEach(function(cb){
+    cb.addEventListener("click", function(e){
+      var k = cb.getAttribute("data-sel"), on = cb.checked;
+      // Shift-click ticks (or unticks) every row between the last one clicked and this one.
+      if (e.shiftKey && STATE.lastSel && STATE.lastSel.dir === dir){
+        var a = STATE.viewKeys.indexOf(STATE.lastSel.key), b = STATE.viewKeys.indexOf(k);
+        if (a !== -1 && b !== -1) STATE.viewKeys.slice(Math.min(a,b), Math.max(a,b) + 1).forEach(function(x){ if (on) STATE.sel[dir+":"+x] = true; else delete STATE.sel[dir+":"+x]; });
+      }
+      if (on) STATE.sel[dir+":"+k] = true; else delete STATE.sel[dir+":"+k];
+      STATE.lastSel = {dir:dir, key:k};
+      renderMain();
+    });
+  });
+  if ($("selReason")) $("selReason").addEventListener("input", function(e){ STATE.selReason = e.target.value; });
+  if ($("btnSelClear")) $("btnSelClear").addEventListener("click", function(){ STATE.sel = {}; renderMain(); });
+  if ($("btnMarkExc")) $("btnMarkExc").addEventListener("click", function(){
+    var keys = selectedKeys(dir), reason = ($("selReason").value || "").trim() || "Marked as exception";
+    setExceptions(dir, keys, reason);
+    showToast(keys.length + " " + plural(keys.length, "delivery", "deliveries") + " marked as exceptions. They no longer count as open problems.");
+  });
+  if ($("btnUnmarkExc")) $("btnUnmarkExc").addEventListener("click", function(){
+    var keys = selectedKeys(dir).filter(function(k){ return !!excReason(dir, k); });
+    setExceptions(dir, keys, "");
+    showToast("Exception removed from " + keys.length + " " + plural(keys.length, "delivery", "deliveries") + ".");
+  });
   area.querySelectorAll("[data-col]").forEach(function(th){
     function open(e){ e.stopPropagation(); openColMenu(dir, th.getAttribute("data-col"), th); }
     th.addEventListener("click", open);
@@ -1202,7 +1287,8 @@ function todayStats(dir){
   var catOf = {};
   rows.forEach(function(r){
     var cat;
-    if (r.result !== "REC") cat = "open";
+    if (r.result === "EXC") cat = "exception";
+    else if (r.result !== "REC") cat = "open";
     else if (dir === "in") cat = (r.sapDays.indexOf(day) !== -1 && r.pkmsReceipt === day) ? "received" : "reconciled";
     else {
       // Outbound: shipped = goods issued in SAP and invoiced in PKMS on the same day.
@@ -1213,16 +1299,16 @@ function todayStats(dir){
     }
     catOf[r.key] = cat;
   });
-  var ORDER = {open:0, received:1, reconciled:2};
+  var ORDER = {open:0, received:1, reconciled:2, exception:3};
   rows.sort(function(a,b){ var d = ORDER[catOf[a.key]] - ORDER[catOf[b.key]]; if (d) return d; return a.key < b.key ? -1 : 1; });
   var both = rows.filter(function(r){ return r.result === "REC"; }).length;
   function n(c){ return rows.filter(function(r){ return catOf[r.key] === c; }).length; }
-  return {day:day, rows:rows, cat:catOf, total:rows.length, both:both, open:rows.length - both, received:n("received"), reconciled:n("reconciled")};
+  return {day:day, rows:rows, cat:catOf, total:rows.length, both:both, open:n("open"), received:n("received"), reconciled:n("reconciled"), exception:n("exception")};
 }
 function excInfo(dir, kind){
   var day = latestDate();
   var list = buildRows(dir).filter(function(r){
-    if (kind === "NOPUT") return r.pkmsFound && !r.pkmsPutaway;
+    if (kind === "NOPUT") return r.pkmsFound && !r.pkmsPutaway && r.result !== "EXC";
     return r.result === kind;
   });
   var oldest = "";
@@ -1259,7 +1345,7 @@ function renderSummary(){
     focus = {cls:"idle", text:"Load the <b>PKMS Outbound ORDSTS</b>, <b>PKMS Inbound ASNSTS</b> and <b>SAP MB51</b> files using the tiles above to see what needs attention."};
   } else {
     var todayOpen = [];
-    ["in","out"].forEach(function(d){ if (ready[d]) todayStats(d).rows.forEach(function(r){ if (r.result !== "REC") todayOpen.push(r); }); });
+    ["in","out"].forEach(function(d){ if (ready[d]) todayStats(d).rows.forEach(function(r){ if (r.result !== "REC" && r.result !== "EXC") todayOpen.push(r); }); });
     if (todayOpen.length){
       var t0 = todayOpen[0], area = t0.dir === "in" ? "inbound" : "outbound";
       var sameDir = todayOpen.filter(function(r){ return r.dir === t0.dir; });
@@ -1315,7 +1401,10 @@ function renderSummary(){
       return '<button class="fix-row'+(e.warn?" warn":"")+'" data-jump="'+dir+':'+e.kind+'"><span class="cnt">'+e.n+'</span><span class="what">'+esc(e.text)+'<small>'+esc(ageWords(e))+'</small></span><span class="go">Show</span></button>';
     }).join("");
     return '<div class="hcol"><div class="hcol-head"><h2>'+title+'</h2>'+pill+'</div>' + todayHtml +
-      '<p class="fix-title">Open problems, all dates</p><div class="fix-list">' + fixes + '</div></div>';
+      '<p class="fix-title">Open problems, all dates</p><div class="fix-list">' + fixes + '</div>' +
+      (function(){ var n = buildRows(dir).filter(function(r){ return r.result === "EXC"; }).length;
+        return n ? '<button class="exc-link" data-jump="'+dir+':EXC">' + n + ' ' + plural(n, "delivery", "deliveries") + ' marked as exceptions, not counted above. <span>Show</span></button>' : ''; })() +
+      '</div>';
   }).join("") + '</div>';
 
   box.innerHTML = html;
@@ -1339,7 +1428,7 @@ function renderTabs(){
     var c = $("cnt-"+d);
     if (missingSources(d).length){ c.textContent = "—"; c.className = "cnt"; c.title = "Files not loaded"; return; }
     var n = buildRows(d).filter(isExc).length;
-    c.textContent = n; c.className = "cnt" + (n ? " bad" : ""); c.title = n + " exceptions across all dates";
+    c.textContent = n; c.className = "cnt" + (n ? " bad" : ""); c.title = n + " open problems across all dates";
   });
   document.querySelectorAll(".tab-btn").forEach(function(b){ b.classList.toggle("active", b.getAttribute("data-tab") === STATE.tab); });
 }
@@ -1490,7 +1579,7 @@ function exportCsv(){
   var head = ["Delivery Nbr","Result", out?"GI'd in SAP":"Received in SAP", out?"SAP GI date":"SAP GR date",
     out?"Invoiced in PKMS":"Received in PKMS", out?"Pickticket status":"ASN status", out?"PKMS created":"PKMS first receipt","PKMS as written","SAP reference as written","Note"];
   var lines = [head.map(csvCell).join(",")].concat(list.map(function(r){
-    return [r.key, RESULT[r.result][dir], r.sapPosted?"Yes":(r.sapReversed?"Reversed":"No"), fmtDate(r.sapDate),
+    return [r.key, r.result === "EXC" ? "Marked as exception: " + excReason(dir, r.key) : RESULT[r.result][dir], r.sapPosted?"Yes":(r.sapReversed?"Reversed":"No"), fmtDate(r.sapDate),
       r.pkmsDone?"Yes":"No", r.pkmsFound?r.pkmsStatus:"Not in file", fmtDate(out?r.pkmsCreated:r.pkmsReceipt),
       r.pkmsRaws.join(" | "), r.sapRaws.join(" | "), STATE.notes[dir+":"+r.key] || ""].map(csvCell).join(",");
   }));
@@ -1533,6 +1622,7 @@ function emailLines(dir){
                           : "We had no new receipts " + onDay(t.day) + ".");
     if (t.reconciled) parts.push((t.received ? "We also reconciled " : "We reconciled ") + t.reconciled + " " + plural(t.reconciled, "delivery", "deliveries") + " that " + plural(t.reconciled, "was", "were") + " aging in transit in SAP.");
     if (t.open) parts.push(t.open + " " + plural(t.open, "delivery is", "deliveries are") + " still open.");
+    if (t.exception) parts.push(t.exception + " " + plural(t.exception, "delivery was", "deliveries were") + " marked as exceptions.");
     sentence = parts.join(" ");
   } else {
     var op = [];
@@ -1540,11 +1630,13 @@ function emailLines(dir){
                        : "We had no new shipments " + onDay(t.day) + ".");
     if (t.reconciled) op.push((t.received ? "We also reconciled " : "We reconciled ") + t.reconciled + " " + plural(t.reconciled, "delivery", "deliveries") + " where the SAP goods issue and the PKMS invoice happened on different days.");
     if (t.open) op.push(t.open + " " + plural(t.open, "delivery is", "deliveries are") + " still open.");
+    if (t.exception) op.push(t.exception + " " + plural(t.exception, "delivery was", "deliveries were") + " marked as exceptions.");
     sentence = op.join(" ");
   }
-  var LABEL = {received: dir === "in" ? "Received" : "Shipped", reconciled:"Reconciled", open:"Open"};
+  var LABEL = {received: dir === "in" ? "Received" : "Shipped", reconciled:"Reconciled", open:"Open", exception:"Exception"};
   return {sentence:sentence, rows:t.rows.map(function(r){
-    return {key:r.key, status: LABEL[t.cat[r.key]], note: STATE.notes[dir+":"+r.key] || ""};
+    var note = STATE.notes[dir+":"+r.key] || (t.cat[r.key] === "exception" ? excReason(dir, r.key) : "");
+    return {key:r.key, status: LABEL[t.cat[r.key]], note: note};
   })};
 }
 function emailHtml(){
@@ -1562,7 +1654,7 @@ function emailHtml(){
     html += '<p style="'+F+'margin:14px 0 6px;font-weight:bold;">' + pair[0] + ' - ' + esc(fmtDate(day)) + '</p>';
     html += '<table style="border-collapse:collapse;"><tr><th '+th+'>Delivery</th><th '+th+'>Status</th><th '+th+'>Comment</th></tr>';
     d.rows.forEach(function(r){
-      var sc = r.status === "Open" ? "color:#c23e17;font-weight:bold;" : ((r.status === "Received" || r.status === "Shipped") ? "color:#1f7d4a;font-weight:bold;" : "color:#2c66d6;");
+      var sc = r.status === "Open" ? "color:#c23e17;font-weight:bold;" : ((r.status === "Received" || r.status === "Shipped") ? "color:#1f7d4a;font-weight:bold;" : (r.status === "Exception" ? "color:#6b7280;" : "color:#2c66d6;"));
       html += '<tr><td '+td+'>'+esc(r.key)+'</td><td style="'+F+'font-size:14px;padding:5px 14px 5px 8px;border:1px solid #d3d9e1;'+sc+'">'+r.status+'</td><td '+td+'>'+esc(r.note)+'</td></tr>';
     });
     html += '</table>';
@@ -1815,19 +1907,44 @@ function syncPushFile(srcKey){
   var s = STATE.sources[srcKey];
   syncWrite("putBlobs", {blobs:blobs, log:"Uploaded " + SPECS[srcKey].label + " (" + s.fileName + ", " + s.records.length + " rows)"});
 }
+function noteMeta(id){
+  var p = id.split(":"), ex = p[0] === "x";
+  if (ex) p = p.slice(1);
+  return {dir: (p[0] === "in" ? "Inbound" : "Outbound") + (ex ? " exception" : ""), delivery: p[1]};
+}
 function syncPushNote(id, v){
   if (!syncOn()) return;
   SYNC.pendingNotes[id] = v;
-  var parts = id.split(":");
-  syncWrite("putNote", {id:id, dir: parts[0] === "in" ? "Inbound" : "Outbound", delivery: parts[1], note: v}).then(function(){
+  syncWrite("putNote", Object.assign({id:id, note: v}, noteMeta(id))).then(function(){
     if (SYNC.pendingNotes[id] === v) delete SYNC.pendingNotes[id];
+  });
+}
+function syncPushNotes(items, log){
+  if (!syncOn() || !items.length) return;
+  items.forEach(function(it){ SYNC.pendingNotes[it.id] = it.v; });
+  var payload = items.map(function(it){ return Object.assign({id:it.id, note:it.v}, noteMeta(it.id)); });
+  syncEnqueue(function(){
+    return syncRetry("putNotes", {notes:payload, log:log}).catch(function(e){
+      if (!/Unknown action/i.test(e.message)) throw e;
+      // The sheet's script is the older version without bulk saving: send them one at a time.
+      var chain = Promise.resolve(null);
+      payload.forEach(function(n){ chain = chain.then(function(){ return syncRetry("putNote", n); }); });
+      return chain;
+    });
+  }).then(function(j){
+    if (j && j.revBefore === SYNC.rev) SYNC.rev = j.rev;
+    items.forEach(function(it){ if (SYNC.pendingNotes[it.id] === it.v) delete SYNC.pendingNotes[it.id]; });
+    SYNC.last = Date.now(); setSync("ok", "");
+  }, function(e){
+    setSync("error", e.message);
+    showToast("Saved on this PC, but not shared: " + e.message, true);
   });
 }
 function syncPushAll(){
   var blobs = {rules: JSON.stringify(STATE.rules), ordHist: JSON.stringify(STATE.ordHist), ordSnaps: JSON.stringify(STATE.ordSnaps)};
   ["ords","asn","mb51"].forEach(function(k){ if (STATE.sources[k]) blobs["src_" + k] = JSON.stringify(STATE.sources[k]); });
   var p = syncWrite("putBlobs", {blobs:blobs, log:"Shared the data from this PC"});
-  Object.keys(STATE.notes).forEach(function(id){ syncPushNote(id, STATE.notes[id]); });
+  syncPushNotes(Object.keys(STATE.notes).map(function(id){ return {id:id, v:STATE.notes[id]}; }), "Shared notes from this PC");
   return p;
 }
 
@@ -1847,6 +1964,7 @@ function remoteFrom(j){
 function syncBusyEditing(){
   var a = document.activeElement;
   if (a && a.classList && a.classList.contains("note-input")) return true;
+  if (a && a.id === "selReason") return true;
   if (!$("colMenu").classList.contains("hidden")) return true;
   return ["mapOverlay","rulesOverlay","sortOverlay"].some(function(id){ return !$(id).classList.contains("hidden"); });
 }
