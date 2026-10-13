@@ -1807,7 +1807,10 @@ function wire(){
 var SYNC_LS = "iffSync_v1", SYNC_POLL_MS = 30000;
 // Built-in connection to the team's Google Sheet, so nobody has to enter anything.
 // To point the scoreboard at a different sheet, change these two lines.
-var DEFAULT_SYNC_URL = "https://script.google.com/macros/s/AKfycbw3gdho8pdPLzwa2pxXhLuuSvzRG3T87eOBIRanksVuvIMTtrROiT0ICx1Wrj1baiyOpg/exec";
+var DEFAULT_SYNC_URL = "https://script.google.com/macros/s/AKfycbwov0YSHWzPrN7oS6z84T4Ba8U7im8Rd9XvURvMez9fKqGQ1IL6IvyLLtgKPDPCpBkZ/exec";
+// Earlier built-in URLs. A PC saved on one of these is moved to the current one, and if the
+// current one ever stops answering, these are tried before giving up.
+var OLD_SYNC_URLS = ["https://script.google.com/macros/s/AKfycbw3gdho8pdPLzwa2pxXhLuuSvzRG3T87eOBIRanksVuvIMTtrROiT0ICx1Wrj1baiyOpg/exec"];
 var DEFAULT_SYNC_KEY = "3820";
 var SYNC = {url:"", key:"", name:"", rev:null, state:"off", msg:"", last:0, queue:[], busy:false, pendingNotes:{}, deferred:null};
 
@@ -1817,6 +1820,7 @@ function syncLoadSettings(){
   SYNC.url = s.url || ""; SYNC.key = s.key || ""; SYNC.name = s.name || "";
   // Nothing saved on this PC yet (and sharing wasn't turned off on purpose): use the built-in connection.
   if (!SYNC.url && !s.off){ SYNC.url = DEFAULT_SYNC_URL; SYNC.key = DEFAULT_SYNC_KEY; SYNC.fromLink = true; }
+  else if (OLD_SYNC_URLS.indexOf(SYNC.url) !== -1){ SYNC.url = DEFAULT_SYNC_URL; SYNC.key = DEFAULT_SYNC_KEY; syncSaveSettings(); }
   // Team link: <page>?sync=<web app url>&key=<access key> connects this browser in one click.
   try{
     var q = new URLSearchParams(location.search);
@@ -2055,6 +2059,24 @@ function copyTeamLink(){
   else window.prompt("Copy this link:", link);
 }
 
+// Connect on page open. If the saved URL doesn't answer (for example, its deployment was archived),
+// try the other built-in URLs that use the same access key and keep the first one that works.
+function syncFirstConnect(firstTime){
+  var tried = [SYNC.url];
+  function attempt(){
+    if (firstTime) return syncConnect(SYNC.url, SYNC.key);
+    return syncCall("ping").then(function(p){ SYNC.sheetName = p.sheet; return syncCall("pull"); }).then(function(j){ applyPulled(j, true); });
+  }
+  function next(err){
+    if (SYNC.key !== DEFAULT_SYNC_KEY) throw err;
+    var cand = [DEFAULT_SYNC_URL].concat(OLD_SYNC_URLS).filter(function(u){ return tried.indexOf(u) === -1; })[0];
+    if (!cand) throw err;
+    tried.push(cand); SYNC.url = cand; syncSaveSettings();
+    return attempt().catch(next);
+  }
+  return attempt().catch(next).catch(function(e){ setSync("error", e.message); throw e; });
+}
+
 function wireSync(){
   $("syncPill").addEventListener("click", openSyncModal);
   $("btnSyncSave").addEventListener("click", saveSyncModal);
@@ -2081,11 +2103,10 @@ function init(){
   renderAll();
   setSync("off");
   if (syncOn()){
-    if (SYNC.fromLink) syncConnect(SYNC.url, SYNC.key).then(function(){
+    if (SYNC.fromLink) syncFirstConnect(true).then(function(){
       if (!SYNC.name) showToast("Connected to the team's shared scoreboard. Optional: click the green status line to add your name to your notes.");
-    }).catch(function(e){ setSync("error", e.message); showToast("Couldn't connect: " + e.message, true); });
-    else syncCall("ping").then(function(p){ SYNC.sheetName = p.sheet; return syncCall("pull"); }).then(function(j){ applyPulled(j, true); })
-      .catch(function(e){ setSync("error", e.message); });
+    }).catch(function(e){ showToast("Couldn't connect: " + e.message, true); });
+    else syncFirstConnect(false).catch(function(){});
   }
 }
 document.addEventListener("DOMContentLoaded", init);
