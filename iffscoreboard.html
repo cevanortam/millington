@@ -234,6 +234,14 @@ input[type=file]{display:none;}
 .controls .grow{flex:1;min-width:240px;}
 .text-input,.select{width:100%;background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:8px 11px;font-family:var(--mono);font-size:13px;}
 .text-input:focus,.select:focus{outline:none;border-color:var(--amber);}
+.range-group{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.range-group .select{width:auto;font-family:var(--sans);}
+.range-group input{width:auto;}
+.range-group .rg-to{font-size:12.5px;color:var(--muted);}
+.stat.k-rate{border-top-color:var(--green);cursor:default;}
+.stat.k-rate .n{color:var(--green);}
+.stat.k-rate.mid .n{color:var(--amber);} .stat.k-rate.mid{border-top-color:var(--amber);}
+.stat.k-rate.low .n{color:var(--red);} .stat.k-rate.low{border-top-color:var(--red);}
 .date-group{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);}
 .date-group input{width:auto;}
 .check{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--text);cursor:pointer;user-select:none;}
@@ -376,6 +384,19 @@ table.grid{width:100%;border-collapse:collapse;font-size:13px;min-width:1050px;}
 
   <div class="controls">
     <div class="grow"><input type="text" class="text-input" id="search" placeholder="Delivery number(s), e.g. 81181566 or paste a list"></div>
+    <div class="range-group" role="group" aria-label="Date range">
+      <select class="select" id="rangePreset" aria-label="Date range">
+        <option value="all">All dates</option>
+        <option value="day">Latest day</option>
+        <option value="7">Last 7 days</option>
+        <option value="30">Last 30 days</option>
+        <option value="month">This month</option>
+        <option value="custom">Custom range</option>
+      </select>
+      <input type="date" class="text-input" id="rangeFrom" aria-label="From date">
+      <span class="rg-to">to</span>
+      <input type="date" class="text-input" id="rangeTo" aria-label="To date">
+    </div>
     <button class="btn ghost sm" id="btnSort">Sort…</button>
     <button class="btn ghost sm" id="btnReset">Clear filters</button>
   </div>
@@ -398,7 +419,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:13px;min-width:1050px;}
       <li>Open transaction <code>MB51</code> (Material Document List).</li>
       <li>Material: leave the field empty but set it to <b>not equal to blank</b>. Double-click the empty Material field (or right-click › Options), choose <code>≠ Not equal to</code>, and confirm. A green <code>≠</code> icon appears beside the field, as in the screenshot. This drops lines with no material.</li>
       <li>Plant: <code>VB04</code>.</li>
-      <li>Movement Type: click the multiple-selection arrow to the right of the field and enter <code>101</code> and <code>601</code>. The arrow turns green when more than one value is set.</li>
+      <li>Movement Type: click the multiple-selection arrow to the right of the field and enter <code>101</code>, <code>601</code> and <code>643</code>, one per line. The arrow turns green when more than one value is set.</li>
       <li>Posting Date: from far enough back to cover your oldest open PKMS records, through today. Anything in PKMS older than the start date is marked "Can't check" rather than flagged.</li>
       <li>Layout: <code>/ESTOQUE C C</code>, or any layout that includes Reference, MvT, Posting Date and Quantity. Reference carries the delivery number.</li>
       <li>Execute, then export with List › Export › Spreadsheet and save as <code>.xlsx</code>. Upload it on the SAP MB51 tile.</li>
@@ -491,7 +512,15 @@ table.grid{width:100%;border-collapse:collapse;font-size:13px;min-width:1050px;}
 "use strict";
 
 var STORE_KEY = "iffRecon_v2";
-var DEFAULT_RULES = {outPost:["601"], outRev:[], inPost:["101"], inRev:[], outDone:90, inDone:10, inPut:40};
+var DEFAULT_RULES = {outPost:["601","643"], outRev:[], inPost:["101"], inRev:[], outDone:90, inDone:10, inPut:40, v:2};
+// Brings rules saved by an older version up to date. v2: 643 counts as an outbound goods issue.
+function upgradeRules(r){
+  if (!r.v || r.v < 2){
+    if ((r.outPost || []).indexOf("643") === -1) r.outPost = (r.outPost || []).concat("643");
+    r.v = 2;
+  }
+  return r;
+}
 var ORD_LABELS = {"10":"10 Unselected","20":"20 Printed","35":"35 Picking","40":"40 Packing","90":"90 Invoiced"};
 var ORD_HINTS = {"10":"Created, not released","20":"Picktickets printed","35":"Picking started, not complete","40":"Picked complete","90":"Closed out of PKMS"};
 var ASN_LABELS = {"10":"10 Not put away","40":"40 Put away"};
@@ -532,6 +561,7 @@ var STATE = {
   notes: {},
   tab: "in",
   day: "",
+  range: {preset:"all", from:"", to:""},
   sel: {}, selReason: "", viewKeys: [], lastSel: null,
   ordHist: {}, ordSnaps: [],
   search: "",
@@ -607,7 +637,7 @@ function load(){
     var p = JSON.parse(raw);
     if (p.sources) STATE.sources = Object.assign({ords:null,asn:null,mb51:null}, p.sources);
     if (p.rules){
-      STATE.rules = Object.assign(JSON.parse(JSON.stringify(DEFAULT_RULES)), p.rules);
+      STATE.rules = upgradeRules(Object.assign(JSON.parse(JSON.stringify(DEFAULT_RULES)), p.rules, {v: p.rules.v || 0}));
       if (p.rules.inPut == null){ STATE.rules.inDone = DEFAULT_RULES.inDone; STATE.rules.inPut = DEFAULT_RULES.inPut; }
     }
     if (p.notes) STATE.notes = p.notes;
@@ -936,13 +966,44 @@ function searchTokens(){
   return STATE.search.split(/[\s,;]+/).map(function(t){ return normKey(t).key; }).filter(function(t){ return t.length >= 3; });
 }
 
+function inRange(r, from, to){
+  function ok(d){ return !!d && (!from || d >= from) && (!to || d <= to); }
+  if (r.sapDays && r.sapDays.some(ok)) return true;
+  return ok(r.pkmsDate) || ok(r.pkmsInv) || ok(r.pkmsCreated) || ok(r.pkmsReceipt);
+}
+function addDays(iso, n){ var d = new Date(iso + "T12:00:00"); d.setDate(d.getDate() + n); return d.getFullYear() + "-" + pad2(d.getMonth()+1) + "-" + pad2(d.getDate()); }
+function applyPreset(preset){
+  var end = latestDate() || realToday(), R = STATE.range;
+  R.preset = preset;
+  if (preset === "all"){ R.from = ""; R.to = ""; }
+  else if (preset === "day"){ R.from = end; R.to = end; }
+  else if (preset === "7"){ R.from = addDays(end, -6); R.to = end; }
+  else if (preset === "30"){ R.from = addDays(end, -29); R.to = end; }
+  else if (preset === "month"){ R.from = end.slice(0, 8) + "01"; R.to = end; }
+  syncRangeInputs();
+}
+function syncRangeInputs(){
+  var R = STATE.range;
+  $("rangePreset").value = R.preset;
+  $("rangeFrom").value = R.from; $("rangeTo").value = R.to;
+}
+function rangeText(){
+  var R = STATE.range;
+  if (!R.from && !R.to) return "";
+  if (R.from === R.to) return fmtDate(R.from);
+  return (R.from ? fmtDate(R.from) : "start") + " to " + (R.to ? fmtDate(R.to) : "latest");
+}
+
 function viewRows(dir){
   var rows = buildRows(dir), tokens = searchTokens();
   var base;
   if (tokens.length){
     base = rows.filter(function(r){ return tokens.some(function(t){ return r.key === t || r.key.indexOf(t) !== -1; }); });
   } else {
-    base = rows.slice();
+    // Date range: a delivery is in range if SAP posted it, or PKMS received / invoiced / created it,
+    // on any day inside the range. A search always looks across all dates.
+    var R = STATE.range;
+    base = (R.from || R.to) ? rows.filter(function(r){ return inRange(r, R.from, R.to); }) : rows.slice();
   }
   // Stat counts follow the column filters (but not the stat card's own result filter).
   var counted = base.filter(function(r){ return passesFilters(dir, r, null); });
@@ -1069,7 +1130,7 @@ function renderStats(dir, counts){
   var pct = denom ? Math.round(counts.REC / denom * 100) + "%" : "—";
   $("stats").innerHTML = defs.map(function(d){
     return '<button class="stat '+d.cls+(STATE.resultFilter===d.k?" active":"")+'" data-rf="'+d.k+'"><div class="n">'+d.n+'</div><div class="l">'+esc(d.l)+'</div></button>';
-  }).join("") + '<div class="stat k-rec" style="cursor:default;"><div class="n">'+pct+'</div><div class="l">Reconciled of deliveries done in either system</div></div>';
+  }).join("") + '<div class="stat k-rate'+(denom ? (counts.REC/denom >= 0.95 ? "" : counts.REC/denom >= 0.8 ? " mid" : " low") : "")+'" title="Reconciled deliveries out of all deliveries done in SAP or PKMS' + (rangeText() && !searchTokens().length ? ", " + rangeText() : "") + '. Exceptions and deliveries not done anywhere yet are left out."><div class="n">'+pct+'</div><div class="l">Reconciliation rate' + (rangeText() && !searchTokens().length ? " for these dates" : ", all dates") + '</div></div>';
   $("stats").querySelectorAll("[data-rf]").forEach(function(b){
     b.addEventListener("click", function(){ STATE.resultFilter = b.getAttribute("data-rf"); renderMain(); });
   });
@@ -1097,7 +1158,8 @@ function renderMain(){
 
   var tokens = searchTokens();
   var note = "";
-  if (tokens.length) note = "Showing deliveries matching your search.";
+  if (tokens.length) note = "Showing deliveries matching your search, across all dates.";
+  else if (rangeText()) note = "Showing deliveries with SAP or PKMS activity on " + rangeText() + ", problems first. Tick the boxes on the left to mark deliveries as exceptions.";
   else note = "Showing every delivery in the loaded files, problems first. Tick the boxes on the left to mark deliveries as exceptions.";
   $("viewNote").textContent = note;
 
@@ -1523,6 +1585,7 @@ function closeColMenu(){ $("colMenu").classList.add("hidden"); }
 
 function renderChips(dir){
   var F = STATE.filters[dir], html = "";
+  if (rangeText() && !searchTokens().length) html += '<span class="chip"><span class="t"><b>Dates:</b> ' + esc(rangeText()) + '</span><button data-unrange="1" aria-label="Show all dates">×</button></span>';
   Object.keys(F).forEach(function(k){
     var vals = F[k].map(function(v){ return v === "" ? BLANK : v; });
     var txt = vals.length ? vals.slice(0, 4).join(", ") + (vals.length > 4 ? " +" + (vals.length - 4) + " more" : "") : "nothing selected";
@@ -1534,6 +1597,7 @@ function renderChips(dir){
   }
   var box = $("chips");
   box.innerHTML = html;
+  box.querySelectorAll("[data-unrange]").forEach(function(b){ b.addEventListener("click", function(){ applyPreset("all"); renderMain(); }); });
   box.querySelectorAll("[data-unfilter]").forEach(function(b){ b.addEventListener("click", function(){ delete STATE.filters[dir][b.getAttribute("data-unfilter")]; renderMain(); }); });
   box.querySelectorAll("[data-unsort]").forEach(function(b){ b.addEventListener("click", function(){ STATE.sort[dir] = [{k:"result", d:1}]; renderMain(); }); });
 }
@@ -1718,7 +1782,7 @@ function listVal(id){ return $(id).value.split(/[\s,;]+/).map(function(s){ retur
 function saveRules(){
   var od = parseInt($("r-outDone").value,10), id = parseInt($("r-inDone").value,10), ip = parseInt($("r-inPut").value,10);
   if (isNaN(od) || isNaN(id) || isNaN(ip)){ showToast("PKMS statuses need to be numbers, like 90, 10 and 40.", true); return; }
-  STATE.rules = {outPost:listVal("r-outPost"), outRev:listVal("r-outRev"), inPost:listVal("r-inPost"), inRev:listVal("r-inRev"), outDone:od, inDone:id, inPut:ip};
+  STATE.rules = {outPost:listVal("r-outPost"), outRev:listVal("r-outRev"), inPost:listVal("r-inPost"), inRev:listVal("r-inRev"), outDone:od, inDone:id, inPut:ip, v:2};
   STATE.rowsCache = {}; save(); renderAll();
   syncWrite("putBlobs", {blobs:{rules: JSON.stringify(STATE.rules)}, log:"Changed rules"});
   $("rulesOverlay").classList.add("hidden");
@@ -1774,7 +1838,19 @@ function wire(){
   document.querySelector(".workspace").addEventListener("scroll", closeColMenu, true);
   window.addEventListener("scroll", function(){ closeColMenu(); }, {passive:true});
 
+  $("rangePreset").addEventListener("change", function(e){
+    if (e.target.value === "custom"){ STATE.range.preset = "custom"; $("rangeFrom").focus(); return; }
+    applyPreset(e.target.value); renderMain();
+  });
+  ["rangeFrom","rangeTo"].forEach(function(id){
+    $(id).addEventListener("change", function(){
+      var R = STATE.range; R.preset = "custom"; R.from = $("rangeFrom").value; R.to = $("rangeTo").value;
+      if (R.from && R.to && R.from > R.to){ var t = R.from; R.from = R.to; R.to = t; }
+      syncRangeInputs(); renderMain();
+    });
+  });
   $("btnReset").addEventListener("click", function(){
+    applyPreset("all");
     STATE.search = ""; $("search").value = ""; STATE.resultFilter = ""; STATE.filters[STATE.tab] = {};
     renderMain();
   });
@@ -1975,7 +2051,7 @@ function syncBusyEditing(){
 function commitRemote(R){
   SYNC.deferred = null;
   STATE.sources = R.sources;
-  if (R.rules) STATE.rules = Object.assign(JSON.parse(JSON.stringify(DEFAULT_RULES)), R.rules);
+  if (R.rules) STATE.rules = upgradeRules(Object.assign(JSON.parse(JSON.stringify(DEFAULT_RULES)), R.rules, {v: R.rules.v || 0}));
   STATE.ordHist = R.ordHist; STATE.ordSnaps = R.ordSnaps; STATE.notes = R.notes;
   STATE.rowsCache = {};
   save(); renderAll();
